@@ -3,8 +3,8 @@ sudo apt install -y build-essential pkg-config libglib2.0-dev libpixman-1-dev bi
 echo -e "\033[41;37m 正在下载必要源码包 \033[0m"
 mkdir resource
 cd resource
-wget https://gitee.com/Hanabichan/lzu-oslab-resource/raw/master/gdb-10.1.tar.xz
-wget https://gitee.com/Hanabichan/lzu-oslab-resource/raw/master/qemu-5.1.0.tar.xz
+axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521696/download/qemu-5.1.0.tar.xz
+axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521695/download/gdb-10.1.tar.xz
 echo -e "\033[41;37m 正在解压 \033[0m"
 tar xJf qemu-5.1.0.tar.xz
 tar -xvJ -f gdb-10.1.tar.xz
@@ -26,3 +26,4 @@ qemu-system-riscv64 --version
 echo -e "\033[41;37m 清理安装文件 \033[0m"
 cd ../..
 rm -rf resource
+

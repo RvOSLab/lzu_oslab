@@ -50,3 +50,45 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# fd dotfile
+.fdignore
+
+# rg dotfile
+.fdignore
+
+# Vim-generated file
+.nvimlog
+.root
+.project
+.swp
+.session
+session
+swp
+.undo
+undo
+projectins.json
+.ycm_extra_config.py
+
+# os
+*.tmp
+*.img
+*.bin
+
+# other
+TODO
+TODO.wiki
+
+# LSP
+.clangd
+.ccl
+# cache
+.cache
+
+# tags
+GPATH
+GTAGS
+GRTAGS
+tags
+.notags
+

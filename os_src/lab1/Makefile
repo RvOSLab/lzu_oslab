@@ -13,7 +13,7 @@ KERN_MAP := kernel.map
 KERN_SYM := kernel.sym
 KERN_ASM := kernel.asm
 
-CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-strict-aliasing -nostdinc -I . 
+CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I . 
 
 objects := $(patsubst %.c, %.o, $(wildcard *.c)) entry.o
 

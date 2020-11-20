@@ -28,8 +28,8 @@
 /** sbi ecall return type */
 struct sbiret
 {
-    uint32_t error;
-    uint32_t value;
+    long error;
+    long value;
 };
 
 struct sbiret sbi_get_spec_version();      /** get sbi specification version */

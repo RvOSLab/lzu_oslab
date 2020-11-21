@@ -1,6 +1,6 @@
 # 以下是部分变量的定义，其中部分是 Makefile 的默认变量，使用 := 符号定义可以覆盖原变量的定义
 # CC - 编译器；LD - 链接器；OBJCOPY - 二进制拷贝程序；OBJDUMP - 反汇编程序
-# NM - 符号提取程序；AS - 编译器；GDB - 调试程序；TMUX - 可分屏终端管理工具；QEMU - RISC-V模拟器
+# NM - 符号提取程序；AS - 编译器；GDB - 调试程序；TMUX - 终端复用器；QEMU - RISC-V模拟器
 CC := riscv64-linux-gnu-gcc
 LD := riscv64-linux-gnu-ld
 OBJCOPY := riscv64-linux-gnu-objcopy
@@ -13,7 +13,7 @@ QEMU := qemu-system-riscv64
 
 # 二进制文件，可直接启动系统
 KERN_IMG := kernel.img
-# 链接得到的 ELF 类型的可执行文件（含 ELF 文件信息）
+# 链接得到的 ELF 格式的可执行文件
 KERN_BIN := kernel.bin
 # 导出的内存布局文件
 KERN_MAP := kernel.map
@@ -24,17 +24,17 @@ KERN_ASM := kernel.asm
 
 # -mcmodel=medany 适用于64位RISC-V的CPU（RV64I指令集），使一些C语言代码中的寻址操作可以被编译为auipc指令，用于相对寻址，可使程序的运行与程序被加载的位置无关
 # -Wall 将所有的警告信息全开
-# -g 添加适用于gdb的调试信息，这会降低运行速度
-# -fno-builtin 不使用C语言的内建函数
+# -g 添加适用于gdb的调试信息
+# -fno-builtin 不使用 GCC 内建函数
 # -fno-stack-protector 不使用栈保护
 # -fno-strict-aliasing 允许未定义的类型间强制转换
 # -nostdinc 不使用系统标准库
 # -I . 优先在当前目录搜索头文件
 CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I . 
 
-# 创建一个文件名列表，列表内容是所有.c文件对应的.o文件（还未创建，将在下面被创建），最后加上entry.o（没有对应的.c文件）
-# wildcard 函数，功能是展开成一列所有符合由其参数描述的文件名，文件间以空格间隔。
-# patsubst 是字符替换，3个参数：需要匹配的式样，用什么来替换它，需要被处理的由空格分隔的字列。
+# 创建一个文件名列表，列表内容是所有.c文件对应的.o文件（还未创建，将在下面被创建），最后加上entry.o（对应 entry.s）
+# wildcard 函数返回通配符匹配到的文件名，文件间以空格分隔。
+# patsubst 函数进行模式替换，3个参数：需要匹配的模式，用什么来替换它，需要被处理的由空格分隔的字列。
 objects := $(patsubst %.c, %.o, $(wildcard *.c)) entry.o
 
 # .PHONY表示后面这些都是伪造的target，无论同名文件是否存在都会运行
@@ -55,11 +55,8 @@ $(KERN_BIN) : $(objects)
 	$(LD) -T linker.ld -M=$(KERN_MAP) -o $(KERN_BIN) $^
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 
-# run，启动文本形式的 QEMU 运行操作系统，先决条件是 build （见上）
-# machine 参数用于指定 QEMU 所模拟的机器，可以使用 `qemu-system-riscv64 -machine help` 命令查看所有可用机器，此处选择 virt 通用虚拟化 RISC-V 平台，支持 VirtIO 设备
-# nographic 不开启图形界面
-# bios 使用 QEMU 默认的 bios，QEMU 自带了 OpenSBI v0.7 作为引导的第一级。
-# device loader,file=$(KERN_IMG),addr=0x80200000 使用通用加载器（可以加载裸二进制文件）加载文件 $(KERN_IMG) 到内存地址的 0x80200000 处
+# run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
+# bios 使用 QEMU 默认的 BIOS，即使用 QEMU 自带的 OpenSBI v0.7。
 run : build
 	@$(QEMU) \
     		-machine virt \
@@ -75,17 +72,17 @@ run-gui : build
     		-device loader,file=$(KERN_IMG),addr=0x80200000 
 
 # debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
-# tmux 的具体用法请自行上网查找或使用 `man tmux` 命令查看
 debug :
 	$(TMUX) new -s debug -d "$(QEMU) \
     			-machine virt \
 				-s -S \
+				-serial mon:stdio \
 				-nographic \
 				-bios default \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x gdbinit"
 	$(TMUX) attach-session -t debug
 
-# 使用 nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)
+# 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)
 # -v：按照地址由低到高排序。
 symbol : $(KERN_BIN)
 	$(NM) -v $(KERN_BIN) > $(KERN_SYM)

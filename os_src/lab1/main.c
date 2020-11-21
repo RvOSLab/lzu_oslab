@@ -55,7 +55,7 @@ main()
                 kputs("Implemention ID: Unkonwn");
         }
     }
-    kputs("Hello World");
+    kputs("Hello LZU OS");
     while (1)
         ; /* infinite loop */
     return 0;

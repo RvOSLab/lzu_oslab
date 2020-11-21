@@ -36,20 +36,20 @@
    sudo apt install -y build-essential pkg-config libglib2.0-dev libpixman-1-dev binutils texinfo axel git make gcc-riscv64-linux-gnu libncurses5-dev tmux
    ```
 
- 2. 下载必要源码包，并解压。
+2. 下载必要源码包，并解压。
 
-    ```shell
-    mkdir resource	#创建资源目录
-    cd resource		#进入资源目录
-    
-    axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521696/download/qemu-5.1.0.tar.xz		#下载qemu安装包。axel 是一个多线程下载器，可以使用其他下载器。
-    axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521695/download/gdb-10.1.tar.xz			#下载gdb安装包
-    ```
+   ```shell
+   mkdir resource	#创建资源目录
+   cd resource		#进入资源目录
+   
+   axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521696/download/qemu-5.1.0.tar.xz		#下载qemu安装包。axel 是一个多线程下载器，可以使用其他下载器。
+   axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521695/download/gdb-10.1.tar.xz			#下载gdb安装包
+   ```
 
-    ```shell
-    tar xJf qemu-5.1.0.tar.xz		#解压qemu包
-    tar -xvJ -f gdb-10.1.tamoz-extension://717d5c3f-f03c-43ed-a324-9r.xz		#解压gdb包
-    ```
+   ```shell
+   tar xJf qemu-5.1.0.tar.xz		#解压qemu包
+   tar xJf gdb-10.1.tar.xz       #解压gdb包
+   ```
 
 3. 编译并安装qemu虚拟机
 
@@ -97,16 +97,16 @@
    ```shell
    riscv64-unknown-elf-gdb -v		# 打印gdb版本信息
    qemu-system-riscv64 --version	# 打印qemu版本信息
-      
+     
    cd ../..
    rm -rf resource
    ```
 
+## 编译链接过程与 Makefile 解释
 
+这部分请参考 `os_src/lab1/Makefile` 的注释
 
-
-
-# 启动过程
+## 启动过程
 
 RISC-V 处理器通常有 3 个特权级，由高到底分别为 *M 模式*（*machine mode*）、*S 模式*（*supervisor mode*）和  *U 模式*（*user mode*）。M 模式下运行最受信任的代码，S 模式下运行操作系统，U 模式下运行用户程序。M 模式下的代码对整个系统拥有绝对控制权，可以控制一切硬件资源。
 
@@ -125,7 +125,7 @@ SBI 被加载到物理地址 0x80000000 处，通常占据 200 K 空间。SBI �
 
 因此需要将内核的第一条指令（函数）放置到地址 0x80200000 上，本实验通过链接脚本 linker.ld 完成了这项工作，具体细节参考其中的注释。
 
-# 实验题
+## 实验题
 
 1. **熟悉实验环境，使用 gdb 连接到 qemu 模拟器，反汇编并单步跟踪**
 
@@ -170,7 +170,7 @@ Makefile 中已经完成了项目的构建，以上两个题目都不需要修�
 
 题目所需的所有背景知识均可在[参考资料](#参考资料)中找到。
 
-# 参考资料
+## 参考资料
 
 理解编译链接：
 

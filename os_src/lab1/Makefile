@@ -56,7 +56,10 @@ $(KERN_BIN) : $(objects)
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 
 # run，启动文本形式的 QEMU 运行操作系统，先决条件是 build （见上）
+# machine 参数用于指定 QEMU 所模拟的机器，可以使用 `qemu-system-riscv64 -machine help` 命令查看所有可用机器，此处选择 virt 通用虚拟化 RISC-V 平台，支持 VirtIO 设备
+# nographic 不开启图形界面
 # bios 使用 QEMU 默认的 bios，QEMU 自带了 OpenSBI v0.7 作为引导的第一级。
+# device loader,file=$(KERN_IMG),addr=0x80200000 使用通用加载器（可以加载裸二进制文件）加载文件 $(KERN_IMG) 到内存地址的 0x80200000 处
 run : build
 	@$(QEMU) \
     		-machine virt \
@@ -64,28 +67,35 @@ run : build
     		-bios default \
     		-device loader,file=$(KERN_IMG),addr=0x80200000 
 
+# run-gui，启动图形形式的 QEMU 运行操作系统，需要 vncviewer 连接，先决条件是 build （见上）
 run-gui : build
 	@$(QEMU) \
     		-machine virt \
     		-bios default \
     		-device loader,file=$(KERN_IMG),addr=0x80200000 
 
+# debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
+# tmux 的具体用法请自行上网查找或使用 `man tmux` 命令查看
 debug :
 	$(TMUX) new -s debug -d "$(QEMU) \
     			-machine virt \
 				-s -S \
-				-serial mon:stdio \
 				-nographic \
 				-bios default \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x gdbinit"
 	$(TMUX) attach-session -t debug
 
-# 使用 nm 命令输出 kernel.bin 中符号的信息到 kernel.sym
+# 使用 nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)
+# -v：按照地址由低到高排序。
 symbol : $(KERN_BIN)
 	$(NM) -v $(KERN_BIN) > $(KERN_SYM)
 
+# 使用 objdump 命令输出 kernel.bin 的反汇编后的汇编代码，先决条件是 $(KERN_BIN)
+# -d：仅反汇编代码段内容
 disassembly : $(KERN_BIN)
 	$(OBJDUMP) -d $(KERN_BIN) > $(KERN_ASM)
 
+# 清理编译产生的文件。
+# 命令前面加上“-”，即使这条命令出错，make 也会继续执行后续命令
 clean :
-	-rm -f *.o $(KERN_BIN) $(KERN_IMG) $(KERN_SYM) $(KERN_ASM)
+	-rm -f *.o $(KERN_BIN) $(KERN_IMG) $(KERN_SYM) $(KERN_ASM) $(KERN_MAP)

@@ -26,4 +26,3 @@ qemu-system-riscv64 --version
 echo -e "\033[41;37m 清理安装文件 \033[0m"
 cd ../..
 rm -rf resource
-

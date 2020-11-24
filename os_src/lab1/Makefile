@@ -4,7 +4,7 @@
 CC := riscv64-linux-gnu-gcc
 LD := riscv64-linux-gnu-ld
 OBJCOPY := riscv64-linux-gnu-objcopy
-OBDDUMP := riscv64-linux-gnu-objdump
+OBJDUMP := riscv64-linux-gnu-objdump
 NM := riscv64-linux-gnu-nm
 AS := riscv64-linux-gnu-as
 GDB := riscv64-unknown-elf-gdb
@@ -72,7 +72,7 @@ run-gui : build
     		-device loader,file=$(KERN_IMG),addr=0x80200000 
 
 # debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
-debug :
+debug : build
 	$(TMUX) new -s debug -d "$(QEMU) \
     			-machine virt \
 				-s -S \

@@ -69,15 +69,15 @@ run-gui : build
 	@$(QEMU) \
     		-machine virt \
     		-bios default \
-    		-device loader,file=$(KERN_IMG),addr=0x80200000 
+    		-device loader,file=$(KERN_IMG),addr=0x80200000 \
+    		-monitor stdio \
 
 # debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
 debug : build
 	$(TMUX) new -s debug -d "$(QEMU) \
     			-machine virt \
 				-s -S \
-				-serial mon:stdio \
-				-nographic \
+				-monitor stdio \
 				-bios default \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x gdbinit"
 	$(TMUX) attach-session -t debug

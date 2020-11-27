@@ -79,7 +79,7 @@ debug : build
 				-s -S \
 				-monitor stdio \
 				-bios default \
-				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x gdbinit"
+				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "sleep 0.5s; $(GDB) -q -x gdbinit"
 	$(TMUX) attach-session -t debug
 
 # 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)

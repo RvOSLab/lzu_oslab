@@ -33,7 +33,7 @@
 1. 安装环境部署和内核编译所必要的软件包。
 
    ```shell
-   sudo apt install -y build-essential pkg-config libglib2.0-dev libpixman-1-dev binutils texinfo axel git make gcc-riscv64-linux-gnu libncurses5-dev tmux
+   sudo apt install -y build-essential pkg-config libglib2.0-dev libpixman-1-dev binutils libgtk-3-dev texinfo axel git make gcc-riscv64-linux-gnu libncurses5-dev tmux
    ```
 
 2. 下载必要源码包，并解压。
@@ -48,7 +48,7 @@
 
    ```shell
    tar xJf qemu-5.1.0.tar.xz		#解压qemu包
-   tar xJf gdb-10.1.tar.xz       #解压gdb包
+   tar xJf gdb-10.1.tar.xz			#解压gdb包
    ```
 
 3. 编译并安装qemu虚拟机
@@ -60,11 +60,11 @@
    ```
 
    - 指定系统版本，构建对应RISC-V架构的内容。
-
-   - `./configure` 命令配置安装平台的目标特征。
+- `./configure` 命令配置安装平台的目标特征。
+   - gtk是一套跨平台的图形用户界面工具包，配置后qemu支持使用GUI。
 
    ```shell
-   ./configure --target-list=riscv32-softmmu,riscv64-softmmu
+   ./configure --target-list=riscv32-softmmu,riscv64-softmmu --enable-gtk
    ```
 
    - 编译并安装qemu。

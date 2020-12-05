@@ -92,3 +92,5 @@ GRTAGS
 tags
 .notags
 
+# LZU_OS
+*.asm

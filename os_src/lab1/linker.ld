@@ -12,6 +12,7 @@ BASE_ADDRESS = 0x80200000;
 SECTIONS
 {
     /* . 表示当前地址（location counter） */
+    . = ALIGN(4K);
     . = BASE_ADDRESS;
 
     /* start 符号表示全部的开始位置 */
@@ -27,6 +28,7 @@ SECTIONS
         *(.text .text.*)
     }
 
+    . = ALIGN(4K);
     rodata_start = .;
 
     /* .rodata 字段 */
@@ -35,6 +37,7 @@ SECTIONS
         *(.rodata .rodata.*)
     }
 
+    . = ALIGN(4K);
     data_start = .;
 
     /* .data 字段 */
@@ -43,6 +46,7 @@ SECTIONS
         *(.data .data.*)
     }
 
+    . = ALIGN(4K);
     bss_start = .;
 
     /* .bss 字段 */
@@ -51,6 +55,7 @@ SECTIONS
         *(.sbss .bss .bss.*)
     }
 
+    . = ALIGN(4K);
     /* 结束地址 */
     kernel_end = .;
 }

@@ -4,7 +4,7 @@
 CC := riscv64-linux-gnu-gcc
 LD := riscv64-linux-gnu-ld
 OBJCOPY := riscv64-linux-gnu-objcopy
-OBDDUMP := riscv64-linux-gnu-objdump
+OBJDUMP := riscv64-linux-gnu-objdump
 NM := riscv64-linux-gnu-nm
 AS := riscv64-linux-gnu-as
 GDB := riscv64-unknown-elf-gdb

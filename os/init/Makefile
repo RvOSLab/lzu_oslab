@@ -11,6 +11,6 @@ build : lib.a init.o
 init.o : entry.s main.c
 
 clean :
-	-(for obj in $(ls *.o); do rm $obj; done)
+	-find . -regex '.*\.o' -exec rm {} \;
 
 

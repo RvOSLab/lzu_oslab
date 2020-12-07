@@ -5,9 +5,9 @@ CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict
 vpath %.h ../include
 
 .PHONY : clean build
-build : libstd.a
+build : libmm.a
 
-libstd.a : $(objects)
+libmm.a : $(objects)
 	$(AR) vq $@ $^
 
 $(objects) : %.o : %.c

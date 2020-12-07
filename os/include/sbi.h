@@ -40,3 +40,5 @@ void sbi_set_timer(uint64_t stime_value);  /** set timer */
 int sbi_console_getchar();                 /** read a byte from debug console */
 void sbi_console_putchar(int ch);          /** print character to debug console */
 void sbi_shutdown();                       /** shutdown */
+void print_system_infomation();
+void kputs(const char *msg);

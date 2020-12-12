@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+<meta name="generator" content="Doxygen 1.8.20"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LZU OSLab: lib/kdebug.c 源文件</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr style="height: 56px;">
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname">LZU OSLab
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 制作者 Doxygen 1.8.20 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+var searchBox = new SearchBox("searchBox", "search",false,'搜索');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(function() {
+  initMenu('',true,false,'search.php','搜索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */</script>
+<div id="main-nav"></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe src="javascript:void(0)" frameborder="0" 
+        name="MSearchResults" id="MSearchResults">
+</iframe>
+</div>
+
+<div id="nav-path" class="navpath">
+  <ul>
+<li class="navelem"><a class="el" href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li>  </ul>
+</div>
+</div><!-- top -->
+<div class="header">
+  <div class="headertitle">
+<div class="title">kdebug.c</div>  </div>
+</div><!--header-->
+<div class="contents">
+<a href="kdebug_8c.html">浏览该文件的文档.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="kdebug_8h.html">kdebug.h</a>&gt;</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="string_8h.html">string.h</a>&gt;</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="keywordtype">void</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno"><a class="line" href="kdebug_8c.html#a1b903516d5692eef93ceb57e8be16cc4">    5</a></span>&#160;<a class="code" href="kdebug_8c.html#a1b903516d5692eef93ceb57e8be16cc4">kputchar</a>(<span class="keywordtype">int</span> ch)</div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;{</div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;    <a class="code" href="sbi_8h.html#ac4c399fda9e2c8dfe1364b845ecbf108">sbi_console_putchar</a>(ch);</div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;}</div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keywordtype">int</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno"><a class="line" href="kdebug_8c.html#a920fd1e3853f252265f55edafbbd85d5">   11</a></span>&#160;<a class="code" href="kdebug_8c.html#a920fd1e3853f252265f55edafbbd85d5">kputs</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *msg)</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;{</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *ret = msg;</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    <span class="keywordflow">for</span> ( ; *msg != <span class="charliteral">&#39;\0&#39;</span>; ++msg )</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    {</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;        <a class="code" href="kdebug_8c.html#a1b903516d5692eef93ceb57e8be16cc4">kputchar</a>(*msg);</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    }</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    <a class="code" href="kdebug_8c.html#a1b903516d5692eef93ceb57e8be16cc4">kputchar</a>(<span class="charliteral">&#39;\n&#39;</span>);</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    <span class="keywordflow">return</span> ret == msg;</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;}</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keywordtype">int</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="kdebug_8c.html#ab2761bdf0cca73ad0fb5880895210cd8">   23</a></span>&#160;<a class="code" href="kdebug_8c.html#ab2761bdf0cca73ad0fb5880895210cd8">kprintf</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *fmt, ...)</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;{</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="comment">// TODO</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;}</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keywordtype">void</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;do_panic(<span class="keyword">const</span> <span class="keywordtype">char</span>* file, <span class="keywordtype">int</span> line, <span class="keyword">const</span> <span class="keywordtype">char</span>* fmt, ...)</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;{</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <a class="code" href="stdarg_8h.html#af53f622e3b6c080daeb167c1955d7ec1">va_list</a> ap;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <a class="code" href="stdarg_8h.html#ade24ac546ea93fde2353ed2db8e89c66">va_start</a>(ap, fmt);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="string_8h.html#a008e171a518fe0e0352f31b245e03875">strlen</a>(fmt))</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    {</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <a class="code" href="kdebug_8c.html#a920fd1e3853f252265f55edafbbd85d5">kputs</a>(fmt);</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    }</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="kdebug_8c.html#a1b903516d5692eef93ceb57e8be16cc4">kputchar</a>(<span class="charliteral">&#39;\n&#39;</span>);</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="stdarg_8h.html#acd9b3b9085ec072324c5fdac2b40304e">va_end</a>(ap);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="sbi_8h.html#a9f0b07efb57562dfce9dbba6cb8d531e">sbi_shutdown</a>();</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;}</div>
+</div><!-- fragment --></div><!-- contents -->
+<div class="ttc" id="asbi_8h_html_a9f0b07efb57562dfce9dbba6cb8d531e"><div class="ttname"><a href="sbi_8h.html#a9f0b07efb57562dfce9dbba6cb8d531e">sbi_shutdown</a></div><div class="ttdeci">void sbi_shutdown()</div><div class="ttdef"><b>Definition:</b> <a href="sbi_8c_source.html#l00111">sbi.c:111</a></div></div>
+<div class="ttc" id="astring_8h_html"><div class="ttname"><a href="string_8h.html">string.h</a></div></div>
+<div class="ttc" id="astdarg_8h_html_acd9b3b9085ec072324c5fdac2b40304e"><div class="ttname"><a href="stdarg_8h.html#acd9b3b9085ec072324c5fdac2b40304e">va_end</a></div><div class="ttdeci">#define va_end(ap)</div><div class="ttdef"><b>Definition:</b> <a href="stdarg_8h_source.html#l00013">stdarg.h:13</a></div></div>
+<div class="ttc" id="asbi_8h_html_ac4c399fda9e2c8dfe1364b845ecbf108"><div class="ttname"><a href="sbi_8h.html#ac4c399fda9e2c8dfe1364b845ecbf108">sbi_console_putchar</a></div><div class="ttdeci">void sbi_console_putchar(int ch)</div><div class="ttdef"><b>Definition:</b> <a href="sbi_8c_source.html#l00018">sbi.c:18</a></div></div>
+<div class="ttc" id="astdarg_8h_html_ade24ac546ea93fde2353ed2db8e89c66"><div class="ttname"><a href="stdarg_8h.html#ade24ac546ea93fde2353ed2db8e89c66">va_start</a></div><div class="ttdeci">#define va_start(ap, last)</div><div class="ttdef"><b>Definition:</b> <a href="stdarg_8h_source.html#l00011">stdarg.h:11</a></div></div>
+<div class="ttc" id="akdebug_8h_html"><div class="ttname"><a href="kdebug_8h.html">kdebug.h</a></div></div>
+<div class="ttc" id="astdarg_8h_html_af53f622e3b6c080daeb167c1955d7ec1"><div class="ttname"><a href="stdarg_8h.html#af53f622e3b6c080daeb167c1955d7ec1">va_list</a></div><div class="ttdeci">__builtin_va_list va_list</div><div class="ttdef"><b>Definition:</b> <a href="stdarg_8h_source.html#l00010">stdarg.h:10</a></div></div>
+<div class="ttc" id="akdebug_8c_html_a1b903516d5692eef93ceb57e8be16cc4"><div class="ttname"><a href="kdebug_8c.html#a1b903516d5692eef93ceb57e8be16cc4">kputchar</a></div><div class="ttdeci">void kputchar(int ch)</div><div class="ttdef"><b>Definition:</b> <a href="kdebug_8c_source.html#l00005">kdebug.c:5</a></div></div>
+<div class="ttc" id="akdebug_8c_html_ab2761bdf0cca73ad0fb5880895210cd8"><div class="ttname"><a href="kdebug_8c.html#ab2761bdf0cca73ad0fb5880895210cd8">kprintf</a></div><div class="ttdeci">int kprintf(const char *fmt,...)</div><div class="ttdef"><b>Definition:</b> <a href="kdebug_8c_source.html#l00023">kdebug.c:23</a></div></div>
+<div class="ttc" id="akdebug_8c_html_a920fd1e3853f252265f55edafbbd85d5"><div class="ttname"><a href="kdebug_8c.html#a920fd1e3853f252265f55edafbbd85d5">kputs</a></div><div class="ttdeci">int kputs(const char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="kdebug_8c_source.html#l00011">kdebug.c:11</a></div></div>
+<div class="ttc" id="astring_8h_html_a008e171a518fe0e0352f31b245e03875"><div class="ttname"><a href="string_8h.html#a008e171a518fe0e0352f31b245e03875">strlen</a></div><div class="ttdeci">size_t strlen(const char *str)</div><div class="ttdef"><b>Definition:</b> <a href="string_8c_source.html#l00004">string.c:4</a></div></div>
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+制作者&#160;<a href="http://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.8.20
+</small></address>
+</body>
+</html>

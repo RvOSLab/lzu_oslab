@@ -94,3 +94,8 @@ tags
 
 # LZU_OS
 *.asm
+doc/html/
+*.png
+*.js
+*.css
+*.html

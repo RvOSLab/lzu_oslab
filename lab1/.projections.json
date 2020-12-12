@@ -1,0 +1,22 @@
+{
+    "include/*.h": {
+        "alternate": ["lib/{}.c", "mm/{}.c"],
+        "type": "include"
+    },
+    "include/mm.h": {
+        "alternate": "mm/memory.c",
+        "type": "mm/memory.c"
+    },
+    "lib/*.c": {
+        "alternate": "include/{}.h",
+        "type": "lib"
+    },
+    "mm/*.c": {
+        "alternate": "include/{}.h",
+        "type": "mm"
+    },
+    "mm/memory.c": {
+        "alternate": "include/mm.h",
+        "type": "mm"
+    }
+}

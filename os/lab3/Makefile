@@ -63,11 +63,11 @@ debug : build
 	$(TMUX) new -s debug -d "$(QEMU) \
     			-machine virt \
 				-s -S \
-<<<<<<< HEAD:os/lab1/Makefile
-				-monitor stdio \
-=======
 				-nographic \
+<<<<<<< HEAD
 >>>>>>> Rearrange structure of lab:os/Makefile
+=======
+>>>>>>> fix conflict
 				-bios default \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "sleep 0.5s; $(GDB) -q -x gdbinit"
 	$(TMUX) attach-session -t debug

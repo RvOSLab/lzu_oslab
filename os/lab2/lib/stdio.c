@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <kdebug.h>
 #include <stdarg.h>
 
@@ -36,7 +37,6 @@ int kprintf(const char *_Format, ...) {
 	int ch;			//character
 	const char* str = NULL;//string
 
-
 	va_start(ap, _Format);
 	while (*_Format != '\0')
 	{
@@ -65,13 +65,6 @@ int kprintf(const char *_Format, ...) {
 					len--;
 				}
 				break;
-			
-
-
-
-
-
-
 			case 'p':
 				putchar('0');
 				putchar('x');

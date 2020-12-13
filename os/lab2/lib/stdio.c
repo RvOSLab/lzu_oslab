@@ -26,7 +26,6 @@
 //实际上, va_end被定义为空.它只是为实现与va_start配对(实现代码对称和"代码自注释"功能)
 
 static unsigned long kpow(int x, int y);
-int kprintf(const char *_Format, ...);
 
 int kprintf(const char *_Format, ...) {
 	va_list ap;		//定义可变参数的首指针
@@ -35,7 +34,7 @@ int kprintf(const char *_Format, ...) {
 	char len;		//decimal length
 	int rev = 0;	//return value:length of string
 	int ch;			//character
-	int* str = NULL;//string
+	const char* str = NULL;//string
 
 
 	va_start(ap, _Format);
@@ -62,13 +61,22 @@ int kprintf(const char *_Format, ...) {
 				{
 					ch = temp / kpow(10, len - 1);
 					temp %= kpow(10, len - 1);
-					kputchar(ch + '0');				//kputchar将数字转为字符输出
+					putchar(ch + '0');				//putchar将数字转为字符输出
 					len--;
 				}
 				break;
 			
+
+
+
+
+
+
+			case 'p':
+				putchar('0');
+				putchar('x');
+
 			case 'x':
-				CaseX:
 				val = va_arg(ap, int);
 				temp = val;
 				len = 0;
@@ -85,47 +93,44 @@ int kprintf(const char *_Format, ...) {
 					temp %= kpow(16, len - 1);
 					if (ch <= 9)
 					{
-						kputchar(ch + '0');
+						putchar(ch + '0');
 					}
 					else
 					{
-						kputchar(ch - 10 + 'a');
+						putchar(ch - 10 + 'a');
 					}
 					len--;
 				}
 				break;
-			case 'p':
-				kputchar('0');
-				kputchar('x');
-				goto CaseX;
-				break;
+			
 			case 's':		//string
-				str = va_arg(ap, int *);
-				while (str)
+				str = va_arg(ap, const char *);
+				// rev += strlen(str);
+
+				while (*str)
 				{
-					kputchar(str);
+					putchar(*str);
 					str++;
 				}
-				rev = sizeof(str) - 1;
 				break;
 			case 'c':		//character
-				kputchar(va_arg(ap, int));
+				putchar(va_arg(ap, int));
 				rev += 1;
 				break;
 			default:
 				break;
 			}
 		case '\n':
-			kputchar('\n');
+			putchar('\n');
 			break;
 		case '\r':
-			kputchar('\r');
+			putchar('\r');
 			break;
 		case '\t':
-			kputchar('\t');
+			putchar('\t');
 			break;
 		default:
-			kputchar(*_Format);
+			putchar(*_Format);
 		}
 		_Format++;
 	}
@@ -149,6 +154,6 @@ static unsigned long kpow(int x, int y) {
 //	kprintf("%c%d",'c', 11);
 //	kprintf("%x\r", a);
 //	kprintf("%p", p);
-//	kprintf("%s", 'hi');
+//	kprintf("%s", "hi");
 //	/*string乱码*/
 //}

@@ -1,16 +1,4 @@
-# 以下是部分变量的定义，其中部分是 Makefile 的默认变量，使用 := 符号定义可以覆盖原变量的定义
-# CC - 编译器；LD - 链接器；OBJCOPY - 二进制拷贝程序；OBJDUMP - 反汇编程序
-# NM - 符号提取程序；AS - 编译器；GDB - 调试程序；TMUX - 终端复用器；QEMU - RISC-V模拟器
-CC := riscv64-linux-gnu-gcc
-LD := riscv64-linux-gnu-ld
-OBJCOPY := riscv64-linux-gnu-objcopy
-OBJDUMP := riscv64-linux-gnu-objdump
-NM := riscv64-linux-gnu-nm
-AS := riscv64-linux-gnu-as
-GDB := riscv64-unknown-elf-gdb
-TMUX := tmux
-QEMU := qemu-system-riscv64
-
+include tools/toolchain.mk
 # 二进制文件，可直接启动系统
 KERN_IMG := kernel.img
 # 链接得到的 ELF 格式的可执行文件
@@ -30,7 +18,7 @@ KERN_ASM := kernel.asm
 # -fno-strict-aliasing 允许未定义的类型间强制转换
 # -nostdinc 不使用系统标准库
 # -I . 优先在当前目录搜索头文件
-CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I . 
+CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include
 
 # 创建一个文件名列表，列表内容是所有.c文件和.s文件对应的.o文件（还未创建，将在下面被创建）
 # wildcard 函数返回通配符匹配到的文件名，文件间以空格分隔。
@@ -43,7 +31,6 @@ objects := $(patsubst %.c, %.o, $(wildcard *.c)) $(patsubst %.s, %.o, $(wildcard
 # make 不加参数默认选取第一个 target 运行，此处 all 就是第一个 target，要想生成 target 需要先决条件 build（见下）
 all : build
 
-# build，先决条件是 $(KERN_BIN)，也即 kernel.bin（见下）
 build : $(KERN_BIN)
 
 # $(KERN_BIN)，先决条件是 $(objects) 里所包含的文件

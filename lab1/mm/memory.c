@@ -70,8 +70,7 @@ void free_page(uint64_t addr)
 /*******************************************************************************
  * @brief 获取空物理页
  *
- * @return 物理页的物理地址
- * @note 当没有可分配的物理页时 panic
+ * @return 成功时物理页的物理地址,失败时返回 0
  ******************************************************************************/
 uint64_t get_free_page(void)
 {
@@ -84,7 +83,6 @@ uint64_t get_free_page(void)
 			return ret;
 		}
 	}
-	panic("get_free_page(): memory exhausted");
 	return 0;
 }
 
@@ -102,7 +100,7 @@ void mem_test()
 
 	/** 测试物理页分配是否正常 */
 	uint64_t page1, old_page1;
-	page1 = old_page1 = get_free_page();
+    assert(page1 = old_page1 = get_free_page(), "Memory exhausts");
 	assert(page1 != 0, "page1 equal to zero");
 	assert(page1 == HIGH_MEM - PAGE_SIZE,
 	       "Error in address return by get_free_page()");
@@ -112,7 +110,7 @@ void mem_test()
 	}
 
 	uint64_t page2, old_page2;
-	page2 = old_page2 = get_free_page();
+        assert(page2 = old_page2 = get_free_page(), "Memory exhausts");
 	assert(page2 != 0, "page2 equal to zero");
 	assert(page2 == HIGH_MEM - 2 * PAGE_SIZE,
 	       "page2 is not equal to HIGH_MEM - 2 * PAGE_SIZE");
@@ -123,7 +121,7 @@ void mem_test()
 	}
 
 	uint64_t page3, old_page3;
-	page3 = old_page3 = get_free_page();
+	assert(page3 = old_page3 = get_free_page(), "Memory exhausts");
 	assert(page3 != 0, "page3 equal to zero");
 	assert(page3 == HIGH_MEM - 3 * PAGE_SIZE,
 	       "page3 is not equal to HIGH_MEM - 3 * PAGE_SIZE");

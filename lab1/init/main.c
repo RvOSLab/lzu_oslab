@@ -9,7 +9,7 @@ main()
     print_system_infomation();
     kputs("Hello LZU OS");
     kputs("running mem_init()");
-    mem_init(LOW_MEM, HIGH_MEM);
+    mem_init();
     kputs("running mem_test()");
     mem_test();
     while (1)

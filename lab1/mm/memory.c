@@ -1,3 +1,6 @@
+/**
+ * 实现物理内存管理
+ */
 #include <assert.h>
 #include <kdebug.h>
 #include <mm.h>
@@ -5,35 +8,32 @@
 
 /*******************************************************************************
  * @brief 内存页表，跟踪系统的全部内存
- *
  ******************************************************************************/
 unsigned char mem_map[PAGING_PAGES] = { 0 };
 
 /*******************************************************************************
  * @brief 初始化内存管理模块
  *
- * 该函数初始化 mem_map[] 数组，将物理地址空间 [mem_start, mem_end) 纳入到
+ * 该函数初始化 mem_map[] 数组，将物理地址空间 [HIGH_MEM, LOW_MEM) 纳入到
  * 内核的管理中。
- *
- * @param mem_start 起始物理地址
- * @param mem_end 结束物理地址
- * @todo 打开 status 寄存器中的 SUM 标志位
  ******************************************************************************/
 void
-mem_init(uint64_t mem_start, uint64_t mem_end)
+mem_init()
 {
     size_t i;
     for (i = 0; i < PAGING_PAGES; i++)
         mem_map[i] = USED;
-    mem_start = CEIL(mem_start);
-    mem_end = FLOOR(mem_end);
+    size_t mem_start = LOW_MEM;
+    size_t mem_end = HIGH_MEM;
+    mem_start = CEIL(LOW_MEM);
+    mem_end = FLOOR(HIGH_MEM);
     i = MAP_NR(mem_start);
     if (mem_end > HIGH_MEM)
         mem_end = HIGH_MEM;
     mem_end -= mem_start;
     mem_end >>= 12;
     while (mem_end-- > 0)
-        mem_map[i++] = 0;
+        mem_map[i++] = UNUSED;
     mem_start = MEM_START;
     mem_end = MEM_END;
 }
@@ -103,7 +103,7 @@ mem_test()
     for (i = 0; i < MAP_NR(LOW_MEM); ++i)
         assert(mem_map[i] == USED, "Error in mem_map[]");
     for (; i < MAP_NR(HIGH_MEM); ++i)
-        assert(mem_map[i] == 0, "Error in mem_map[]");
+        assert(mem_map[i] == UNUSED, "Error in mem_map[]");
 
     /** 测试物理页分配是否正常 */
     uint64_t page1, old_page1;

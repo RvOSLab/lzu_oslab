@@ -21,7 +21,7 @@ KERN_ASM := kernel.asm
 CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include
 
 # .PHONY表示后面这些都是伪造的target，无论同名文件是否存在都会运行
-.PHONY : all build run run-gui symbol debug clean disassembly
+.PHONY : all build run run-gui symbol debug clean disassembly format
 
 # make 不加参数默认选取第一个 target 运行，此处 all 就是第一个 target，要想生成 target 需要先决条件 build（见下）
 all : build
@@ -77,6 +77,9 @@ symbol : $(KERN_BIN)
 disassembly : $(KERN_BIN)
 	$(OBJDUMP) -d $(KERN_BIN) > $(KERN_ASM)
 
+# 格式化代码
+format: 
+	@find . -regex '.*\.\(c\|h\)' -exec clang-format -i {} \;
 # 清理编译产生的文件。
 # 命令前面加上“-”，即使这条命令出错，make 也会继续执行后续命令
 clean :

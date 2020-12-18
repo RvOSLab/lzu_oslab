@@ -24,8 +24,8 @@ void mem_init()
 		mem_map[i] = USED;
 	size_t mem_start = LOW_MEM;
 	size_t mem_end = HIGH_MEM;
-	mem_start = CEIL(LOW_MEM);
-	mem_end = FLOOR(HIGH_MEM);
+	mem_start = LOW_MEM;
+	mem_end = HIGH_MEM;
 	i = MAP_NR(mem_start);
 	if (mem_end > HIGH_MEM)
 		mem_end = HIGH_MEM;

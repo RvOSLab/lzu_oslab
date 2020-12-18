@@ -6,6 +6,5 @@
 int kputs(const char *msg);
 // int kprintf(const char *fmt, ...);
 void kputchar(int ch);
-void do_panic(const char* file, int line, const char* fmt, ...);
-#endif 
-
+void do_panic(const char *file, int line, const char *fmt, ...);
+#endif

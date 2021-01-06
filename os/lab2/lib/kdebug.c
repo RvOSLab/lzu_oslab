@@ -1,66 +1,61 @@
 #include <kdebug.h>
-#include <string.h>
+#include <sbi.h>
 #include <stdarg.h>
+#include <string.h>
 
 static unsigned long kpow(int x, int y);
 
-void
-kputchar(int ch)
+void kputchar(int ch)
 {
     sbi_console_putchar(ch);
 }
 
-int
-kputs(const char *msg)
+int kputs(const char* msg)
 {
-    const char *ret = msg;
-    for ( ; *msg != '\0'; ++msg )
-    {
+    const char* ret = msg;
+    for (; *msg != '\0'; ++msg) {
         kputchar(*msg);
     }
     kputchar('\n');
     return ret == msg;
 }
 
-void
-do_panic(const char* file, int line, const char* fmt, ...)
+void do_panic(const char* file, int line, const char* fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    /// kprintf("--------------------------------------------------------------------------\n");
-    /// kprintf("Panic at %s: %d\n", file, line);
-    if (strlen(fmt))
-    {
-        /// kprintf("Assert message: ");
-        /// kprintf(fmt, ap);
+    kprintf("--------------------------------------------------------------------------\n");
+    kprintf("Panic at %s: %d\n", file, line);
+    if (strlen(fmt)) {
+        kprintf("Assert message: ");
+        kprintf(fmt, ap);
         kputs(fmt);
     }
     kputchar('\n');
     va_end(ap);
     sbi_shutdown();
-    /// kprintf("Shutdown machine\n");
-    /// kprintf("--------------------------------------------------------------------------\n");
+    kprintf("Shutdown machine\n");
+    kprintf("--------------------------------------------------------------------------\n");
 }
 
+int kprintf(const char* fmt, ...)
+{
+    va_list ap;
+    int val;
+    int temp;
+    char len;
+    int rev = 0;
+    int ch;
+    const char* str = NULL;
 
-int
-kprintf(const char* _Format, ...) {
-	va_list ap;		//定义可变参数的首指针
-	int val;		//decimal value
-	int temp;		//medium value （decimal to char）
-	char len;		//decimal length
-	int rev = 0;	//return value:length of string
-	int ch;			//character
-	const char* str = NULL;//string
-
-	va_start(ap, _Format);
-	while (*_Format != '\0')
+	va_start(ap, fmt);
+	while (*fmt != '\0')
 	{
-		switch (*_Format)
+		switch (*fmt)
 		{
 		case '%':
-			_Format++;
-			switch (*_Format)
+			fmt++;
+			switch (*fmt)
 			{
 			case 'd':		//Decimal
 				val = va_arg(ap, int);
@@ -77,13 +72,13 @@ kprintf(const char* _Format, ...) {
 				{
 					ch = temp / kpow(10, len - 1);
 					temp %= kpow(10, len - 1);
-					putchar(ch + '0');				//putchar将数字转为字符输出
+					kputchar(ch + '0');
 					len--;
 				}
 				break;
 			case 'p':
-				putchar('0');
-				putchar('x');
+				kputchar('0');
+				kputchar('x');
 
 			case 'x':
 				val = va_arg(ap, int);
@@ -102,59 +97,57 @@ kprintf(const char* _Format, ...) {
 					temp %= kpow(16, len - 1);
 					if (ch <= 9)
 					{
-						putchar(ch + '0');
+						kputchar(ch + '0');
 					}
 					else
 					{
-						putchar(ch - 10 + 'a');
+						kputchar(ch - 10 + 'a');
 					}
 					len--;
 				}
 				break;
-
-			case 's':		//string
-				str = va_arg(ap, const char*);
-				// rev += strlen(str);
+            case 's':
+                str = va_arg(ap, const char*);
 
 				while (*str)
 				{
-					putchar(*str);
+					kputchar(*str);
 					str++;
 				}
 				break;
 			case 'c':		//character
-				putchar(va_arg(ap, int));
+				kputchar(va_arg(ap, int));
 				rev += 1;
 				break;
 			default:
 				break;
 			}
 		case '\n':
-			putchar('\n');
+			kputchar('\n');
 			rev += 1;
 			break;
 		case '\r':
-			putchar('\r');
+			kputchar('\r');
 			rev += 1;
 			break;
 		case '\t':
-			putchar('\t');
+			kputchar('\t');
 			rev += 1;
 			break;
 		default:
-			putchar(*_Format);
+			kputchar(*fmt);
 		}
-		_Format++;
+		fmt++;
 	}
 	va_end(ap);
 	return rev;
 }
 
-static unsigned long kpow(int x, int y) {
-	unsigned long sum = 1;
-	while (y--)
-	{
-		sum *= x;
-	}
-	return sum;
+static unsigned long kpow(int x, int y)
+{
+    unsigned long sum = 1;
+    while (y--) {
+        sum *= x;
+    }
+    return sum;
 }

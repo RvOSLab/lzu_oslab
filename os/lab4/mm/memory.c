@@ -96,8 +96,9 @@ void free_page(uint64_t addr)
 	if (addr < LOW_MEM)
 		return;
 	if (addr >= HIGH_MEM)
-		panic("trying to free nonexistent page");
-	assert(mem_map[MAP_NR(addr)] != 0, "trying to free free page");
+		panic("free_page(): trying to free nonexistent page");
+	assert(mem_map[MAP_NR(addr)] != 0,
+	       "free_page(): trying to free free page");
 	--mem_map[MAP_NR(addr)];
 }
 
@@ -134,11 +135,11 @@ uint64_t get_free_page(void)
 uint64_t put_page(uint64_t page, uint64_t addr)
 {
 	assert((page & (PAGE_SIZE - 1)) == 0,
-	       "Try to put unaligned page %p to %p", page, addr);
+	       "put_page(): Try to put unaligned page %p to %p", page, addr);
 	assert(page >= LOW_MEM && page < HIGH_MEM,
-	       "Trying to put page %p at %p\n", page, addr);
+	       "put_page(): Trying to put page %p at %p\n", page, addr);
 	assert(mem_map[MAP_NR(page)] == 1,
-	       "mem_map[] disagrees with %p at %p \n", page, addr);
+	       "put_page(): mem_map[] disagrees with %p at %p \n", page, addr);
 	uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
 	uint64_t *page_table = pg_dir;
 	for (size_t level = 0; level < 2; ++level) {
@@ -279,10 +280,10 @@ int copy_page_tables(uint64_t from, uint64_t to, uint64_t size)
 	uint64_t dest_vpns[3] = { GET_VPN1(to), GET_VPN2(to), GET_VPN3(to) };
 	uint64_t dest_dir_idx = dest_vpns[0];
 	assert(dest_dir_idx < 512,
-	       "copy_page_tables(): call with wrong argument");
+	       "copy_page_tables(): called with wrong argument");
 	for (; src_dir_idx <= src_dir_idx_end; ++src_dir_idx, ++dest_dir_idx) {
 		assert(dest_dir_idx < 512,
-		       "copy_page_tables(): call with wrong argument");
+		       "copy_page_tables(): called with wrong argument");
 		if (!pg_dir[src_dir_idx]) {
 			continue;
 		}
@@ -423,11 +424,13 @@ void mem_test()
 		for (size_t level = 0; level < 2; ++level) {
 			uint64_t idx = vpns[level];
 			assert(page_table[idx],
-			       "page table %p of %p not exists");
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
 			page_table = (uint64_t *)GET_PAGE_ADDR(page_table[idx]);
 		}
 		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == addr,
-		       "virtual address %p maps to physical address %p");
+		       "mem_test(): linear address %p maps to physical address %p",
+		       addr, GET_PAGE_ADDR(page_table[vpns[2]]));
 	}
 	/* 测试虚拟地址`DEVICE_START`至`DEVICE_END`是否映射到了相等的物理地址 */
 	addr = DEVICE_START;
@@ -438,11 +441,13 @@ void mem_test()
 		for (size_t level = 0; level < 2; ++level) {
 			uint64_t idx = vpns[level];
 			assert(page_table[idx],
-			       "page table %p of %p not exists");
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
 			page_table = (uint64_t *)GET_PAGE_ADDR(page_table[idx]);
 		}
 		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == addr,
-		       "virtual address %p maps to physical address %p");
+		       "linear address %p maps to physical address %p", addr,
+		       GET_PAGE_ADDR(page_table[vpns[2]]));
 		addr += PAGE_SIZE;
 	}
 	/* 测试 copy_page_tables() 是否正确 */
@@ -458,12 +463,14 @@ void mem_test()
 		for (size_t level = 0; level < 2; ++level) {
 			uint64_t idx = vpns[level];
 			assert(page_table[idx],
-			       "page table %p of %p not exists");
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
 			page_table = (uint64_t *)GET_PAGE_ADDR(page_table[idx]);
 		}
 		assert(GET_PAGE_ADDR(page_table[vpns[2]]) ==
 			       addr - MEM_END + MEM_START,
-		       "virtual address %p maps to physical address %p");
+		       "virtual address %p maps to physical address %p", addr,
+		       GET_PAGE_ADDR(page_table[vpns[2]]));
 	}
 
 	/* 测试引用计数是否正确
@@ -485,13 +492,15 @@ void mem_test()
 		for (size_t level = 0; level < 2; ++level) {
 			uint64_t idx = vpns[level];
 			assert(page_table[idx],
-			       "page table %p of %p not exists");
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
 			page_table = (uint64_t *)GET_PAGE_ADDR(page_table[idx]);
 			assert(mem_map[MAP_NR((uint64_t)page_table)] == 2,
 			       "mem_test(): mem_map[] references are errorneous");
 		}
 		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == addr,
-		       "virtual address %p maps to physical address %p");
+		       "linear address %p maps to physical address %p", addr,
+		       GET_PAGE_ADDR(page_table[vpns[2]]));
 	}
 
 	/* 测试 free_page_tables() */
@@ -508,7 +517,8 @@ void mem_test()
 		for (size_t level = 0; level < 2; ++level) {
 			uint64_t idx = vpns[level];
 			assert(page_table[idx],
-			       "page table %p of %p not exists");
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
 			page_table = (uint64_t *)GET_PAGE_ADDR(page_table[idx]);
 			/* 线性地址 [MEM_END, MEM_END + MEM_END - MEM_START)被释放，
              * 因此主内存区 [MEM_START, MEM_END) 中页表的引用计数为 1*/
@@ -516,7 +526,8 @@ void mem_test()
 			       "mem_test(): mem_map[] references are errorneous");
 		}
 		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == addr,
-		       "virtual address %p maps to physical address %p");
+		       "linear address %p maps to physical address %p", addr,
+		       GET_PAGE_ADDR(page_table[vpns[2]]));
 	}
 
 	/* [MEM_END, MEM_END + MEM_END - MEM_START) 对应的所有二三级页表项均为空 */
@@ -530,7 +541,8 @@ void mem_test()
 			uint64_t idx = vpns[level];
 			if (level > 0) {
 				assert(!page_table[idx],
-				       "mem_test(): pte %p maps to %p");
+				       "mem_test(): pte %p is not empty",
+				       &page_table[idx]);
 			}
 			page_table = (uint64_t *)GET_PAGE_ADDR(page_table[idx]);
 		}

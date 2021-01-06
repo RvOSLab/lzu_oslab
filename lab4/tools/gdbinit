@@ -1,3 +1,5 @@
 file kernel.bin
 target remote localhost:1234
-b _start
+b main
+layout src
+focus cmd

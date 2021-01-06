@@ -7,10 +7,7 @@ int main()
 {
 	print_system_infomation();
 	kputs("Hello LZU OS");
-	kputs("running mem_init()");
-	mem_init();
-	kputs("running mem_test()");
-	mem_test();
+    mem_init();
 	while (1)
 		; /* infinite loop */
 	return 0;

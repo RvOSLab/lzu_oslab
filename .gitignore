@@ -12,6 +12,9 @@
 *.map
 *.exp
 
+# Git
+*.orig
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -68,6 +71,7 @@ swp
 .undo
 undo
 projectins.json
+compile_commands.json
 .ycm_extra_config.py
 
 # os
@@ -94,7 +98,7 @@ tags
 
 # LZU_OS
 *.asm
-doc/
+doc/html/
 *.png
 *.js
 *.css

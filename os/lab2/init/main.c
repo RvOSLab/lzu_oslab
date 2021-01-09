@@ -3,6 +3,7 @@
 #include <riscv.h>
 #include <trap.h>
 #include <clock.h>
+#include <kdebug.h>
 
 int 
 main()

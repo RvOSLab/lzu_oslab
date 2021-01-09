@@ -170,7 +170,7 @@ void exception_handler(struct trapframe *tf)
 void print_trapframe(struct trapframe *tf) {
     kprintf("trapframe at %p\n\n", tf);
     print_regs(&tf->gpr);
-    kprintf("  trap information:\n")
+    kprintf("  trap information:\n");
     kprintf("  status   0x%x\n", tf->status);
     kprintf("  epc      0x%x\n", tf->epc);
     kprintf("  badvaddr 0x%x\n", tf->badvaddr);

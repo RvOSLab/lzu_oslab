@@ -1,6 +1,7 @@
 #include <clock.h>
 #include <sbi.h>
 #include <riscv.h>
+#include <kdebug.h>
 
 volatile size_t ticks;
 
@@ -17,8 +18,7 @@ static uint64_t timebase;
  * and then enable IRQ_TIMER.
  * */
 void clock_init(void) {
-    // 设置100Hz的时钟，qemu运行频率为3686400Hz
-    // divided by 100 when using QEMU(10MHz)
+    // QEMU clock frequency: 10MHz
     timebase = 100000;
     // initialize time counter 'ticks' to zero
     ticks = 0;

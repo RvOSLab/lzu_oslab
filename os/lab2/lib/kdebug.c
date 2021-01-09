@@ -38,7 +38,7 @@ void do_panic(const char* file, int line, const char* fmt, ...)
     kprintf("--------------------------------------------------------------------------\n");
 }
 
-int kprintf(const char* fmt, ...)
+uint64_t kprintf(const char* _Format, ...)
 {
     va_list ap;
 	uint64_t val;

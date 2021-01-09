@@ -4,20 +4,6 @@
 
 volatile size_t ticks;
 
-static void kputs(const char *msg);
-
-static void
-kputs(const char *msg)
-{
-    for ( ; *msg != '\0'; ++msg )
-    {
-        sbi_console_putchar(*msg);
-    }
-    sbi_console_putchar('\n');
-}
-
-
-
 static inline uint64_t get_cycles(void) {
     uint64_t n;
     __asm__ __volatile__("rdtime %0" : "=r"(n));

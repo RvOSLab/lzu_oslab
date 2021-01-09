@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-static unsigned long kpow(int x, int y);
+static uint64_t kpow(uint64_t x, uint64_t y);
 
 void kputchar(int ch)
 {
@@ -41,11 +41,11 @@ void do_panic(const char* file, int line, const char* fmt, ...)
 int kprintf(const char* fmt, ...)
 {
     va_list ap;
-    int val;
-    int temp;
-    char len;
-    int rev = 0;
-    int ch;
+	uint64_t val;
+	uint64_t temp;
+	uint64_t len;
+	uint64_t rev = 0;
+	int ch;
     const char* str = NULL;
 
 	va_start(ap, fmt);
@@ -57,15 +57,15 @@ int kprintf(const char* fmt, ...)
 			fmt++;
 			switch (*fmt)
 			{
-			case 'd':		//Decimal
-				val = va_arg(ap, int);
+			case 'u':		//Decimal
+				val = va_arg(ap, uint64_t);
 				temp = val;
 				len = 0;
-				while (temp)
+				do
 				{
 					len++;
 					temp /= 10;
-				}
+				} while (temp);
 				rev += len;
 				temp = val;
 				while (len)
@@ -77,18 +77,18 @@ int kprintf(const char* fmt, ...)
 				}
 				break;
 			case 'p':
+			case 'x':
 				kputchar('0');
 				kputchar('x');
 
-			case 'x':
-				val = va_arg(ap, int);
+				val = va_arg(ap, uint64_t);
 				temp = val;
 				len = 0;
-				while (temp)
+				do
 				{
 					len++;
 					temp /= 16;
-				}
+				} while (temp);
 				rev += len;
 				temp = val;
 				while (len)
@@ -122,6 +122,7 @@ int kprintf(const char* fmt, ...)
 			default:
 				break;
 			}
+			break;
 		case '\n':
 			kputchar('\n');
 			rev += 1;
@@ -143,11 +144,11 @@ int kprintf(const char* fmt, ...)
 	return rev;
 }
 
-static unsigned long kpow(int x, int y)
+static uint64_t kpow(uint64_t x, uint64_t y)
 {
-    unsigned long sum = 1;
-    while (y--) {
-        sum *= x;
-    }
-    return sum;
+	uint64_t sum = 1;
+	while (y--) {
+		sum *= x;
+	}
+	return sum;
 }

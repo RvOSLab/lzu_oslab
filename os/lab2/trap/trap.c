@@ -19,17 +19,6 @@ void interrupt_handler(struct trapframe *tf);
 void exception_handler(struct trapframe *tf);
 void print_regs(struct pushregs *gpr);
 void print_trapframe(struct trapframe *tf);
-static void kputs(const char *msg);
-
-static void
-kputs(const char *msg)
-{
-    for ( ; *msg != '\0'; ++msg )
-    {
-        sbi_console_putchar(*msg);
-    }
-    sbi_console_putchar('\n');
-}
 
 void idt_init(void)
 {
@@ -61,7 +50,7 @@ void trap(struct trapframe *tf)
 /* trap_dispatch - dispatch based on what type of trap occurred */
 static inline void trap_dispatch(struct trapframe *tf)
 {
-    if ((intptr_t)tf->cause < 0)    // interrupts，外部中断，scause最高位为1
+    if ((int64_t)tf->cause < 0)    // interrupts，外部中断，scause最高位为1
     {
         //kputs("Interrupt Happened!");
         interrupt_handler(tf);
@@ -75,7 +64,7 @@ static inline void trap_dispatch(struct trapframe *tf)
 
 void interrupt_handler(struct trapframe *tf)
 {
-    intptr_t cause = (tf->cause << 1) >> 1;
+    int64_t cause = (tf->cause << 1) >> 1;
     switch (cause)
     {
     case IRQ_U_SOFT:

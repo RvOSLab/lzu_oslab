@@ -5,47 +5,47 @@
 
 // 保存通用寄存器的结构体抽象，用于trapframe结构体
 struct pushregs {
-    uintptr_t zero;  // Hard-wired zero
-    uintptr_t ra;    // Return address
-    uintptr_t sp;    // Stack pointer
-    uintptr_t gp;    // Global pointer
-    uintptr_t tp;    // Thread pointer
-    uintptr_t t0;    // Temporary
-    uintptr_t t1;    // Temporary
-    uintptr_t t2;    // Temporary
-    uintptr_t s0;    // Saved register/frame pointer
-    uintptr_t s1;    // Saved register
-    uintptr_t a0;    // Function argument/return value
-    uintptr_t a1;    // Function argument/return value
-    uintptr_t a2;    // Function argument
-    uintptr_t a3;    // Function argument
-    uintptr_t a4;    // Function argument
-    uintptr_t a5;    // Function argument
-    uintptr_t a6;    // Function argument
-    uintptr_t a7;    // Function argument
-    uintptr_t s2;    // Saved register
-    uintptr_t s3;    // Saved register
-    uintptr_t s4;    // Saved register
-    uintptr_t s5;    // Saved register
-    uintptr_t s6;    // Saved register
-    uintptr_t s7;    // Saved register
-    uintptr_t s8;    // Saved register
-    uintptr_t s9;    // Saved register
-    uintptr_t s10;   // Saved register
-    uintptr_t s11;   // Saved register
-    uintptr_t t3;    // Temporary
-    uintptr_t t4;    // Temporary
-    uintptr_t t5;    // Temporary
-    uintptr_t t6;    // Temporary
+    uint64_t zero;  // Hard-wired zero
+    uint64_t ra;    // Return address
+    uint64_t sp;    // Stack pointer
+    uint64_t gp;    // Global pointer
+    uint64_t tp;    // Thread pointer
+    uint64_t t0;    // Temporary
+    uint64_t t1;    // Temporary
+    uint64_t t2;    // Temporary
+    uint64_t s0;    // Saved register/frame pointer
+    uint64_t s1;    // Saved register
+    uint64_t a0;    // Function argument/return value
+    uint64_t a1;    // Function argument/return value
+    uint64_t a2;    // Function argument
+    uint64_t a3;    // Function argument
+    uint64_t a4;    // Function argument
+    uint64_t a5;    // Function argument
+    uint64_t a6;    // Function argument
+    uint64_t a7;    // Function argument
+    uint64_t s2;    // Saved register
+    uint64_t s3;    // Saved register
+    uint64_t s4;    // Saved register
+    uint64_t s5;    // Saved register
+    uint64_t s6;    // Saved register
+    uint64_t s7;    // Saved register
+    uint64_t s8;    // Saved register
+    uint64_t s9;    // Saved register
+    uint64_t s10;   // Saved register
+    uint64_t s11;   // Saved register
+    uint64_t t3;    // Temporary
+    uint64_t t4;    // Temporary
+    uint64_t t5;    // Temporary
+    uint64_t t6;    // Temporary
 };
 
 // 保存上下文的栈的结构体抽象，和trap.S中分配的36*XLENB相对应
 struct trapframe {
     struct pushregs gpr;    // x0-x31
-    uintptr_t status;   // sstatus
-    uintptr_t epc;      // sepc
-    uintptr_t badvaddr; // stval 实际常用于存放需要访问但是不在内存中的地址
-    uintptr_t cause;    // scause
+    uint64_t status;   // sstatus
+    uint64_t epc;      // sepc
+    uint64_t badvaddr; // stval 实际常用于存放需要访问但是不在内存中的地址
+    uint64_t cause;    // scause
 };
 
 void trap(struct trapframe *tf);    // 中断处理程序（从汇编的中断处理程序跳转过来处理）

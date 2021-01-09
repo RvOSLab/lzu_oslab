@@ -134,6 +134,7 @@ void exception_handler(struct trapframe *tf)
         break;
     case CAUSE_BREAKPOINT:
         kputs("breakpoint");
+        print_trapframe(tf);
         tf->epc+=2;
         break;
     case CAUSE_MISALIGNED_LOAD:
@@ -167,8 +168,9 @@ void exception_handler(struct trapframe *tf)
 }
 
 void print_trapframe(struct trapframe *tf) {
-    kprintf("trapframe at %p\n", tf);
+    kprintf("trapframe at %p\n\n", tf);
     print_regs(&tf->gpr);
+    kprintf("  trap information:\n")
     kprintf("  status   0x%x\n", tf->status);
     kprintf("  epc      0x%x\n", tf->epc);
     kprintf("  badvaddr 0x%x\n", tf->badvaddr);
@@ -176,6 +178,7 @@ void print_trapframe(struct trapframe *tf) {
 }
 
 void print_regs(struct pushregs *gpr) {
+    kprintf("  registers:\n");
     kprintf("  zero     0x%x\n", gpr->zero);
     kprintf("  ra       0x%x\n", gpr->ra);
     kprintf("  sp       0x%x\n", gpr->sp);
@@ -207,7 +210,7 @@ void print_regs(struct pushregs *gpr) {
     kprintf("  t3       0x%x\n", gpr->t3);
     kprintf("  t4       0x%x\n", gpr->t4);
     kprintf("  t5       0x%x\n", gpr->t5);
-    kprintf("  t6       0x%x\n", gpr->t6);
+    kprintf("  t6       0x%x\n\n", gpr->t6);
 }
 
 /* trap_in_kernel - 检测中断是否发生在内核态，返回1=true，0=false */

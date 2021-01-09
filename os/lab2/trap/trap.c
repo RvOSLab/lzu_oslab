@@ -10,6 +10,7 @@
 #include <trap.h>
 #include <clock.h>
 #include <sbi.h>
+#include <kdebug.h>
 
 #define TICK_NUM 100
 static inline void trap_dispatch(struct trapframe *tf);
@@ -221,12 +222,5 @@ int trap_in_kernel(struct trapframe *tf) {
 }
 
 static void print_ticks() {
-    /*
-    cprintf("%d ticks\n", TICK_NUM);
-#ifdef DEBUG_GRADE
-    cprintf("End of Test.\n");
-    panic("EOT: kernel seems ok.");
-#endif
-*/
-kputs("print_ticks");
+    kprintf("%u ticks\n", ticks);
 }

@@ -85,4 +85,5 @@ format:
 clean :
 	-make -C init/ clean
 	-make -C lib/ clean
+	-make -C trap/ clean
 	-rm -f $(KERN_BIN) $(KERN_IMG) $(KERN_SYM) $(KERN_ASM) $(KERN_MAP)

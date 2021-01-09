@@ -77,10 +77,9 @@ uint64_t kprintf(const char* fmt, ...)
 				}
 				break;
 			case 'p':
-			case 'x':
 				kputchar('0');
 				kputchar('x');
-
+			case 'x':
 				val = va_arg(ap, uint64_t);
 				temp = val;
 				len = 0;

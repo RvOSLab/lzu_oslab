@@ -167,53 +167,47 @@ void exception_handler(struct trapframe *tf)
 }
 
 void print_trapframe(struct trapframe *tf) {
-    kputs("print_trapframe");
-    /*
-    cprintf("trapframe at %p\n", tf);
+    kprintf("trapframe at %p\n", tf);
     print_regs(&tf->gpr);
-    cprintf("  status   0x%08x\n", tf->status);
-    cprintf("  epc      0x%08x\n", tf->epc);
-    cprintf("  badvaddr 0x%08x\n", tf->badvaddr);
-    cprintf("  cause    0x%08x\n", tf->cause);
-    */
+    kprintf("  status   0x%x\n", tf->status);
+    kprintf("  epc      0x%x\n", tf->epc);
+    kprintf("  badvaddr 0x%x\n", tf->badvaddr);
+    kprintf("  cause    0x%x\n", tf->cause);
 }
 
 void print_regs(struct pushregs *gpr) {
-    /*
-    cprintf("  zero     0x%08x\n", gpr->zero);
-    cprintf("  ra       0x%08x\n", gpr->ra);
-    cprintf("  sp       0x%08x\n", gpr->sp);
-    cprintf("  gp       0x%08x\n", gpr->gp);
-    cprintf("  tp       0x%08x\n", gpr->tp);
-    cprintf("  t0       0x%08x\n", gpr->t0);
-    cprintf("  t1       0x%08x\n", gpr->t1);
-    cprintf("  t2       0x%08x\n", gpr->t2);
-    cprintf("  s0       0x%08x\n", gpr->s0);
-    cprintf("  s1       0x%08x\n", gpr->s1);
-    cprintf("  a0       0x%08x\n", gpr->a0);
-    cprintf("  a1       0x%08x\n", gpr->a1);
-    cprintf("  a2       0x%08x\n", gpr->a2);
-    cprintf("  a3       0x%08x\n", gpr->a3);
-    cprintf("  a4       0x%08x\n", gpr->a4);
-    cprintf("  a5       0x%08x\n", gpr->a5);
-    cprintf("  a6       0x%08x\n", gpr->a6);
-    cprintf("  a7       0x%08x\n", gpr->a7);
-    cprintf("  s2       0x%08x\n", gpr->s2);
-    cprintf("  s3       0x%08x\n", gpr->s3);
-    cprintf("  s4       0x%08x\n", gpr->s4);
-    cprintf("  s5       0x%08x\n", gpr->s5);
-    cprintf("  s6       0x%08x\n", gpr->s6);
-    cprintf("  s7       0x%08x\n", gpr->s7);
-    cprintf("  s8       0x%08x\n", gpr->s8);
-    cprintf("  s9       0x%08x\n", gpr->s9);
-    cprintf("  s10      0x%08x\n", gpr->s10);
-    cprintf("  s11      0x%08x\n", gpr->s11);
-    cprintf("  t3       0x%08x\n", gpr->t3);
-    cprintf("  t4       0x%08x\n", gpr->t4);
-    cprintf("  t5       0x%08x\n", gpr->t5);
-    cprintf("  t6       0x%08x\n", gpr->t6);
-    */
-    kputs("print_regs");
+    kprintf("  zero     0x%x\n", gpr->zero);
+    kprintf("  ra       0x%x\n", gpr->ra);
+    kprintf("  sp       0x%x\n", gpr->sp);
+    kprintf("  gp       0x%x\n", gpr->gp);
+    kprintf("  tp       0x%x\n", gpr->tp);
+    kprintf("  t0       0x%x\n", gpr->t0);
+    kprintf("  t1       0x%x\n", gpr->t1);
+    kprintf("  t2       0x%x\n", gpr->t2);
+    kprintf("  s0       0x%x\n", gpr->s0);
+    kprintf("  s1       0x%x\n", gpr->s1);
+    kprintf("  a0       0x%x\n", gpr->a0);
+    kprintf("  a1       0x%x\n", gpr->a1);
+    kprintf("  a2       0x%x\n", gpr->a2);
+    kprintf("  a3       0x%x\n", gpr->a3);
+    kprintf("  a4       0x%x\n", gpr->a4);
+    kprintf("  a5       0x%x\n", gpr->a5);
+    kprintf("  a6       0x%x\n", gpr->a6);
+    kprintf("  a7       0x%x\n", gpr->a7);
+    kprintf("  s2       0x%x\n", gpr->s2);
+    kprintf("  s3       0x%x\n", gpr->s3);
+    kprintf("  s4       0x%x\n", gpr->s4);
+    kprintf("  s5       0x%x\n", gpr->s5);
+    kprintf("  s6       0x%x\n", gpr->s6);
+    kprintf("  s7       0x%x\n", gpr->s7);
+    kprintf("  s8       0x%x\n", gpr->s8);
+    kprintf("  s9       0x%x\n", gpr->s9);
+    kprintf("  s10      0x%x\n", gpr->s10);
+    kprintf("  s11      0x%x\n", gpr->s11);
+    kprintf("  t3       0x%x\n", gpr->t3);
+    kprintf("  t4       0x%x\n", gpr->t4);
+    kprintf("  t5       0x%x\n", gpr->t5);
+    kprintf("  t6       0x%x\n", gpr->t6);
 }
 
 /* trap_in_kernel - 检测中断是否发生在内核态，返回1=true，0=false */

@@ -99,16 +99,16 @@ void interrupt_handler(struct trapframe *tf)
         kputs("Machine timer interrupt\n");
         break;
     case IRQ_U_EXT:
-        kputs("User software interrupt\n");
+        kputs("User external interrupt\n");
         break;
     case IRQ_S_EXT:
         kputs("Supervisor external interrupt\n");
         break;
     case IRQ_H_EXT:
-        kputs("Hypervisor software interrupt\n");
+        kputs("Hypervisor external interrupt\n");
         break;
     case IRQ_M_EXT:
-        kputs("Machine software interrupt\n");
+        kputs("Machine external interrupt\n");
         break;
     default:
         print_trapframe(tf);

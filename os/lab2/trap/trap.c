@@ -15,11 +15,8 @@
 #define TICK_NUM 100
 static inline void trap_dispatch(struct trapframe *tf);
 static void print_ticks();
-void idt_init(void);
 void interrupt_handler(struct trapframe *tf);
 void exception_handler(struct trapframe *tf);
-void print_regs(struct pushregs *gpr);
-void print_trapframe(struct trapframe *tf);
 
 void idt_init(void)
 {

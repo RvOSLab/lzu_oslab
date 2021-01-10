@@ -4,6 +4,7 @@
 #include <kdebug.h>
 
 volatile size_t ticks;
+static uint64_t timebase;
 
 static inline uint64_t get_cycles(void) {
     uint64_t n;
@@ -11,22 +12,19 @@ static inline uint64_t get_cycles(void) {
     return n;
 }
 
-static uint64_t timebase;
-
 /* *
  * clock_init - initialize 8253 clock to interrupt 100 times per second,
  * and then enable IRQ_TIMER.
  * */
 void clock_init(void) {
     // QEMU clock frequency: 10MHz
+    // set timebase = 100000 means clock interrupt frequency is 100Hz 
     timebase = 100000;
     // initialize time counter 'ticks' to zero
     ticks = 0;
     // 开启时钟
-    //clear_csr(CSR_MIE, MIP_STIP);
     //set_csr(CSR_MIE, MIP_MTIP);
     set_csr(0x104, 1<<5);
-    //kputs("set stip!");
     clock_set_next_event();
     kputs("Setup Timer!");
 }

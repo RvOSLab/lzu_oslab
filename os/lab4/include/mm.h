@@ -48,6 +48,7 @@ uint64_t get_free_page(void);
 void get_empty_page(uint64_t addr);
 uint64_t put_page(uint64_t page, uint64_t addr);
 uint64_t put_dirty_page(uint64_t page, uint64_t addr);
-void enable_pagging();
+void show_page_tables();
+// void wp_page_handler(struct trapframe *frame)
 
 #endif

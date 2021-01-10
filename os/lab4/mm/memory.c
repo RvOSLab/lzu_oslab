@@ -33,7 +33,10 @@ void static map_page(uint64_t page, uint64_t addr)
 		}
 		page_table = (uint64_t *)GET_PAGE_ADDR(page_table[idx]);
 	}
-	page_table[vpns[2]] = (page >> 2) | 0x1F;
+	if (page >= LOW_MEM)
+		page_table[vpns[2]] = (page >> 2) | 0x1F;
+	else
+		page_table[vpns[2]] = (page >> 2) | 0x0F;
 }
 
 /*******************************************************************************
@@ -69,6 +72,15 @@ void mem_init()
 	for (; mem_start < mem_end; mem_start += PAGE_SIZE)
 		map_page(mem_start, mem_start);
 	mem_test();
+	/* 开启分页 */
+	__asm__ __volatile__("csrrs x0, sstatus, %0\n\t"
+			     "csrrw x0, satp, %1\n\t"
+			     "sfence.vma\n\t"
+			     : /* empty output list */
+			     : "r"(1 << 18), "r"(((uint64_t)pg_dir >> 12) |
+						 ((uint64_t)8 << 60)));
+	for (int i = 512; i-- > 0;)
+		;
 }
 
 /*******************************************************************************
@@ -387,27 +399,15 @@ void write_verify(uint64_t addr)
 	}
 	un_wp_page(&page_table[vpns[2]]);
 }
-/*******************************************************************************
- * @brief 缺页异常处理函数
- *
- * @param error_code x86 异常错误码
- * @param addr 异常发生地址
- * @todo 改写为 RISCV
- ******************************************************************************/
-void do_no_page(uint64_t error_code, uint64_t addr)
-{
-}
 
-/*******************************************************************************
- * @brief 写保护异常处理函数
- *
- * @param error_code x86 错误码
- * @param addr 异常发生地址
- * @todo 改写为 RISCV
+/******************************************************************************
+ *@brief 写保护异常处理函数
  ******************************************************************************/
-void do_wp_page(uint64_t error_code, uint64_t addr)
-{
-}
+/* void wp_page_handler(struct trapframe *frame) */
+/* {                                             */
+/*     [> uint64_t addr; <]                      */
+/*     write_verify(addr);                       */
+/* }                                             */
 
 /*******************************************************************************
  * @brief 测试页表是否正确初始化
@@ -548,4 +548,29 @@ void mem_test()
 		}
 	}
 	kputs("mem_test(): Passed");
+}
+
+/*******************************************************************************
+ * @brief 打印页表
+ ******************************************************************************/
+void show_page_tables()
+{
+	for (size_t i = 0; i++ < 512; ++i) {
+		kprintf("%x\n", pg_dir[i]);
+		if (pg_dir[i]) {
+			uint64_t *pg_tb1 =
+				(uint64_t *)GET_PAGE_ADDR((uint64_t)pg_dir[i]);
+			for (int i = 512; i-- > 0; ++pg_tb1) {
+				kprintf("\t%x\n", *pg_tb1);
+				if (*pg_tb1) {
+					uint64_t *pg_tb2 =
+						(uint64_t *)GET_PAGE_ADDR(
+							*pg_tb1);
+					for (int j = 512; j-- > 0; ++pg_tb2) {
+						kprintf("\t\t%x\n", *pg_tb2);
+					}
+				}
+			}
+		}
+	}
 }

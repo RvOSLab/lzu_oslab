@@ -74,11 +74,10 @@ int kprintf(const char* fmt, ...)
 				}
 				break;
 			case 'p':
+			case 'x':
 				kputchar('0');
 				kputchar('x');
-
-			case 'x':
-				val = va_arg(ap, int);
+				val = va_arg(ap, uint64_t);
 				temp = val;
 				len = 0;
 				while (temp)
@@ -119,6 +118,7 @@ int kprintf(const char* fmt, ...)
 			default:
 				break;
 			}
+            break;
 		case '\n':
 			kputchar('\n');
 			rev += 1;

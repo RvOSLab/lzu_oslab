@@ -187,7 +187,7 @@ Makefile 中已经完成了项目的构建，以上两个题目都不需要修�
 - [RISC-V Assembly Language](https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md)：RISC-V 官方的汇编语言教程。篇幅很短，都是例子，需要有 RISC-V 指令的基础。
 
 - [RISC-V Reader（中译版）](http://crva.ict.ac.cn/documents/RISC-V-Reader-Chinese-v2p1.pdf)：完整的 RISC-V 教程，包括主要的指令集拓展和汇编语言。该书假设读者有计算机组成原理、体系结构的知识，了解至少一种指令集，有使用汇编语言编程的经验。
-- 《计算机组成与设计-硬件/软件借口（原书第 5 版）》：RISC-V 的两位主要设计者撰写的教材。第二章介绍 RISC-V 指令，并使用 RISC-V 指令编程。该书假设读者没有任何关于计算机组成原理和汇编语言的知识。
+- 《计算机组成与设计-硬件/软件接口（原书第 5 版）》：RISC-V 的两位主要设计者撰写的教材。第二章介绍 RISC-V 指令，并使用 RISC-V 指令编程。该书假设读者没有任何关于计算机组成原理和汇编语言的知识。
 
 理解内联汇编和调用规范：
 

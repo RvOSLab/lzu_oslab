@@ -1,9 +1,5 @@
 /**
- * 实现物理内存管理
- * @todo
- * - `copy_page_tables()`
- * - 区分物理地址和虚拟地址
- * - mem_test()
+ * 实现虚拟内存
  */
 #include <assert.h>
 #include <kdebug.h>
@@ -26,34 +22,6 @@ uint64_t *pg_dir = boot_pg_dir;
 uint8_t mem_map[PAGING_PAGES] = { 0 };
 
 /*******************************************************************************
- * @brief 将物理地址 page 映射到虚拟地址 addr
- *
- * 本函数仅仅创建虚拟地址和物理地址之间的映射，不修改物理页应用计数，不获取物理页。
- * 这个函数仅用于建立内核映射。
- *
- * @param page 物理地址
- * @param addr 虚拟地址
- * @note 请确保 page 对齐到了 4 K 边界
- ******************************************************************************/
-inline void map_page(uint64_t page, uint64_t addr)
-{
-	uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
-	uint64_t *page_table = pg_dir;
-	for (size_t level = 0; level < 2; ++level) {
-		uint64_t idx = vpns[level];
-		if (!page_table[idx]) {
-			uint64_t tmp;
-			assert(tmp = get_free_page(),
-			       "map_page(): Memory exhausts ");
-			page_table[idx] = (tmp >> 2) | 0x11;
-		}
-		page_table =
-			(uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
-	}
-	page_table[vpns[2]] = (page >> 2) | KERN_RWX;
-}
-
-/*******************************************************************************
  * @brief 建立所有进程共有的内核映射
  * 
  * 所有进程发生系统调用、中断、异常后都会进入到内核态，因此所有进程的虚拟地址空间
@@ -71,7 +39,7 @@ void map_kernel()
 	phy_mem_end = DEVICE_END;
 	vir_mem_start = DEVICE_ADDRESS;
 	while (phy_mem_start < phy_mem_end) {
-		map_page(phy_mem_start, vir_mem_start);
+		put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
 		phy_mem_start += PAGE_SIZE;
 		vir_mem_start += PAGE_SIZE;
 	}
@@ -80,7 +48,7 @@ void map_kernel()
 	phy_mem_end = MEM_END;
 	vir_mem_start = BASE_ADDRESS;
 	while (phy_mem_start < phy_mem_end) {
-		map_page(phy_mem_start, vir_mem_start);
+		put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
 		phy_mem_start += PAGE_SIZE;
 		vir_mem_start += PAGE_SIZE;
 	}
@@ -124,7 +92,16 @@ void mem_init()
 	while (mem_end-- > 0)
 		mem_map[i++] = UNUSED;
 
+	/* 进入 main() 时开启了 RV39 大页模式，暂时创造一个虚拟地址到物理地址的映射让程序跑起来。
+     * 现在，我们要新建一个页目录并开启页大小为 4K 的 RV39 分页。
+     */
+	uint64_t page = get_free_page();
+	assert(page, "mem_init(): fail to allocate page");
+	uint64_t *kernel_pg_dir = (uint64_t *)VIRTUAL(page);
+	pg_dir = kernel_pg_dir;
 	map_kernel();
+	active_mapping();
+	kputs("map kernel");
 	mem_test();
 }
 
@@ -179,30 +156,26 @@ uint64_t get_free_page(void)
 }
 
 /*******************************************************************************
- * `put_page()`用于建立物理地址和虚拟地址间的映射，物理页必须是 **已分配但未映射** 的，
- * 不能将未分配或已经映射到别的虚拟页的物理页映射到另一个虚拟页。
+ * @brief 建立物理地址和虚拟地址间的映射
  *
+ * 本函数仅仅建立映射，不修改物理页引用计数
  * 当分配物理页失败（创建页表）时 panic,因此不需要检测返回值。
- * @param pg_dir 页目录
+ *
  * @param page   物理地址
  * @param addr   虚拟地址
  * @param flag   标志位
  * @return 物理地址 page
- * @see panic(), map_page()
+ * @see panic(), map_kernel_page()
  ******************************************************************************/
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 {
 	assert((page & (PAGE_SIZE - 1)) == 0,
 	       "put_page(): Try to put unaligned page %p to %p", page, addr);
-	assert(page >= LOW_MEM && page < HIGH_MEM,
-	       "put_page(): Trying to put page %p at %p\n", page, addr);
-	assert(mem_map[MAP_NR(page)] == 1,
-	       "put_page(): mem_map[] disagrees with %p at %p \n", page, addr);
 	uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
 	uint64_t *page_table = pg_dir;
 	for (size_t level = 0; level < 2; ++level) {
 		uint64_t idx = vpns[level];
-		if (!(page_table[idx] & PAGE_PRESENT)) {
+		if (!page_table[idx]) {
 			uint64_t tmp;
 			assert(tmp = get_free_page(),
 			       "put_page(): Memory exhausts");
@@ -245,7 +218,11 @@ void free_page_tables(uint64_t from, uint64_t size)
 {
 	assert((from & 0x1FFFFF) == 0,
 	       "free_page_tables() called with wrong alignment");
-	size = (size + 0x1FFFFF) >> 21;
+	size = (size + 0x1FFFFF) & ~0x1FFFFF;
+	int is_user_space = IS_USER(from, from + size);
+	assert(IS_KERNEL(from, from + size) || IS_USER(from, from + size),
+	       "free_page_tables(): address space [from, from + size) must be kernel space or user space");
+	size >>= 21;
 	uint64_t vpns[3] = { GET_VPN1(from), GET_VPN2(from), GET_VPN3(from) };
 	uint64_t dir_idx = vpns[0];
 	uint64_t dir_idx_end = dir_idx + ((size * 0x200000) / 0x40000000 - 1) +
@@ -272,10 +249,15 @@ void free_page_tables(uint64_t from, uint64_t size)
 				continue;
 			uint64_t *pg_tb2 =
 				(uint64_t *)VIRTUAL(GET_PAGE_ADDR(*pg_tb1));
-			for (size_t nr = 512; nr-- > 0; pg_tb2++) {
-				if (*pg_tb2) {
-					free_page(GET_PAGE_ADDR(*pg_tb2));
-					*pg_tb2 = 0;
+			/* 用户地址空间：释放页表和指向的物理页 */
+			/* 内核地址空间：仅释放页表 */
+			if (is_user_space) {
+				for (size_t nr = 512; nr-- > 0; pg_tb2++) {
+					if (*pg_tb2) {
+						free_page(
+							GET_PAGE_ADDR(*pg_tb2));
+						*pg_tb2 = 0;
+					}
 				}
 			}
 			free_page(GET_PAGE_ADDR(*pg_tb1));
@@ -296,12 +278,8 @@ void free_page_tables(uint64_t from, uint64_t size)
 /*******************************************************************************
  * @brief 将虚拟地址 from 开始的 size 字节虚拟地址空间拷贝到另一进程虚拟地址 to 处
  *
- * 这个函数用于拷贝用户虚拟地址空间，如果要拷贝内核线性映射，应该调用`map_kernel()`
- *
- * 本函数并没有拷贝内存，而是让两段虚拟地址空间共享同一映射。`size`将被对其到 2M，
+ * 本函数并没有拷贝内存，而是让两段虚拟地址空间共享同一映射。`size`将被对齐到 2M，
  * 每次拷贝 N * 2M 地址空间（二级页表项映射的内存大小）。
- *
- * `to`开始的 N * 2M 虚拟地址空间必须是 **未映射的**,否则 panic。
  *
  * @param from 源
  * @param to_pg_dir 目的进程页目录 **线性映射虚拟地址**
@@ -310,16 +288,21 @@ void free_page_tables(uint64_t from, uint64_t size)
  * @return 由于没有实现交换，因此总是成功，返回 0
  * @todo  重构接口，将`to_pg_dir`改为进程控制块指针
  * @see free_page_tables(), map_kernel()
- * @note 这个函数是本实验最复杂的函数，涉及两个进程间虚拟地址空间的共享
+ * @note 
+ * - `to`开始的 N * 2M 虚拟地址空间必须是 **未映射的**,否则 panic。
+ * - 两虚拟地址空间要么都是用户空间，要么都是内核空间 
  ******************************************************************************/
 int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 		     uint64_t size)
 {
-	assert(from < BASE_ADDRESS && to < BASE_ADDRESS,
-	       "try to copy kernel mapping");
 	assert(!(from & 0x1FFFFF) && !(to & 0x1FFFFF),
 	       "copy_page_tables() called with wrong alignment");
-	size = (size + 0x1FFFFF) >> 21;
+	size = (size + 0x1FFFFF) & ~0x1FFFFF;
+	int is_user_space = IS_USER(from, from + size);
+	/* 两虚拟地址空间要么都是用户空间，要么都是内核空间 */
+	assert(!(IS_KERNEL(from, from + size) ^ IS_KERNEL(to, to + size)),
+	       "copy_page_tables(): called with wrong argument");
+	size >>= 21;
 	uint64_t src_vpns[3] = { GET_VPN1(from), GET_VPN2(from),
 				 GET_VPN3(from) };
 	uint64_t src_dir_idx = src_vpns[0];
@@ -331,9 +314,9 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 	uint64_t dest_dir_idx_end = dest_dir_idx +
 				    ((size * 0x200000) / 0x40000000 - 1) +
 				    ((size * 0x200000) % 0x3FFFFFFF != 0);
-	assert(src_dir_idx < 512 && src_dir_idx_end < 512,
+	assert(src_dir_idx_end < 512,
 	       "copy_page_tables(): called with wrong argument");
-	assert(dest_dir_idx < 512 && dest_dir_idx_end < 512,
+	assert(dest_dir_idx_end < 512,
 	       "copy_page_tables(): called with wrong argument");
 
 	for (; src_dir_idx <= src_dir_idx_end; ++src_dir_idx) {
@@ -358,10 +341,9 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 					       pg_dir[src_dir_idx])) +
 				       src_vpns[1];
 		uint64_t *dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
-						pg_dir[dest_dir_idx])) +
+						to_pg_dir[dest_dir_idx])) +
 					dest_vpns[1];
 
-		// dest_pg_tb1 的值
 		for (; cnt-- > 0; ++src_pg_tb1) {
 			if (!*src_pg_tb1) {
 				continue;
@@ -392,16 +374,10 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 				/* 写保护 */
 				*dest_pg_tb2 = *src_pg_tb2;
 				uint64_t page_addr = GET_PAGE_ADDR(*src_pg_tb2);
-				if (page_addr >= LOW_MEM) {
+				if (is_user_space) {
 					++mem_map[MAP_NR(page_addr)];
-					*dest_pg_tb2 &= ~PAGE_READABLE;
-					*src_pg_tb2 &= ~PAGE_READABLE;
-				} else {
-					/*
-                     * 物理地址 [MEM_START, LOW_MEM) 是 OpenSBI 和内核，这段内存被标记为`USED`，不会被分配。
-                     * 正常情况下，要拷贝的线性地址不会指向这段内存。
-                     */
-					panic("copy_page_tables(): try to copy memory below LOW_MEM");
+					*dest_pg_tb2 &= ~PAGE_WRITABLE;
+					*src_pg_tb2 &= ~PAGE_WRITABLE;
 				}
 			}
 			++dest_pg_tb1;
@@ -474,12 +450,16 @@ void write_verify(uint64_t addr)
 
 /******************************************************************************
  *@brief 写保护异常处理函数
+ *@todo 实现进程后完成该函数
  ******************************************************************************/
-/* void wp_page_handler(struct trapframe *frame) */
-/* {                                             */
-/*     uint64_t addr = frame->stval;             */
-/*     write_verify(addr);                       */
-/* }                                             */
+/*
+ * void wp_page_handler(struct trapframe *frame)
+ * {
+ *     uint64_t addr = frame->stval;
+ *     [> 检测该地址是否位于进程的只读段，如果是，则直接退出 <]
+ *     write_verify(addr);
+ * }
+ */
 
 /*******************************************************************************
  * @brief 测试内存模块是否正常
@@ -528,40 +508,21 @@ void mem_test()
 		       GET_PAGE_ADDR(page_table[vpns[2]]));
 	}
 
-	/** 测试 copy_page_tables() 是否正确 */
-	addr = BASE_ADDRESS + PAGING_MEMORY;
-	end = addr + PAGING_MEMORY;
-	copy_page_tables(BASE_ADDRESS, pg_dir, addr, PAGING_MEMORY);
-
-	/* 虚拟地址 [BASE_ADDRESS + PAGING_MEMORY, BASE_ADDRESS + 2*PAGING_MEMORY) 映射到物理地址 [MEM_START, MEM_END) */
-	for (; addr < end; addr += PAGE_SIZE) {
-		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
-				     GET_VPN3(addr) };
-		uint64_t *page_table = pg_dir;
-		for (size_t level = 0; level < 2; ++level) {
-			uint64_t idx = vpns[level];
-			assert(page_table[idx],
-			       "page table %p of %p not exists",
-			       &page_table[idx], addr);
-			page_table = (uint64_t *)VIRTUAL(
-				GET_PAGE_ADDR(page_table[idx]));
-		}
-		assert(GET_PAGE_ADDR(page_table[vpns[2]]) ==
-			       PHYSICAL(addr - PAGING_MEMORY),
-		       "virtual address %p maps to physical address %p", addr,
-		       GET_PAGE_ADDR(page_table[vpns[2]]));
+    /* 分配 1000 个物理页并映射到虚拟地址 0x200000 开始的 1000 个虚拟页，
+     * 这个虚拟地址空间可以看成一个进程的虚拟地址空间 */
+	uint64_t page_traker[1000];
+	uint64_t p = 0x200000;
+	for (size_t i = 0; i < 1000; ++i) {
+		page_traker[i] = get_free_page();
+		assert(page_traker[i]);
+		put_page(page_traker[i], p, USER_RWX | PAGE_PRESENT);
+		p += PAGE_SIZE;
 	}
 
-	/* copy_page_tables() 会递增主内存区物理页引用计数，因此，主内存区中的引用计数一定大于等于 1。
-     *
-     * 页表的物理页最初引用计数为 1, copy_page_tables() 后被另一个进程映射，引用计数变为 2
-     */
-	for (size_t idx = MAP_NR(HIGH_MEM) - 1; idx > MAP_NR(LOW_MEM); --idx)
-		assert(mem_map[idx] >= 1 && mem_map[idx] < 3);
-
-	addr = BASE_ADDRESS;
-	end = BASE_ADDRESS + PAGING_MEMORY;
-	for (; addr < end; addr += PAGE_SIZE) {
+    /* 检测映射和引用计数是否正确 */
+	addr = 0x200000;
+	end = addr + 1000 * PAGE_SIZE;
+	for (size_t i = 0; addr < end; addr += PAGE_SIZE, ++i) {
 		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
 				     GET_VPN3(addr) };
 		uint64_t *page_table = pg_dir;
@@ -572,65 +533,150 @@ void mem_test()
 			       &page_table[idx], addr);
 			page_table = (uint64_t *)VIRTUAL(
 				GET_PAGE_ADDR(page_table[idx]));
-			/* 二、三级页表的引用计数一定是 2 */
-			assert(mem_map[MAP_NR(PHYSICAL((uint64_t)page_table))] ==
-				       2,
-			       "mem_test(): mem_map[] references are errorneous");
-		}
-		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == PHYSICAL(addr),
-		       "virtual address %p maps to physical address %p", addr,
-		       GET_PAGE_ADDR(page_table[vpns[2]]));
-	}
-
-	/** 测试 free_page_tables() */
-	free_page_tables(BASE_ADDRESS + PAGING_MEMORY, PAGING_MEMORY);
-	for (size_t idx = MAP_NR(HIGH_MEM) - 1; idx > MAP_NR(LOW_MEM); --idx)
-		assert(mem_map[idx] < 2,
-		       "mem_test(): mem_map[] references are errorneous");
-
-	/* 测试 [BASE_ADDRESS, BASE_ADDRESS + PAGING_MEMORY) 页表是否正确 */
-	addr = BASE_ADDRESS;
-	end = BASE_ADDRESS + PAGING_MEMORY;
-	for (; addr < end; addr += PAGE_SIZE) {
-		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
-				     GET_VPN3(addr) };
-		uint64_t *page_table = pg_dir;
-		for (size_t level = 0; level < 2; ++level) {
-			uint64_t idx = vpns[level];
-			assert(page_table[idx],
-			       "page table %p of %p not exists",
-			       &page_table[idx], addr);
-			page_table = (uint64_t *)VIRTUAL(
-				GET_PAGE_ADDR(page_table[idx]));
-			/* 虚拟地址 [BASE_ADDRESS + PAGING_MEMORY, BASE_ADDRESS + 2*PAGING_MEMORY)被释放，
-             * 因此主内存区 [MEM_START, MEM_END) 中页表的引用计数为 1*/
 			assert(mem_map[MAP_NR(PHYSICAL((uint64_t)page_table))] ==
 				       1,
-			       "mem_test(): mem_map[] references are errorneous");
+			       "page table reference is wrong");
 		}
-		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == PHYSICAL(addr),
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
 		       "virtual address %p maps to physical address %p", addr,
 		       GET_PAGE_ADDR(page_table[vpns[2]]));
 	}
 
-	/* [BASE_ADDRESS + PAGING_MEMORY, BASE_ADDRESS + 2*PAGING_MEMORY) 对应的所有二三级页表项均为空 */
-	addr = BASE_ADDRESS;
-	end = BASE_ADDRESS + 2 * PAGING_MEMORY;
-	for (; addr < end; addr += PAGE_SIZE) {
+    /* 新建一个页目录（模拟创建新进程），将当前“进程”对应的虚拟地址空间 [0x200000, 0x200000 + 1000*PAGE_SIZE) 
+     * 拷贝到新“进程”应的虚拟地址空间 [0x200000, 0x200000 + 1000*PAGE_SIZE) */
+	uint64_t page = get_free_page();
+	assert(page);
+	uint64_t *new_pg_dir = (uint64_t *)VIRTUAL(page);
+	uint64_t *old_pg_dir = pg_dir;
+	pg_dir = new_pg_dir;
+	map_kernel();
+	pg_dir = old_pg_dir;
+	copy_page_tables(0x200000, new_pg_dir, 0x200000, 1000 * PAGE_SIZE);
+
+    /* 检查旧“进程”虚拟地址空间的映射和引用计数 */
+	addr = 0x200000;
+	end = addr + 1000 * PAGE_SIZE;
+	for (size_t i = 0; addr < end; addr += PAGE_SIZE, ++i) {
 		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
 				     GET_VPN3(addr) };
 		uint64_t *page_table = pg_dir;
+		for (size_t level = 0; level < 2; ++level) {
+			uint64_t idx = vpns[level];
+			assert(page_table[idx],
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
+			page_table = (uint64_t *)VIRTUAL(
+				GET_PAGE_ADDR(page_table[idx]));
+			assert(mem_map[MAP_NR(PHYSICAL((uint64_t)page_table))] ==
+				       1,
+			       "page table reference is wrong");
+		}
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
+		       "virtual address %p maps to physical address %p", addr,
+		       GET_PAGE_ADDR(page_table[vpns[2]]));
+        /* 两个“进程”的虚拟地址同时映射到一个物理地址 */
+		assert(mem_map[MAP_NR(page_traker[i])] == 2,
+		       "page reference is wrong");
+        /* 共享同一物理地址后进行写保护 */
+		assert(GET_FLAG(page_table[vpns[2]]) ==
+			       (USER_RX | PAGE_PRESENT),
+		       "permission is wrong");
+	}
+
+    /* 检查新“进程”虚拟地址空间的映射和引用计数 
+     * 新“进程”虚拟地址空间和旧“进程”虚拟地址相同 */
+	pg_dir = new_pg_dir;
+	addr = 0x200000;
+	end = addr + 1000 * PAGE_SIZE;
+	for (size_t i = 0; addr < end; addr += PAGE_SIZE, ++i) {
+		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
+				     GET_VPN3(addr) };
+		uint64_t *page_table = pg_dir;
+		for (size_t level = 0; level < 2; ++level) {
+			uint64_t idx = vpns[level];
+			assert(page_table[idx],
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
+			page_table = (uint64_t *)VIRTUAL(
+				GET_PAGE_ADDR(page_table[idx]));
+			assert(mem_map[MAP_NR(PHYSICAL((uint64_t)page_table))] ==
+				       1,
+			       "page table reference is wrong");
+		}
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
+		       "virtual address %p maps to physical address %p", addr,
+		       GET_PAGE_ADDR(page_table[vpns[2]]));
+		assert(mem_map[MAP_NR(GET_PAGE_ADDR(page_table[vpns[2]]))] == 2,
+		       "page reference is wrong");
+		assert(GET_FLAG(page_table[vpns[2]]) ==
+			       (USER_RX | PAGE_PRESENT),
+		       "permission is wrong");
+	}
+
+    /* 释放新“进程”虚拟地址空间 */
+	pg_dir = new_pg_dir;
+	addr = 0x200000;
+	end = addr + 1000 * PAGE_SIZE;
+	free_page_tables(addr, 1000 * PAGE_SIZE);
+
+    /* 检查旧“进程”虚拟地址空间的映射和引用计数 */
+	pg_dir = old_pg_dir;
+	for (size_t i = 0; addr < end; addr += PAGE_SIZE, ++i) {
+		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
+				     GET_VPN3(addr) };
+		uint64_t *page_table = pg_dir;
+		for (size_t level = 0; level < 2; ++level) {
+			uint64_t idx = vpns[level];
+			assert(page_table[idx],
+			       "page table %p of %p not exists",
+			       &page_table[idx], addr);
+			page_table = (uint64_t *)VIRTUAL(
+				GET_PAGE_ADDR(page_table[idx]));
+			assert(mem_map[MAP_NR(PHYSICAL((uint64_t)page_table))] ==
+				       1,
+			       "page table reference is wrong");
+		}
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
+		       "virtual address %p maps to physical address %p", addr,
+		       GET_PAGE_ADDR(page_table[vpns[2]]));
+        /* 新“进程”虚拟地址空间被释放，旧“进程”唯一地占有物理页 */
+		assert(mem_map[MAP_NR(GET_PAGE_ADDR(page_table[vpns[2]]))] == 1,
+		       "page reference is wrong");
+        /* 整个过程不涉及旧“进程”虚拟地址空间的写，因此页表项权限不变 */
+		assert(GET_FLAG(page_table[vpns[2]]) ==
+			       (USER_RX | PAGE_PRESENT),
+		       "permission is wrong");
+	}
+
+    /* 检查新“进程”虚拟地址空间的映射和引用计数 */
+	pg_dir = new_pg_dir;
+	addr = 0x200000;
+	end = addr + 1000 * PAGE_SIZE;
+	for (size_t i = 0; addr < end; addr += PAGE_SIZE, ++i) {
+		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
+				     GET_VPN3(addr) };
+		uint64_t *page_table = pg_dir;
+        /* 一级页表项被清零
+         * 二级页表项清零，但二级页表未被释放
+         * 三级页表被释放
+         * 所有指向的物理页都被释放 */
 		for (size_t level = 0; level < 2; ++level) {
 			uint64_t idx = vpns[level];
 			if (level > 0) {
 				assert(!page_table[idx],
-				       "mem_test(): pte %p is not empty",
-				       &page_table[idx]);
+				       "page table %p of %p exists",
+				       &page_table[idx], addr);
+                break;
 			}
 			page_table = (uint64_t *)VIRTUAL(
 				GET_PAGE_ADDR(page_table[idx]));
+			assert(mem_map[MAP_NR(PHYSICAL((uint64_t)page_table))] ==
+				       1,
+			       "page table reference is wrong");
 		}
 	}
+
+	pg_dir = old_pg_dir;
 	kputs("mem_test(): Passed");
 }
 

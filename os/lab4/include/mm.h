@@ -24,6 +24,10 @@
 #define PHYSICAL(addr)  (addr - LINEAR_OFFSET)
 #define VIRTUAL(addr)   (addr + LINEAR_OFFSET)
 
+/* 必须保证 end > start */
+#define IS_KERNEL(start, end) (start >= BASE_ADDRESS && end <= BASE_ADDRESS + PAGING_MEMORY)
+#define IS_USER(start, end)   (end <= BASE_ADDRESS)
+
 #define USED 100
 #define UNUSED 0
 
@@ -35,11 +39,12 @@
 #define PAGE_EXECUTABLE 0x08
 #define PAGE_PRESENT	0x01
 
-#define KERN_RWX       PAGE_READABLE   | PAGE_WRITABLE | PAGE_EXECUTABLE
-#define KERN_RW        PAGE_READABLE   | PAGE_WRITABLE
-#define USER_RWX       PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE | PAGE_EXECUTABLE
-#define USER_RW        PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE
-#define USER_R         PAGE_USER       | PAGE_READABLE
+#define KERN_RWX       (PAGE_READABLE   | PAGE_WRITABLE | PAGE_EXECUTABLE)
+#define KERN_RW        (PAGE_READABLE   | PAGE_WRITABLE)
+#define USER_RWX       (PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE | PAGE_EXECUTABLE)
+#define USER_RX        (PAGE_USER       | PAGE_READABLE | PAGE_EXECUTABLE)
+#define USER_RW        (PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE)
+#define USER_R         (PAGE_USER       | PAGE_READABLE)
 
 #define invalidate() __asm__ __volatile__("sfence.vma\n\t"::)
 
@@ -68,7 +73,6 @@ void mem_init();
 void free_page(uint64_t addr);
 void free_page_tables(uint64_t from, uint64_t size);
 uint64_t get_free_page(void);
-void map_page(uint64_t page, uint64_t addr);
 void get_empty_page(uint64_t addr, uint8_t flag);
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();

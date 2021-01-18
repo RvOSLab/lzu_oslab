@@ -1,5 +1,5 @@
 file kernel.bin
 target remote localhost:1234
-layout asm
-b * 0x80200000
+layout src
+b main
 focus cmd

@@ -26,21 +26,12 @@ CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-stric
 # make 不加参数默认选取第一个 target 运行，此处 all 就是第一个 target，要想生成 target 需要先决条件 build（见下）
 all : build
 
-build : $(KERN_BIN)
-
-# $(KERN_BIN)，先决条件是 $(objects) 里所包含的文件
-# 我们没有手动写对 $(objects) 的生成规则， make 命令会使用自身的隐含规则，读取所有对应的源代码文件（本例中是.c文件和.s文件）来自动编译成.o文件
-# 后面的第一条命令是按照 linker.ld 文件描述的内存布局来链接所有的.o目标文件（即$^指代的先决条件），链接后生成的文件名为 $(KERN_BIN)，然后导出内存布局至 $(KERN_MAP)
-# 第二条命令，使用 objcopy 将生成的文件里的裸二进制内容拷贝出来到 $(KERN_IMG) 文件中。
-# 拷贝二进制的原因：ld 生成的文件默认为 ELF 可执行文件格式，需要借助 Linux 的 ELF 加载器来执行，我们的目的是写一个全新的操作系统，在裸机上不会有 ELF 加载器帮助我们加载，因此需要去掉所有 ELF 文件相关信息，转换为一种平铺模式的二进制文件，使 cpu 直接转到一个指令后，就能顺序执行，不受 ELF 文件信息的干扰
-$(KERN_BIN) : init/main.o init/entry.o lib/libstd.a mm/libmm.a
-	$(LD) -T tools/linker.ld -M=$(KERN_MAP) -o $(KERN_BIN) $^
-	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
-
-lib/libstd.a : 
+build : 
+	make -C init build
 	make -C lib build
-mm/libmm.a :
 	make -C mm build
+	$(LD) -T tools/linker.ld -M=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o lib/libstd.a mm/libmm.a
+	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
 # bios 使用 QEMU 默认的 BIOS，即使用 QEMU 自带的 OpenSBI v0.7。
 run : build

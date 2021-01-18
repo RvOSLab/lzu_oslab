@@ -8,6 +8,7 @@ vpath %.h ../include
 build : libmm.a
 
 libmm.a : $(objects) ../lib/libstd.a
+	make -C ../lib build
 	$(AR) vq $@ $^
 
 $(objects) : %.o : %.c

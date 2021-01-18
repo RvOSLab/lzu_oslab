@@ -6,9 +6,12 @@ vpath $.a ../lib
 
 .PHONY : clean build
 
-build : lib.a init.o 
+build : entry.o main.o
 
-init.o : entry.s main.c
+entry.o : entry.s 
+	$(CC) $(CFLAGS) -c entry.s
+main.o : main.c
+	$(CC) $(CFLAGS) -c main.c
 
 clean :
 	-find . -regex '.*\.o' -exec rm {} \;

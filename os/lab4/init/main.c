@@ -6,7 +6,8 @@
 int main()
 {
 	print_system_infomation();
-    mem_init();
+    kprintf("%p\n", kernel_start);
+    // mem_init();
 	kputs("Hello LZU OS");
 	while (1)
 		; /* infinite loop */

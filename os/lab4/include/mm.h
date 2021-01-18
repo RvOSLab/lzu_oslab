@@ -14,8 +14,15 @@
 #define HIGH_MEM        0x88000000
 #define LOW_MEM         0x83000000
 #define PAGING_MEMORY   (1024 * 1024 * 128)
+#define LINEAR_OFFSET   0x40000000
+/* BASE_ADDRESS   -- 0xC0000000 */
+/* DEVICE_ADDRESS -- 0xC8000000 */
+#define BASE_ADDRESS    (MEM_START + LINEAR_OFFSET)
+#define DEVICE_ADDRESS  (BASE_ADDRESS + PAGING_MEMORY)
 #define PAGING_PAGES    (PAGING_MEMORY >> 12)
 #define MAP_NR(addr)    (((addr)-MEM_START) >> 12)
+#define PHYSICAL(addr)  (addr - LINEAR_OFFSET)
+#define VIRTUAL(addr)   (addr + LINEAR_OFFSET)
 
 #define USED 100
 #define UNUSED 0
@@ -28,16 +35,32 @@
 #define PAGE_EXECUTABLE 0x08
 #define PAGE_PRESENT	0x01
 
+#define KERN_RWX       PAGE_READABLE   | PAGE_WRITABLE | PAGE_EXECUTABLE
+#define KERN_RW        PAGE_READABLE   | PAGE_WRITABLE
+#define USER_RWX       PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE | PAGE_EXECUTABLE
+#define USER_RW        PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE
+#define USER_R         PAGE_USER       | PAGE_READABLE
+
 #define invalidate() __asm__ __volatile__("sfence.vma\n\t"::)
 
-#define GET_VPN1(addr) (((addr) >> 30) & 0x1FF)
-#define GET_VPN2(addr) (((addr) >> 21) & 0x1FF)
-#define GET_VPN3(addr) (((addr) >> 12) & 0x1FF)
-#define GET_PPN(addr)  ((addr) >> 12)
-#define GET_PAGE_ADDR(pte) (((pte) & ~0xFFC00000000003FF) << 2)
+#define GET_VPN1(addr)     (( (addr) >> 30) & 0x1FF)
+#define GET_VPN2(addr)     (( (addr) >> 21) & 0x1FF)
+#define GET_VPN3(addr)     (( (addr) >> 12) & 0x1FF)
+#define GET_PPN(addr)      (( addr) >> 12)
+#define GET_PAGE_ADDR(pte) (( (pte) & ~0xFFC00000000003FF) << 2)
+#define GET_FLAG(pte)      ( (pte) & 0x3FF )
 
 extern unsigned char mem_map [ PAGING_PAGES ];
-extern uint64_t pg_dir[512];
+extern uint64_t *pg_dir;
+
+/* 可执行文件中各节的起始虚拟地址,定义在链接脚本中 */
+extern void kernel_start();
+extern void kernel_end();
+extern void text_start();
+extern void rodata_start();
+extern void data_start();
+extern void bss_start();
+
 void mem_test();
 void pagging_test();
 void show_mem();
@@ -45,10 +68,11 @@ void mem_init();
 void free_page(uint64_t addr);
 void free_page_tables(uint64_t from, uint64_t size);
 uint64_t get_free_page(void);
-void get_empty_page(uint64_t addr);
-uint64_t put_page(uint64_t page, uint64_t addr);
-uint64_t put_dirty_page(uint64_t page, uint64_t addr);
+void map_page(uint64_t page, uint64_t addr);
+void get_empty_page(uint64_t addr, uint8_t flag);
+uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();
+void active_mapping();
 // void wp_page_handler(struct trapframe *frame)
 
 #endif

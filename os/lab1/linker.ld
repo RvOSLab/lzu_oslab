@@ -57,6 +57,5 @@ SECTIONS
 
     . = ALIGN(4K);
     /* 结束地址 */
-    . = ALIGN(4K);
     kernel_end = .;
 }

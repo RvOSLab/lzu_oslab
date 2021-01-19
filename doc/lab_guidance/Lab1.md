@@ -207,7 +207,7 @@ Makefile 中已经完成了项目的构建，以上两个题目都不需要修�
 
 RISC-V 汇编远比 x86 简单，学习起来很快。RISC-V 是精简指令集，设计者认为大道至简，指令集只需要实现了最基础、最常用的功能，复杂指令应该由编译器设计者通过组合简单指令实现。为了方便汇编程序员编程，汇编器添加了很多伪指令来降低程序员的工作量。比如，RISC-V 指令集中没有将 32 位立即数加载到寄存器中的指令，汇编器提供了伪指令`li reg, imm`来实现这个功能，在汇编后这条伪指令会被翻译为多条机器指令。因此，在学习 RISC-V 汇编语言之前需要先学习 RV32I 指令集。建议以以下顺序阅读 RISC-V 汇编的参考资料：
 
-1. 阅读《计算机组成与设计-硬件/软件借口（原书第 5 版）》第 2 章，了解 RISC-V 设计原则和 RV32I 指令集
+1. 阅读《计算机组成与设计-硬件/软件接口（原书第 5 版）》第 2 章，了解 RISC-V 设计原则和 RV32I 指令集
 2. 阅读[RISC-V Reader（中译版）](http://crva.ict.ac.cn/documents/RISC-V-Reader-Chinese-v2p1.pdf)第二、三、九章学习 RISC-V 汇编
 3. 具体用法可以参考[RISC-V Assembly Language](https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md)
 

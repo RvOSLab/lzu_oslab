@@ -12,5 +12,3 @@ init.o : entry.s main.c
 
 clean :
 	-find . -regex '.*\.o' -exec rm {} \;
-
-

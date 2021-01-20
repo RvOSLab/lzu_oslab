@@ -1,20 +1,4 @@
-<<<<<<< HEAD:os/lab1/Makefile
-# 以下是部分变量的定义，其中部分是 Makefile 的默认变量，使用 := 符号定义可以覆盖原变量的定义
-# CC - 编译器；LD - 链接器；OBJCOPY - 二进制拷贝程序；OBJDUMP - 反汇编程序
-# NM - 符号提取程序；AS - 编译器；GDB - 调试程序；TMUX - 终端复用器；QEMU - RISC-V模拟器
-CC := riscv64-linux-gnu-gcc
-LD := riscv64-linux-gnu-ld
-OBJCOPY := riscv64-linux-gnu-objcopy
-OBJDUMP := riscv64-linux-gnu-objdump
-NM := riscv64-linux-gnu-nm
-AS := riscv64-linux-gnu-as
-GDB := riscv64-unknown-elf-gdb
-TMUX := tmux
-QEMU := qemu-system-riscv64
-
-=======
 include tools/toolchain.mk
->>>>>>> lab2:os/lab3/Makefile
 # 二进制文件，可直接启动系统
 KERN_IMG := kernel.img
 # 链接得到的 ELF 格式的可执行文件
@@ -79,15 +63,9 @@ debug : build
 	$(TMUX) new -s debug -d "$(QEMU) \
     			-machine virt \
 				-s -S \
-<<<<<<< HEAD:os/lab1/Makefile
-				-monitor stdio \
-				-bios default \
-				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "sleep 0.5s; $(GDB) -q -x gdbinit"
-=======
 				-nographic \
 				-bios default \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
->>>>>>> lab2:os/lab3/Makefile
 	$(TMUX) attach-session -t debug
 
 # 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)

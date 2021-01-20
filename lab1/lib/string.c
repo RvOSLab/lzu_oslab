@@ -10,7 +10,8 @@ size_t strlen(const char *str)
 
 void *memset(void *src, int ch, size_t cnt)
 {
-	for (size_t i = 0; i < cnt; ++i)
-		*(char *)(src + i) = ch;
+	for (size_t i = 0; i < cnt; ++i) {
+        *((char *)src + i) = ch;
+    }
 	return src;
 }

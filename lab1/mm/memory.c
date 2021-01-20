@@ -74,7 +74,7 @@ void free_page(uint64_t addr)
  ******************************************************************************/
 uint64_t get_free_page(void)
 {
-	int i = MAP_NR(HIGH_MEM);
+	int i = MAP_NR(HIGH_MEM) - 1;
 	for (; i >= MAP_NR(LOW_MEM); --i) {
 		if (mem_map[i] == 0) {
 			mem_map[i] = 1;
@@ -100,7 +100,8 @@ void mem_test()
 
 	/** 测试物理页分配是否正常 */
 	uint64_t page1, old_page1;
-    assert(page1 = old_page1 = get_free_page(), "Memory exhausts");
+    page1 = old_page1 = get_free_page();
+    assert(page1, "Memory exhausts");
 	assert(page1 != 0, "page1 equal to zero");
 	assert(page1 == HIGH_MEM - PAGE_SIZE,
 	       "Error in address return by get_free_page()");

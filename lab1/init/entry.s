@@ -9,10 +9,6 @@ boot_stack:
     .space 4096 * 16
 boot_stack_top:
 
-    .section .data
-pg_dir:
-    .zero 512 * 8
-
 
 
 

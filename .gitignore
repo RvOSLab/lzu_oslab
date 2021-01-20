@@ -67,7 +67,7 @@ session
 swp
 .undo
 undo
-projectins.json
+.projectins.json
 .ycm_extra_config.py
 
 # os
@@ -84,6 +84,7 @@ TODO.wiki
 .ccl
 # cache
 .cache
+compile_commands.json
 
 # tags
 GPATH

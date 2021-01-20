@@ -685,7 +685,7 @@ void mem_test()
  ******************************************************************************/
 void show_page_tables()
 {
-	for (int i = 512; i-- > 0; ++i) {
+	for (size_t i = 0; i++ < 512; ++i) {
 		kprintf("%x\n", pg_dir[i]);
 		if (pg_dir[i]) {
 			uint64_t *pg_tb1 =

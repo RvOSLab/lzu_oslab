@@ -2,8 +2,8 @@
  * @file assert.h
  * 本文件实现 assert() 和 panic()
  */
-#ifndef ASSERT_H
-#define ASSERT_H
+#ifndef __ASSERT_H__
+#define __ASSERT_H__
 #include <string.h>
 #include <stdarg.h>
 #include <kdebug.h>

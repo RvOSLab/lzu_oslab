@@ -101,8 +101,6 @@ void mem_init()
 	pg_dir = kernel_pg_dir;
 	map_kernel();
 	active_mapping();
-	kputs("map kernel");
-	mem_test();
 }
 
 /*******************************************************************************

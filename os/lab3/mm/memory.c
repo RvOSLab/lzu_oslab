@@ -94,9 +94,9 @@ void mem_test()
 	/** 测试 mem_map[] 是否正确 */
 	size_t i;
 	for (i = 0; i < MAP_NR(LOW_MEM); ++i)
-		assert(mem_map[i] == USED, "Error in mem_map[]");
+		assert(mem_map[i] == USED, "Reference counter goes wrong");
 	for (; i < MAP_NR(HIGH_MEM); ++i)
-		assert(mem_map[i] == UNUSED, "Error in mem_map[]");
+		assert(mem_map[i] == UNUSED, "Reference counter goes wrong");
 
 	/** 测试物理页分配是否正常 */
 	uint64_t page1, old_page1;

@@ -38,13 +38,13 @@ void do_panic(const char* file, int line, const char* fmt, ...)
     kprintf("--------------------------------------------------------------------------\n");
 }
 
-uint64_t kprintf(const char* fmt, ...)
+int kprintf(const char* fmt, ...)
 {
     va_list ap;
 	uint64_t val;
 	uint64_t temp;
-	uint64_t len;
-	uint64_t rev = 0;
+	int len;
+	int rev = 0;
 	int ch;
     const char* str = NULL;
 

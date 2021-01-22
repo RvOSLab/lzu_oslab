@@ -78,6 +78,8 @@ compile_commands.json
 *.tmp
 *.img
 *.bin
+*.sym
+kernel.asm
 
 # other
 TODO

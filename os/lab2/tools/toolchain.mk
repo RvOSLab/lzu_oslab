@@ -6,6 +6,7 @@ LD := riscv64-linux-gnu-ld
 AR := riscv64-linux-gnu-ar
 OBJCOPY := riscv64-linux-gnu-objcopy
 OBJDUMP := riscv64-linux-gnu-objdump
+READELF := riscv64-linux-gnu-readelf
 NM := riscv64-linux-gnu-nm
 AS := riscv64-linux-gnu-as
 GDB := riscv64-unknown-elf-gdb

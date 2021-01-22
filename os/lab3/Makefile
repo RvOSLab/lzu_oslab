@@ -62,7 +62,7 @@ debug : build
 # 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)
 # -v：按照地址由低到高排序。
 symbol : $(KERN_BIN)
-	$(NM) -v $(KERN_BIN) > $(KERN_SYM)
+	$(READELF) -s $(KERN_BIN) > $(KERN_SYM)
 
 # 使用 objdump 命令输出 kernel.bin 的反汇编后的汇编代码，先决条件是 $(KERN_BIN)
 # -d：仅反汇编代码段内容

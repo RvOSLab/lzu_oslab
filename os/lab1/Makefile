@@ -1,7 +1,8 @@
 CC := riscv64-linux-gnu-gcc
 LD := riscv64-linux-gnu-ld
 OBJCOPY := riscv64-linux-gnu-objcopy
-OBDDUMP := riscv64-linux-gnu-objdump
+OBJDUMP := riscv64-linux-gnu-objdump
+NM := riscv64-linux-gnu-nm
 AS := riscv64-linux-gnu-as
 GDB := riscv64-unknown-elf-gdb
 TMUX := tmux
@@ -52,10 +53,10 @@ debug :
 
 
 symbol : $(KERN_BIN)
-	riscv64-linux-gnu-nm -v $(KERN_BIN) > $(KERN_SYM)
+	$(NM) -s $(KERN_BIN) > $(KERN_SYM)
 
 disassembly: $(KERN_BIN)
-	riscv64-linux-gnu-objdump -d $(KERN_BIN) > $(KERN_ASM)
+	$(OBJDUMP) -d $(KERN_BIN) > $(KERN_ASM)
 
 
 clean:

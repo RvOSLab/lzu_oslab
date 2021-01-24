@@ -101,6 +101,7 @@ tags
 
 # LZU_OS
 *.asm
+**/lab*/doc/
 doc/html/
 *.png
 *.js

@@ -6,19 +6,13 @@
 #include <mm.h>
 #include <stddef.h>
 
-/**
- * brief 内核页目录（定义在 entry.s 中）
- */
+/** 内核页目录（定义在 entry.s 中）*/
 extern uint64_t boot_pg_dir[512];
 
-/**
- * @brief 当前进程的页目录
- */
+/** 当前进程的页目录 */
 uint64_t *pg_dir = boot_pg_dir;
 
-/**
- * @brief 内存页表，跟踪系统的全部内存
- */
+/** 内存页表，跟踪系统的全部内存 */
 uint8_t mem_map[PAGING_PAGES] = { 0 };
 
 /**

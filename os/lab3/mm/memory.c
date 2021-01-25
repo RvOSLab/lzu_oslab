@@ -6,9 +6,6 @@
 #include <mm.h>
 #include <stddef.h>
 
-/**
- * @brief 内存页表，跟踪系统的全部内存
- */
 unsigned char mem_map[PAGING_PAGES] = { 0 };
 
 /**

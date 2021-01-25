@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <sbi.h>
 int kputs(const char *msg);
-int kprintf(const char* fmt, ...);
+int kprintf(const char *fmt, ...);
 void kputchar(int ch);
-void do_panic(const char* file, int line, const char* fmt, ...);
+void do_panic(const char *file, int line, const char *fmt, ...);
 #endif /* end of include guard: KDEBUG_H */

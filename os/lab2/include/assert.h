@@ -43,10 +43,10 @@
  * ```
  */
 #define assert(cond, ...)                                                      \
-    do {                                                                       \
-        if (!(cond)) {                                                         \
-            panic(__VA_ARGS__);                                                \
-        }                                                                      \
-    } while (0)
+	do {                                                                   \
+		if (!(cond)) {                                                 \
+			panic(__VA_ARGS__);                                    \
+		}                                                              \
+	} while (0)
 
 #endif

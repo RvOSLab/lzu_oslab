@@ -7,69 +7,64 @@ static uint64_t kpow(uint64_t x, uint64_t y);
 
 void kputchar(int ch)
 {
-    sbi_console_putchar(ch);
+	sbi_console_putchar(ch);
 }
 
-int kputs(const char* msg)
+int kputs(const char *msg)
 {
-    const char* ret = msg;
-    for (; *msg != '\0'; ++msg) {
-        kputchar(*msg);
-    }
-    kputchar('\n');
-    return ret == msg;
+	const char *ret = msg;
+	for (; *msg != '\0'; ++msg) {
+		kputchar(*msg);
+	}
+	kputchar('\n');
+	return ret == msg;
 }
 
-void do_panic(const char* file, int line, const char* fmt, ...)
+void do_panic(const char *file, int line, const char *fmt, ...)
 {
-    va_list ap;
-    va_start(ap, fmt);
-    kprintf("--------------------------------------------------------------------------\n");
-    kprintf("Panic at %s: %d\n", file, line);
-    if (strlen(fmt)) {
-        kprintf("Assert message: ");
-        kprintf(fmt, ap);
-        kputs(fmt);
-    }
-    kputchar('\n');
-    va_end(ap);
-    sbi_shutdown();
-    kprintf("Shutdown machine\n");
-    kprintf("--------------------------------------------------------------------------\n");
+	va_list ap;
+	va_start(ap, fmt);
+	kprintf("--------------------------------------------------------------------------\n");
+	kprintf("Panic at %s: %d\n", file, line);
+	if (strlen(fmt)) {
+		kprintf("Assert message: ");
+		kprintf(fmt, ap);
+		kputs(fmt);
+	}
+	kputchar('\n');
+	va_end(ap);
+	sbi_shutdown();
+	kprintf("Shutdown machine\n");
+	kprintf("--------------------------------------------------------------------------\n");
 }
 
-int kprintf(const char* fmt, ...)
+int kprintf(const char *fmt, ...)
 {
-    va_list ap;
+	va_list ap;
 	uint64_t val;
 	uint64_t temp;
 	int len;
 	int rev = 0;
 	int ch;
-    const char* str = NULL;
+	const char *str = NULL;
 
 	va_start(ap, fmt);
-	while (*fmt != '\0')
-	{
-		switch (*fmt)
-		{
+	while (*fmt != '\0') {
+		switch (*fmt) {
 		case '%':
 			fmt++;
-			switch (*fmt)
-			{
-			case 'u':		//Decimal
+			switch (*fmt) {
+			case 'u': //Decimal
 				val = va_arg(ap, uint64_t);
 				temp = val;
 				len = 0;
-				do
-				{
+				do {
 					len++;
 					temp /= 10;
 				} while (temp);
 				rev += len;
 				temp = val;
-				while (len)
-				{
+				while (len) {
 					ch = temp / kpow(10, len - 1);
 					temp %= kpow(10, len - 1);
 					kputchar(ch + '0');
@@ -83,38 +78,32 @@ int kprintf(const char* fmt, ...)
 				val = va_arg(ap, uint64_t);
 				temp = val;
 				len = 0;
-				do
-				{
+				do {
 					len++;
 					temp /= 16;
 				} while (temp);
 				rev += len;
 				temp = val;
-				while (len)
-				{
+				while (len) {
 					ch = temp / kpow(16, len - 1);
 					temp %= kpow(16, len - 1);
-					if (ch <= 9)
-					{
+					if (ch <= 9) {
 						kputchar(ch + '0');
-					}
-					else
-					{
+					} else {
 						kputchar(ch - 10 + 'a');
 					}
 					len--;
 				}
 				break;
-            case 's':
-                str = va_arg(ap, const char*);
+			case 's':
+				str = va_arg(ap, const char *);
 
-				while (*str)
-				{
+				while (*str) {
 					kputchar(*str);
 					str++;
 				}
 				break;
-			case 'c':		//character
+			case 'c': //character
 				kputchar(va_arg(ap, int));
 				rev += 1;
 				break;

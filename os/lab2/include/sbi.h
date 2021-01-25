@@ -29,20 +29,20 @@
 #define DIOSIX 5
 
 /** sbi ecall return type */
-struct sbiret
-{
-    long error;
-    long value;
+struct sbiret {
+	long error;
+	long value;
 };
 
-struct sbiret sbi_get_spec_version();      /** get sbi specification version */
-struct sbiret sbi_get_impl_id();           /** get sbi implementation id */
-struct sbiret sbi_get_impl_version();      /** get sbi implementation version */
-struct sbiret sbi_probe_extension(long extension_id); /** probe sbi extenstion */
-void sbi_set_timer(uint64_t stime_value);  /** set timer */
-int sbi_console_getchar();                 /** read a byte from debug console */
-void sbi_console_putchar(int ch);          /** print character to debug console */
-void sbi_shutdown();                       /** shutdown */
+struct sbiret sbi_get_spec_version(); /** get sbi specification version */
+struct sbiret sbi_get_impl_id(); /** get sbi implementation id */
+struct sbiret sbi_get_impl_version(); /** get sbi implementation version */
+struct sbiret
+sbi_probe_extension(long extension_id); /** probe sbi extenstion */
+void sbi_set_timer(uint64_t stime_value); /** set timer */
+int sbi_console_getchar(); /** read a byte from debug console */
+void sbi_console_putchar(int ch); /** print character to debug console */
+void sbi_shutdown(); /** shutdown */
 void print_system_infomation();
 
 #endif

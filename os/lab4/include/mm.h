@@ -19,6 +19,13 @@
 #define MAP_NR(addr)    (((addr)-MEM_START) >> 12)  /**< 物理地址 addr 在 mem_map[] 中的下标 */
 /// @}
 
+/// @{ @name 虚拟
+/* BASE_ADDRESS   -- 0xC0000000 */
+/* DEVICE_ADDRESS -- 0xC8000000 */
+#define KERNEL_ADDRESS    (MEM_START + LINEAR_OFFSET)
+#define DEVICE_ADDRESS  (KERNEL_ADDRESS + PAGING_MEMORY)
+/// @}
+
 /// @{ @name 物理页标志位
 #define USED 100                            
 #define UNUSED 0
@@ -51,9 +58,12 @@
 #define GET_PPN(addr)      (( addr) >> 12)
 #define GET_PAGE_ADDR(pte) (( (pte) & ~0xFFC00000000003FF) << 2)
 #define GET_FLAG(pte)      ( (pte) & 0x3FF )
+#define LINEAR_OFFSET   0x40000000
+#define PHYSICAL(addr)  (addr - LINEAR_OFFSET)
+#define VIRTUAL(addr)   (addr + LINEAR_OFFSET)
 /* 必须保证 end > start */
-#define IS_KERNEL(start, end) (start >= BASE_ADDRESS && end <= BASE_ADDRESS + PAGING_MEMORY)
-#define IS_USER(start, end)   (end <= BASE_ADDRESS)
+#define IS_KERNEL(start, end) (start >= KERNEL_ADDRESS && end <= KERNEL_ADDRESS + PAGING_MEMORY)
+#define IS_USER(start, end)   (end <= KERNEL_ADDRESS)
 /// @}
 
 extern unsigned char mem_map [ PAGING_PAGES ];

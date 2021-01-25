@@ -40,7 +40,7 @@ void map_kernel()
 
 	phy_mem_start = MEM_START;
 	phy_mem_end = MEM_END;
-	vir_mem_start = BASE_ADDRESS;
+	vir_mem_start = KERNEL_ADDRESS;
 	while (phy_mem_start < phy_mem_end) {
 		put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
 		phy_mem_start += PAGE_SIZE;
@@ -460,8 +460,8 @@ void mem_test()
 {
 	kputs("mem_test(): running");
 	/** 测试虚拟地址到物理地址的线性映射是否正确 */
-	uint64_t addr = BASE_ADDRESS;
-	uint64_t end = BASE_ADDRESS + PAGING_MEMORY;
+	uint64_t addr = KERNEL_ADDRESS;
+	uint64_t end = KERNEL_ADDRESS + PAGING_MEMORY;
 	for (; addr < end; addr += PAGE_SIZE) {
 		uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
 				     GET_VPN3(addr) };

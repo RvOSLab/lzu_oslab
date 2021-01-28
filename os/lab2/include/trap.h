@@ -1,9 +1,16 @@
+/**
+ * @file trap.h
+ * @author Hanabichan (93yutf@gmail.com)
+ * @brief 本文件声明了中断中必要的数据结构 struct pushregs、 struct trapframe 与函数 trap(struct trapframe *tf)、idt_init()、print_trapframe(struct trapframe *tf)、print_regs(struct pushregs *gpr)
+ */
 #ifndef __TRAP_H__
 #define __TRAP_H__
 
 #include <stddef.h>
 
-// 保存通用寄存器的结构体抽象，用于trapframe结构体
+/**
+ * @brief 保存通用寄存器的结构体抽象，用于trapframe结构体
+ */
 struct pushregs {
 	uint64_t zero; // Hard-wired zero
 	uint64_t ra; // Return address
@@ -39,7 +46,9 @@ struct pushregs {
 	uint64_t t6; // Temporary
 };
 
-// 保存上下文的栈的结构体抽象，和trap.S中分配的36*XLENB相对应
+/**
+ * @brief 保存上下文的栈的结构体抽象，和trap.S中分配的36*XLENB相对应
+ */
 struct trapframe {
 	struct pushregs gpr; // x0-x31
 	uint64_t status; // sstatus
@@ -48,12 +57,10 @@ struct trapframe {
 	uint64_t cause; // scause
 };
 
-void trap(struct trapframe
-		  *tf); // 中断处理程序（从汇编的中断处理程序跳转过来处理）
-void idt_init(void); // 初始化中断
-void print_trapframe(struct trapframe *tf); // 打印trapframe（上下文）
-void print_regs(struct pushregs *gpr); // 打印所有通用寄存器
-int trap_in_kernel(
-	struct trapframe *tf); // 检测中断是否发生在内核态，返回1=true，0=false
+void trap(struct trapframe *tf);
+void idt_init();
+void print_trapframe(struct trapframe *tf);
+void print_regs(struct pushregs *gpr);
+int trap_in_kernel(struct trapframe *tf);
 
 #endif

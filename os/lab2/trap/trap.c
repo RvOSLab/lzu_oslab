@@ -1,10 +1,13 @@
-/*
-发生中断时CPU会干的事情：
-- 发生例外的指令的 PC 被存入 sepc 用于恢复，且 PC 被设置为 stvec（存了中断处理程序的地址）。
-- scause 根据异常类型设置，stval 被设置成出错的地址或者其它特定异常的信息字。
-- 把 sstatus CSR 中的 SIE 置零，屏蔽中断，且 SIE 之前的值被保存在 SPIE 中。
-- 发生例外时的权限模式被保存在 sstatus 的 SPP 域，然后设置当前模式为 S 模式。
-*/
+/**
+ * @file trap.c
+ * @author Hanabichan (93yutf@gmail.com)
+ * @brief 定义了中断相关的常量、变量与函数
+ * 发生中断时CPU会干的事情：
+ * 发生例外的指令的 PC 被存入 sepc 用于恢复，且 PC 被设置为 stvec（存了中断处理程序的地址）。
+ * scause 根据异常类型设置，stval 被设置成出错的地址或者其它特定异常的信息字。
+ * 把 sstatus CSR 中的 SIE 置零，屏蔽中断，且 SIE 之前的值被保存在 SPIE 中。
+ * 发生例外时的权限模式被保存在 sstatus 的 SPP 域，然后设置当前模式为 S 模式。
+ */
 
 #include <riscv.h>
 #include <trap.h>
@@ -12,55 +15,68 @@
 #include <sbi.h>
 #include <kdebug.h>
 
-#define TICK_NUM 100
-static inline void trap_dispatch(struct trapframe *tf);
-static void print_ticks();
-void interrupt_handler(struct trapframe *tf);
-void exception_handler(struct trapframe *tf);
+/** 每 PLANED_TICK_NUM 次时钟中断输出一次 */
+#define PLANED_TICK_NUM 100
 
-void idt_init(void)
+static inline void trap_dispatch(struct trapframe *tf);
+static void interrupt_handler(struct trapframe *tf);
+static void exception_handler(struct trapframe *tf);
+
+/**
+ * @brief 初始化中断
+ * 设置 STVEC（“中断向量表”）的值为 __alltraps 的地址
+ * 在 SSTATUS 中启用 interrupt
+ */
+void idt_init()
 {
+	/** 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
 	extern void __alltraps(void);
-	/* 设置 sscratch 寄存器为 0, 表示我们正在内核中执行
-    * 我们规定：当 CPU 处于 U-Mode 时，sscratch 保存内核栈地址；处于 S-Mode 时，sscratch 为 0 。具体看文档
-    */
-	//write_csr(CSR_SSCRATCH, 0);
+	/** 设置 sscratch 寄存器为 0, 表示我们正在内核中执行
+     * 规定当 CPU 处于 U-Mode 时，sscratch 保存内核栈地址；处于 S-Mode 时，sscratch 为 0 。具体看文档
+     */
 	write_csr(0x140, 0);
-	/* 设置中断向量表地址，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
-	//write_csr(CSR_STVEC, &__alltraps);
+	/** 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
 	write_csr(0x105, &__alltraps);
-	// 启用 interrupt，sstatus的SSTATUS_SIE位置1
+	/** 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
 	set_csr(0x100, SSTATUS_SIE);
 }
 
-/* *
- * trap - handles or dispatches an exception/interrupt. if and when trap()
- * returns,
- * the code in kern/trap/trapentry.S restores the old CPU state saved in the
- * trapframe and then uses the iret instruction to return from the exception.
- * */
+/**
+ * @brief 中断处理函数，从 trapentry.s 跳转而来
+ * @param tf 中断保存栈
+ */
 void trap(struct trapframe *tf)
 {
 	trap_dispatch(tf);
 	// kputs("Trap END");
 }
 
-/* trap_dispatch - dispatch based on what type of trap occurred */
+/**
+ * @brief 中断类型的检查与分派
+ * @param tf 中断保存栈
+ */
 static inline void trap_dispatch(struct trapframe *tf)
 {
-	if ((int64_t)tf->cause < 0) // interrupts，外部中断，scause最高位为1
+	/** interrupts，中断，scause最高位为1 */
+	if ((int64_t)tf->cause < 0)
 	{
 		//kputs("Interrupt Happened!");
 		interrupt_handler(tf);
-	} else // exceptions，同步异常，scause最高位为0
+	} else
+	/** exceptions，异常，scause最高位为0 */
 	{
 		kputs("Exception Happened!");
 		exception_handler(tf);
 	}
 }
 
+/**
+ * @brief 中断处理函数，将不同种类中断分配给不同分支
+ * @param tf 中断保存栈
+ */
 void interrupt_handler(struct trapframe *tf)
 {
+	/** 置cause的最高位为0 */
 	int64_t cause = (tf->cause << 1) >> 1;
 	switch (cause) {
 	case IRQ_U_SOFT:
@@ -79,14 +95,10 @@ void interrupt_handler(struct trapframe *tf)
 		kputs("User timer interrupt\n");
 		break;
 	case IRQ_S_TIMER:
-		// "All bits besides SSIP and USIP in the sip register are
-		// read-only." -- privileged spec1.9.1, 4.1.4, p59
-		// In fact, Call sbi_set_timer will clear STIP, or you can clear it
-		// directly.
 		// kputs("Supervisor timer interrupt\n");
 		clock_set_next_event();
-		if (++ticks % TICK_NUM == 0) {
-			print_ticks();
+		if (++ticks % PLANED_TICK_NUM == 0) {
+			kprintf("%u ticks\n", ticks);
 		}
 		break;
 	case IRQ_H_TIMER:
@@ -113,6 +125,10 @@ void interrupt_handler(struct trapframe *tf)
 	}
 }
 
+/**
+ * @brief 异常处理函数，将不同种类中断分配给不同分支
+ * @param tf 中断保存栈
+ */
 void exception_handler(struct trapframe *tf)
 {
 	switch (tf->cause) {
@@ -160,6 +176,10 @@ void exception_handler(struct trapframe *tf)
 	}
 }
 
+/**
+ * @brief 打印中断保存栈
+ * @param tf 中断保存栈
+ */
 void print_trapframe(struct trapframe *tf)
 {
 	kprintf("trapframe at %p\n\n", tf);
@@ -171,6 +191,10 @@ void print_trapframe(struct trapframe *tf)
 	kprintf("  cause    0x%x\n", tf->cause);
 }
 
+/**
+ * @brief 打印中断保存栈中的寄存器信息部分
+ * @param gpr 中断保存栈中的寄存器信息部分
+ */
 void print_regs(struct pushregs *gpr)
 {
 	kprintf("  registers:\n");
@@ -208,14 +232,13 @@ void print_regs(struct pushregs *gpr)
 	kprintf("  t6       0x%x\n\n", gpr->t6);
 }
 
-/* trap_in_kernel - 检测中断是否发生在内核态，返回1=true，0=false */
+/**
+ * @brief 检测中断是否发生在内核态
+ * @param tf 中断保存栈
+ * @return int 1为内核态，0为用户态
+ */
 int trap_in_kernel(struct trapframe *tf)
 {
-	return (tf->status & SSTATUS_SPP) !=
-	       0; // 根据 sstatus.SPP（sstatus的左数第六位）是否为 1 来判断中断前的特权级，1为内核态，0为用户态
-}
-
-static void print_ticks()
-{
-	kprintf("%u ticks\n", ticks);
+	/** 根据 sstatus.SPP（sstatus的右数第9位）是否为 1 来判断中断前的特权级，1为内核态，0为用户态 */
+	return (tf->status & SSTATUS_SPP) != 0;
 }

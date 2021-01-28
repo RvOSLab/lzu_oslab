@@ -1,41 +1,6 @@
 #ifndef __RISCV_H__
 #define __RISCV_H__
 
-#define CSR_CYCLE 0xc00
-#define CSR_TIME 0xc01
-#define CSR_INSTRET 0xc02
-
-/* 寄存器编号 */
-#define CSR_SSTATUS 0x100
-#define CSR_SIE 0x104
-#define CSR_STVEC 0x105
-#define CSR_SSCRATCH 0x140
-#define CSR_SEPC 0x141
-#define CSR_SCAUSE 0x142
-#define CSR_SBADADDR 0x143
-#define CSR_SIP 0x144
-#define CSR_SPTBR 0x180
-#define CSR_MSTATUS 0x300
-#define CSR_MISA 0x301
-#define CSR_MEDELEG 0x302
-#define CSR_MIDELEG 0x303
-#define CSR_MIE 0x304
-#define CSR_MTVEC 0x305
-#define CSR_MSCRATCH 0x340
-#define CSR_MEPC 0x341
-#define CSR_MCAUSE 0x342
-#define CSR_MBADADDR 0x343
-#define CSR_MIP 0x344
-#define CSR_TSELECT 0x7a0
-#define CSR_TDATA1 0x7a1
-#define CSR_TDATA2 0x7a2
-#define CSR_TDATA3 0x7a3
-#define CSR_DCSR 0x7b0
-#define CSR_DPC 0x7b1
-#define CSR_DSCRATCH 0x7b2
-#define CSR_MCYCLE 0xb00
-#define CSR_MINSTRET 0xb02
-
 #define MIP_SSIP (1 << IRQ_S_SOFT)
 #define MIP_HSIP (1 << IRQ_H_SOFT)
 #define MIP_MSIP (1 << IRQ_M_SOFT)

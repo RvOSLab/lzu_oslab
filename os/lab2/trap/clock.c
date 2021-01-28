@@ -14,7 +14,7 @@ volatile size_t ticks;
 static uint64_t timebase;
 
 /**
- * @brief 从时钟硬件获取当前 cycles 
+ * @brief 获取当前的硬件时钟周期数
  * @return uint64_t 
  */
 static inline uint64_t get_cycles()

@@ -26,19 +26,20 @@ static void exception_handler(struct trapframe *tf);
  * @brief 初始化中断
  * 设置 STVEC（“中断向量表”）的值为 __alltraps 的地址
  * 在 SSTATUS 中启用 interrupt
+ * 注：下面的CSR操作均为宏定义，寄存器名直接以字符串形式传递，并没有相应的变量
  */
 void idt_init()
 {
 	/** 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
-	extern void __alltraps(void);
+	extern void __alltraps();
 	/** 设置 sscratch 寄存器为 0, 表示我们正在内核中执行
      * 规定当 CPU 处于 U-Mode 时，sscratch 保存内核栈地址；处于 S-Mode 时，sscratch 为 0 。具体看文档
      */
-	write_csr(0x140, 0);
+	write_csr(sscratch, 0);
 	/** 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
-	write_csr(0x105, &__alltraps);
+	write_csr(stvec, &__alltraps);
 	/** 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
-	set_csr(0x100, SSTATUS_SIE);
+	set_csr(sstatus, SSTATUS_SIE);
 }
 
 /**

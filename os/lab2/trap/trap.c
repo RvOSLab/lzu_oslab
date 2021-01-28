@@ -2,6 +2,7 @@
  * @file trap.c
  * @author Hanabichan (93yutf@gmail.com)
  * @brief 定义了中断相关的常量、变量与函数
+ *
  * 发生中断时CPU会干的事情：
  * 发生例外的指令的 PC 被存入 sepc 用于恢复，且 PC 被设置为 stvec（存了中断处理程序的地址）。
  * scause 根据异常类型设置，stval 被设置成出错的地址或者其它特定异常的信息字。
@@ -15,7 +16,7 @@
 #include <sbi.h>
 #include <kdebug.h>
 
-/** 每 PLANED_TICK_NUM 次时钟中断输出一次 */
+/** 时间片长度 */
 #define PLANED_TICK_NUM 100
 
 static inline void trap_dispatch(struct trapframe *tf);
@@ -24,21 +25,23 @@ static void exception_handler(struct trapframe *tf);
 
 /**
  * @brief 初始化中断
- * 设置 STVEC（“中断向量表”）的值为 __alltraps 的地址
+ * 设置 STVEC（中断向量表）的值为 __alltraps 的地址
+ *
  * 在 SSTATUS 中启用 interrupt
  * 注：下面的CSR操作均为宏定义，寄存器名直接以字符串形式传递，并没有相应的变量
  */
-void idt_init()
+void trap_init()
 {
-	/** 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
-	extern void __alltraps();
-	/** 设置 sscratch 寄存器为 0, 表示我们正在内核中执行
+	/* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
+	extern void __alltraps(void);
+	/* 
+     * 设置 sscratch 寄存器为 0, 表示我们正在内核中执行
      * 规定当 CPU 处于 U-Mode 时，sscratch 保存内核栈地址；处于 S-Mode 时，sscratch 为 0 。具体看文档
      */
 	write_csr(sscratch, 0);
-	/** 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
+	/* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
 	write_csr(stvec, &__alltraps);
-	/** 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
+    /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
 	set_csr(sstatus, SSTATUS_SIE);
 }
 
@@ -49,7 +52,6 @@ void idt_init()
 void trap(struct trapframe *tf)
 {
 	trap_dispatch(tf);
-	// kputs("Trap END");
 }
 
 /**
@@ -58,15 +60,12 @@ void trap(struct trapframe *tf)
  */
 static inline void trap_dispatch(struct trapframe *tf)
 {
-	/** interrupts，中断，scause最高位为1 */
-	if ((int64_t)tf->cause < 0)
-	{
-		//kputs("Interrupt Happened!");
+	/* interrupts，中断，scause最高位为1 */
+	if ((int64_t)tf->cause < 0) {
 		interrupt_handler(tf);
 	} else
-	/** exceptions，异常，scause最高位为0 */
+	/* exceptions，异常，scause最高位为0 */
 	{
-		kputs("Exception Happened!");
 		exception_handler(tf);
 	}
 }
@@ -96,7 +95,6 @@ void interrupt_handler(struct trapframe *tf)
 		kputs("User timer interrupt\n");
 		break;
 	case IRQ_S_TIMER:
-		// kputs("Supervisor timer interrupt\n");
 		clock_set_next_event();
 		if (++ticks % PLANED_TICK_NUM == 0) {
 			kprintf("%u ticks\n", ticks);
@@ -240,6 +238,6 @@ void print_regs(struct pushregs *gpr)
  */
 int trap_in_kernel(struct trapframe *tf)
 {
-	/** 根据 sstatus.SPP（sstatus的右数第9位）是否为 1 来判断中断前的特权级，1为内核态，0为用户态 */
+	/* 根据 sstatus.SPP（sstatus的右数第9位）是否为 1 来判断中断前的特权级，1为内核态，0为用户态 */
 	return (tf->status & SSTATUS_SPP) != 0;
 }

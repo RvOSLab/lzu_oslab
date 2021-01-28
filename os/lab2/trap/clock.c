@@ -8,13 +8,14 @@
 #include <riscv.h>
 #include <kdebug.h>
 
-/** ticks 是时钟中断发生次数的计数 */
+/** 时钟中断发生次数 */
 volatile size_t ticks;
-/** timebase 代表每隔 timebase 次时钟发生一次时钟中断 */
+
+/** 每隔 timebase 次时钟周期发生一次时钟中断 */
 static uint64_t timebase;
 
 /**
- * @brief 获取当前的硬件时钟周期数
+ * @brief 获取开机后经过的时钟周期数
  * @return uint64_t 
  */
 static inline uint64_t get_cycles()
@@ -26,22 +27,21 @@ static inline uint64_t get_cycles()
 
 /**
  * @brief 初始化时钟
- * 包括设置时钟响应的频率与开启时钟中断
+ * 设置时钟响应的频率与开启时钟中断
  */
 void clock_init()
 {
-	/** QEMU 的时钟频率为 10MHz，设置timebase = 100000表示时钟中断频率为100Hz */
+	/* QEMU 的时钟频率为 10MHz，设置timebase = 100000表示时钟中断频率为100Hz */
 	timebase = 100000;
 	ticks = 0;
-	/** 开启时钟中断（设置CSR_MIE） */
-	//set_csr(CSR_MIE, MIP_MTIP);
+	/* 开启时钟中断（设置CSR_MIE） */
 	set_csr(0x104, 1 << 5);
 	clock_set_next_event();
 	kputs("Setup Timer!");
 }
 
 /**
- * @brief 每次时钟中断发生时都要设置下一次时钟中断的发生
+ * @brief 设置下一次时钟中断
  */
 void clock_set_next_event()
 {

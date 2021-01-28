@@ -10,7 +10,7 @@ int main()
 	print_system_infomation();
 	kputs("Hello LZU OS");
 
-	idt_init();
+	trap_init();
 	clock_init();
 
 	__asm__ __volatile__("ebreak \n\t");

@@ -10,7 +10,9 @@
 #define MIP_SEIP (1 << IRQ_S_EXT)
 #define MIP_HEIP (1 << IRQ_H_EXT)
 #define MIP_MEIP (1 << IRQ_M_EXT)
+/// @}
 
+/// @{ @name 中断编号
 #define IRQ_U_SOFT 0
 #define IRQ_S_SOFT 1
 #define IRQ_H_SOFT 2
@@ -25,7 +27,9 @@
 #define IRQ_M_EXT 11
 #define IRQ_COP 12
 #define IRQ_HOST 13
+/// @}
 
+/// @{ @name 异常编号
 #define CAUSE_MISALIGNED_FETCH 0x0
 #define CAUSE_FAULT_FETCH 0x1
 #define CAUSE_ILLEGAL_INSTRUCTION 0x2
@@ -38,7 +42,9 @@
 #define CAUSE_SUPERVISOR_ECALL 0x9
 #define CAUSE_HYPERVISOR_ECALL 0xa
 #define CAUSE_MACHINE_ECALL 0xb
+/// @}
 
+/// @{ @name SSTATUS 寄存器标志位
 #define SSTATUS_UIE 0x00000001
 #define SSTATUS_SIE 0x00000002
 #define SSTATUS_UPIE 0x00000010
@@ -49,66 +55,77 @@
 #define SSTATUS_PUM 0x00040000
 #define SSTATUS32_SD 0x80000000
 #define SSTATUS64_SD 0x8000000000000000
+/// @}
 
-#define read_csr(reg)                                                          \
-	({                                                                     \
-		unsigned long __tmp;                                           \
-		asm volatile("csrr %0, " #reg : "=r"(__tmp));                  \
-		__tmp;                                                         \
-	})
+/// @{ @name 操作控制状态寄存器（CSR）
 
-#define write_csr(reg, val)                                                    \
-	({                                                                     \
-		if (__builtin_constant_p(val) && (unsigned long)(val) < 32)    \
-			asm volatile("csrw " #reg ", %0" ::"i"(val));          \
-		else                                                           \
-			asm volatile("csrw " #reg ", %0" ::"r"(val));          \
-	})
+/** 读取 CSR */
+#define read_csr(reg)                                               \
+    ({                                                              \
+        unsigned long __tmp;                                        \
+        asm volatile("csrr %0, " #reg : "=r"(__tmp));               \
+        __tmp;                                                      \
+    })
 
-#define swap_csr(reg, val)                                                     \
-	({                                                                     \
-		unsigned long __tmp;                                           \
-		if (__builtin_constant_p(val) && (unsigned long)(val) < 32)    \
-			asm volatile("csrrw %0, " #reg ", %1"                  \
-				     : "=r"(__tmp)                             \
-				     : "i"(val));                              \
-		else                                                           \
-			asm volatile("csrrw %0, " #reg ", %1"                  \
-				     : "=r"(__tmp)                             \
-				     : "r"(val));                              \
-		__tmp;                                                         \
-	})
+/** 写 CSR */
+#define write_csr(reg, val)                                         \
+    ({                                                              \
+        if (__builtin_constant_p(val) && (unsigned long)(val) < 32) \
+            asm volatile("csrw " #reg ", %0" ::"i"(val));           \
+        else                                                        \
+            asm volatile("csrw " #reg ", %0" ::"r"(val));           \
+    })
 
-#define set_csr(reg, bit)                                                      \
-	({                                                                     \
-		unsigned long __tmp;                                           \
-		if (__builtin_constant_p(bit) && (unsigned long)(bit) < 32)    \
-			asm volatile("csrrs %0, " #reg ", %1"                  \
-				     : "=r"(__tmp)                             \
-				     : "i"(bit));                              \
-		else                                                           \
-			asm volatile("csrrs %0, " #reg ", %1"                  \
-				     : "=r"(__tmp)                             \
-				     : "r"(bit));                              \
-		__tmp;                                                         \
-	})
 
-#define clear_csr(reg, bit)                                                    \
-	({                                                                     \
-		unsigned long __tmp;                                           \
-		if (__builtin_constant_p(bit) && (unsigned long)(bit) < 32)    \
-			asm volatile("csrrc %0, " #reg ", %1"                  \
-				     : "=r"(__tmp)                             \
-				     : "i"(bit));                              \
-		else                                                           \
-			asm volatile("csrrc %0, " #reg ", %1"                  \
-				     : "=r"(__tmp)                             \
-				     : "r"(bit));                              \
-		__tmp;                                                         \
-	})
+/** 写 CSR 并返回原值 */
+#define swap_csr(reg, val)                                          \
+    ({                                                              \
+        unsigned long __tmp;                                        \
+        if (__builtin_constant_p(val) && (unsigned long)(val) < 32) \
+            asm volatile("csrrw %0, " #reg ", %1"                   \
+                     : "=r"(__tmp)                                  \
+                     : "i"(val));                                   \
+        else                                                        \
+            asm volatile("csrrw %0, " #reg ", %1"                   \
+                     : "=r"(__tmp)                                  \
+                     : "r"(val));                                   \
+        __tmp;                                                      \
+    })
 
-#define rdtime() read_csr(CSR_TIME)
-#define rdcycle() read_csr(CSR_CYCLE)
-#define rdinstret() read_csr(CSR_INSTRET)
+/** 置位寄存器 */
+#define set_csr(reg, bit)                                           \
+    ({                                                              \
+        unsigned long __tmp;                                        \
+        if (__builtin_constant_p(bit) && (unsigned long)(bit) < 32) \
+            asm volatile("csrrs %0, " #reg ", %1"                   \
+                     : "=r"(__tmp)                                  \
+                     : "i"(bit));                                   \
+        else                                                        \
+            asm volatile("csrrs %0, " #reg ", %1"                   \
+                     : "=r"(__tmp)                                  \
+                     : "r"(bit));                                   \
+        __tmp;                                                      \
+    })
 
+/** 复位寄存器 */
+#define clear_csr(reg, bit)                                         \
+    ({                                                              \
+        unsigned long __tmp;                                        \
+        if (__builtin_constant_p(bit) && (unsigned long)(bit) < 32) \
+            asm volatile("csrrc %0, " #reg ", %1"                   \
+                     : "=r"(__tmp)                                  \
+                     : "i"(bit));                                   \
+        else                                                        \
+            asm volatile("csrrc %0, " #reg ", %1"                   \
+                     : "=r"(__tmp)                                  \
+                     : "r"(bit));                                   \
+        __tmp;                                                      \
+    })
+
+/// @}
+
+/**
+ * @file riscv.h
+ * @brief 操作 RISCV 寄存器
+ */
 #endif

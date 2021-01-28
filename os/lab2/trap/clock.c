@@ -3,6 +3,7 @@
  * @author Hanabichan (93yutf@gmail.com)
  * @brief 实现时钟中断
  */
+#include <clock.h>
 #include <sbi.h>
 #include <riscv.h>
 #include <kdebug.h>

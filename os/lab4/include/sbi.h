@@ -27,8 +27,8 @@
 
 /** sbi ecall return type */
 struct sbiret {
-	long error;
-	long value;
+    long error;
+    long value;
 };
 
 struct sbiret sbi_get_spec_version(); /** get sbi specification version */

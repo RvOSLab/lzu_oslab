@@ -20,9 +20,9 @@ static uint64_t timebase;
  */
 static inline uint64_t get_cycles()
 {
-	uint64_t n;
-	__asm__ __volatile__("rdtime %0" : "=r"(n));
-	return n;
+    uint64_t n;
+    __asm__ __volatile__("rdtime %0" : "=r"(n));
+    return n;
 }
 
 /**
@@ -31,13 +31,13 @@ static inline uint64_t get_cycles()
  */
 void clock_init()
 {
-	/* QEMU 的时钟频率为 10MHz，设置timebase = 100000表示时钟中断频率为100Hz */
-	timebase = 100000;
-	ticks = 0;
-	/* 开启时钟中断（设置CSR_MIE） */
-	set_csr(0x104, 1 << 5);
-	clock_set_next_event();
-	kputs("Setup Timer!");
+    /* QEMU 的时钟频率为 10MHz，设置timebase = 100000表示时钟中断频率为100Hz */
+    timebase = 100000;
+    ticks = 0;
+    /* 开启时钟中断（设置CSR_MIE） */
+    set_csr(0x104, 1 << 5);
+    clock_set_next_event();
+    kputs("Setup Timer!");
 }
 
 /**
@@ -45,5 +45,5 @@ void clock_init()
  */
 void clock_set_next_event()
 {
-	sbi_set_timer(get_cycles() + timebase);
+    sbi_set_timer(get_cycles() + timebase);
 }

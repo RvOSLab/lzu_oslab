@@ -7,17 +7,17 @@
 
 int main()
 {
-	print_system_infomation();
-	kputs("Hello LZU OS");
+    print_system_infomation();
+    kputs("Hello LZU OS");
 
-	trap_init();
-	clock_init();
+    trap_init();
+    clock_init();
 
-	__asm__ __volatile__("ebreak \n\t");
+    __asm__ __volatile__("ebreak \n\t");
 
-	kputs("SYSTEM END");
+    kputs("SYSTEM END");
 
-	while (1)
-		; /* infinite loop */
-	return 0;
+    while (1)
+        ; /* infinite loop */
+    return 0;
 }

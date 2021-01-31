@@ -5,11 +5,11 @@
 #include <mm.h>
 int main()
 {
-	print_system_infomation();
+    print_system_infomation();
     mem_init();
     mem_test();
-	kputs("Hello LZU OS");
-	while (1)
-		; /* infinite loop */
-	return 0;
+    kputs("Hello LZU OS");
+    while (1)
+        ; /* infinite loop */
+    return 0;
 }

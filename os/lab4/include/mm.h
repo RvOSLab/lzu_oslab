@@ -5,7 +5,7 @@
 #define PAGE_SIZE 4096       
 #define FLOOR(addr) ((addr) / PAGE_SIZE * PAGE_SIZE)/**< 向下取整到 4K 边界 */
 #define CEIL(addr)               \
-	(((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE) /**< 向上取整到 4K 边界 */ 
+    (((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE) /**< 向上取整到 4K 边界 */ 
 #define DEVICE_START    0x10000000                  /**< 设备树地址空间，暂时不使用 */
 #define DEVICE_END      0x10010000                 
 #define MEM_START       0x80000000                  /**< 物理内存地址空间 */
@@ -32,13 +32,13 @@
 /// @}
 
 /// @{ @name 页表项标志位
-#define PAGE_DIRTY	    0x80                        
-#define PAGE_ACCESSED	0x40
-#define PAGE_USER	    0x10
+#define PAGE_DIRTY        0x80                        
+#define PAGE_ACCESSED    0x40
+#define PAGE_USER        0x10
 #define PAGE_READABLE   0x02
 #define PAGE_WRITABLE   0x04
 #define PAGE_EXECUTABLE 0x08
-#define PAGE_PRESENT	0x01
+#define PAGE_PRESENT    0x01
 
 #define KERN_RWX       (PAGE_READABLE   | PAGE_WRITABLE | PAGE_EXECUTABLE)
 #define KERN_RW        (PAGE_READABLE   | PAGE_WRITABLE)

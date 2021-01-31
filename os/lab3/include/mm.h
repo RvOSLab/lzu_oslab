@@ -5,7 +5,7 @@
 #define PAGE_SIZE 4096       
 #define FLOOR(addr) ((addr) / PAGE_SIZE * PAGE_SIZE)/**< 向下取整到 4K 边界 */
 #define CEIL(addr)               \
-	(((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE) /**< 向上取整到 4K 边界 */ 
+    (((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE) /**< 向上取整到 4K 边界 */ 
 #define DEVICE_START    0x10000000                  /**< 设备树地址空间，暂时不使用 */
 #define DEVICE_END      0x10010000                 
 #define MEM_START       0x80000000                  /**< 物理内存地址空间 */

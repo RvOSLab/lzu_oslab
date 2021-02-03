@@ -10,17 +10,17 @@
 #define DEVICE_END      0x10010000                 
 #define MEM_START       0x80000000                  /**< 物理内存地址空间 */
 #define MEM_END         0x88000000
-#define SIB_START       0x80000000                  /**< SBI 占据的地址空间 */
+#define SBI_START       0x80000000                  /**< SBI 占据的地址空间 */
 #define SBI_END         0x82000000                  /**< 用户程序可用的物理内存地址空间 */
 #define HIGH_MEM        0x88000000                  
 #define LOW_MEM         0x83000000
-#define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 */
+#define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 (bytes) */
 #define PAGING_PAGES    (PAGING_MEMORY >> 12)       /**< 系统物理内存页数 */
 #define MAP_NR(addr)    (((addr)-MEM_START) >> 12)  /**< 物理地址 addr 在 mem_map[] 中的下标 */
 /// @}
 
 /// @{ @name 物理页标志位
-#define USED 100                                    
+#define USED 100
 #define UNUSED 0
 /// @}
 

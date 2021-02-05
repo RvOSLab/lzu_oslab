@@ -88,12 +88,14 @@ struct sbiret sbi_probe_extension(long extension_id)
 
 void sbi_shutdown()
 {
-    register uint64_t a7 asm("x17") = SHUT_DOWN_EXTENTION;
-    register uint64_t a6 asm("x16") = 0;
-    __asm__ __volatile__("ecall \n\t"
-                 : /* empty output list */
-                 : "r"(a6), "r"(a7)
-                 : "memory");
+	register uint64_t a0 asm("x10") = 0x00000000;
+	register uint64_t a1 asm("x11") = 0;
+	register uint64_t a7 asm("x17") = 0x53525354;
+	register uint64_t a6 asm("x16") = 0;
+	__asm__ __volatile__("ecall \n\t"
+			     : /* empty output list */
+			     : "r"(a0), "r"(a1), "r"(a6), "r"(a7)
+			     : "memory");
 }
 
 void print_system_infomation()
@@ -116,6 +118,12 @@ void print_system_infomation()
         kputs("HART_STATE_EXTENTION: available");
     else
         kputs("HART_STATE_EXTENTION: unavailable");
+
+    ret = sbi_probe_extension(RESET_EXTENTION);
+    if (ret.value != 0)
+        kputs("RESET_EXTENTION: available");
+    else
+        kputs("RESET_EXTENTION: unavailable");
 
     ret = sbi_get_impl_id();
     switch (ret.value) {

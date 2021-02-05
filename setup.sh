@@ -1,5 +1,5 @@
 echo -e "\033[41;37m 正在安装必要软件包 \033[0m"
-sudo apt install -y build-essential pkg-config libglib2.0-dev libpixman-1-dev binutils libgtk-3-dev texinfo axel git make gcc-riscv64-linux-gnu libncurses5-dev tmux
+sudo apt install -y build-essential pkg-config libglib2.0-dev libpixman-1-dev binutils libgtk-3-dev texinfo axel git make gcc-riscv64-linux-gnu libncurses5-dev tmux python3-dev
 echo -e "\033[41;37m 正在下载必要源码包 \033[0m"
 mkdir resource
 cd resource
@@ -16,7 +16,7 @@ make -j$(nproc)
 sudo make install
 echo -e "\033[41;37m 开始编译安装 GDB \033[0m"
 cd ../gdb-10.1/
-./configure --target=riscv64-unknown-elf --enable-tui=yes
+./configure --target=riscv64-unknown-elf --enable-tui=yes -with-python=python3
 make -j$(nproc)
 sudo make install
 echo -e "\033[41;37m GDB安装完成，版本信息： \033[0m"

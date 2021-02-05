@@ -88,9 +88,9 @@ struct sbiret sbi_probe_extension(long extension_id)
 
 void sbi_shutdown()
 {
-	register uint64_t a0 asm("x10") = 0x00000000;
+	register uint64_t a0 asm("x10") = 0;
 	register uint64_t a1 asm("x11") = 0;
-	register uint64_t a7 asm("x17") = 0x53525354;
+	register uint64_t a7 asm("x17") = RESET_EXTENTION;
 	register uint64_t a6 asm("x16") = 0;
 	__asm__ __volatile__("ecall \n\t"
 			     : /* empty output list */

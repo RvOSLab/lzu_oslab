@@ -107,3 +107,4 @@ doc/html/
 *.js
 *.css
 *.html
+!fw_jump.bin

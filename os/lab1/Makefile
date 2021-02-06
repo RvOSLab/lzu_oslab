@@ -32,13 +32,13 @@ run : build
 	@$(QEMU) \
     		-machine virt \
     		-nographic \
-    		-bios default \
+    		-bios fw_jump.bin \
     		-device loader,file=$(KERN_IMG),addr=0x80200000 
 
 run-gui : build
 	@$(QEMU) \
     		-machine virt \
-    		-bios default \
+    		-bios fw_jump.bin \
     		-device loader,file=$(KERN_IMG),addr=0x80200000 
 
 debug :
@@ -47,7 +47,7 @@ debug :
 				-s -S \
 				-serial mon:stdio \
 				-nographic \
-				-bios default \
+				-bios fw_jump.bin \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x gdbinit"
 	$(TMUX) attach-session -t debug
 

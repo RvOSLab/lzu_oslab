@@ -1,0 +1,22 @@
+# 顶层 EditorConfig 文件
+root = true
+
+[*]
+# 删除行尾空白
+trim_trailing_whitespace = true
+# 使用 UTF-8 编码
+charset = utf-8
+# 使用 UNIX 风格 EOL
+end_of_line = lf
+# 文件末尾插入空白行
+insert_final_newline = true
+
+[*.{c,h}]
+# 使用 Space 缩进
+indent_style = space
+# 缩进长度为 4 Space
+indent_size = 4
+
+[Makefile]
+# 使用 Tab 缩进
+indent_style = tab

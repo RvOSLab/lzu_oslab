@@ -20,24 +20,6 @@ int kputs(const char *msg)
     return ret == msg;
 }
 
-void do_panic(const char *file, int line, const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    kprintf("--------------------------------------------------------------------------\n");
-    kprintf("Panic at %s: %d\n", file, line);
-    if (strlen(fmt)) {
-        kprintf("Assert message: ");
-        kprintf(fmt, ap);
-        kputs(fmt);
-    }
-    kputchar('\n');
-    va_end(ap);
-    sbi_shutdown();
-    kprintf("Shutdown machine\n");
-    kprintf("--------------------------------------------------------------------------\n");
-}
-
 int kprintf(const char *fmt, ...)
 {
     va_list ap;

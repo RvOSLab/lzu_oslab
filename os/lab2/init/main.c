@@ -7,6 +7,7 @@
 
 int main()
 {
+    kputs("\nLZU OS STARTING....................");
     print_system_infomation();
     kputs("Hello LZU OS");
 

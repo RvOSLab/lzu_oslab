@@ -16,13 +16,13 @@ unsigned char mem_map[PAGING_PAGES] = { 0 };
  */
 void mem_init()
 {
-	size_t i = MAP_NR(HIGH_MEM);
-	/** 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
-	while (i > MAP_NR(LOW_MEM))
-		mem_map[--i] = UNUSED;
-	/** 设SBI与内核内存空间[MEM_START,LOW_MEM)的内存空间为不可用 */
-	while (i > MAP_NR(MEM_START))
-		mem_map[--i] = USED;
+    size_t i = MAP_NR(HIGH_MEM);
+    /** 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
+    while (i > MAP_NR(LOW_MEM))
+        mem_map[--i] = UNUSED;
+    /** 设SBI与内核内存空间[MEM_START,LOW_MEM)的内存空间为不可用 */
+    while (i > MAP_NR(MEM_START))
+        mem_map[--i] = USED;
 }
 
 /**

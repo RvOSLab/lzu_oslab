@@ -33,11 +33,6 @@ void trap_init()
 {
     /* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
     extern void __alltraps(void);
-    /* 
-     * 设置 sscratch 寄存器为 0, 表示我们正在内核中执行
-     * 规定当 CPU 处于 U-Mode 时，sscratch 保存内核栈地址；处于 S-Mode 时，sscratch 为 0 。具体看文档
-     */
-    write_csr(sscratch, 0);
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
     /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
@@ -88,6 +83,9 @@ void interrupt_handler(struct trapframe *tf)
         clock_set_next_event();
         if (++ticks % PLANED_TICK_NUM == 0) {
             kprintf("%u ticks\n", ticks);
+            if (++ticks / PLANED_TICK_NUM == 10){
+                sbi_shutdown();
+            }
         }
         break;
     case IRQ_H_TIMER:
@@ -219,15 +217,4 @@ void print_regs(struct pushregs *gpr)
     kprintf("  t4       0x%x\n", gpr->t4);
     kprintf("  t5       0x%x\n", gpr->t5);
     kprintf("  t6       0x%x\n\n", gpr->t6);
-}
-
-/**
- * @brief 检测中断是否发生在内核态
- * @param tf 中断保存栈
- * @return int 1为内核态，0为用户态
- */
-int trap_in_kernel(struct trapframe *tf)
-{
-    /* 根据 sstatus.SPP（sstatus的右数第9位）是否为 1 来判断中断前的特权级，1为内核态，0为用户态 */
-    return (tf->status & SSTATUS_SPP) != 0;
 }

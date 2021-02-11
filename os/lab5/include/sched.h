@@ -44,6 +44,7 @@ struct task_struct {
     __label__ ret;                                                   \
     write_csr(scause, CAUSE_USER_ECALL);                             \
     set_csr(sstatus, SSTATUS_SPP);                                   \
+    set_csr(sstatus, SSTATUS_SPIE);                                  \
     write_csr(sepc, &&ret - 4);                                      \
     register uint64_t a7 asm("a7") = 0;                              \
     __asm__ __volatile__("call __alltraps \n\t" ::"r"(a7):"memory"); \

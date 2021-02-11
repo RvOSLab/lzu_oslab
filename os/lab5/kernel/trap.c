@@ -95,27 +95,17 @@ struct trapframe *interrupt_handler(struct trapframe *tf)
          * 2. 禁止嵌套中断是否会导致发生系统调用时，系统的中断丢失，比如无法接受键盘
          *    输入、无法收到 IO 完成的中断。
          */
-        if (!current) {
-            current = (struct task_struct *)&init_task;
-            /* INCOMPLETE!!! 暂时不切换到应用态 */
-            /* tf->status &= ~SSTATUS_SPP [> 0x00000100 <]; */
-        }
-
 		if (trap_in_kernel(tf)) {
 			++current->cstime;
 		} else {
 			++current->cutime;
 		}
-
-        /* Note:
-         * 1. task0 的 counter 被设置为 1 以便在第一次时钟中断中切换到 task0。
-         *    之后发生溢出，如果任意时刻又切换到 task0,意味着永远不发生进程切换。
-         * 2. UNIX 系统在内核态不发生进程切换（时钟中断导致的），这里破坏了这一
-         *    原则
-         */
-        if (!--current->counter) {
+        if (--current->counter)
+            return tf;
+        if (!trap_in_kernel(tf)) {
             return switch_to(tf, schedule());
         }
+
 		break;
 	case IRQ_H_TIMER:
 	case IRQ_M_TIMER:
@@ -232,7 +222,7 @@ static struct trapframe *syscall_handler(struct trapframe *tf)
     } else {
         tf->gpr.a0 = syscall_table[syscall_nr](tf);
     }
-    /* tf->epc += 4; */
+    tf->epc += 4;
     return tf;
 }
 

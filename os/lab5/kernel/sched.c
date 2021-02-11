@@ -52,7 +52,7 @@ void sched_init()
 {
 	init_task.task = (struct task_struct){
 		.state = TASK_RUNNING,
-		.counter = 1,     /* 确保创建 task 0 后第一次时钟中断进行调度 */
+		.counter = 15,
 		.priority = 15,
 		.p_pptr = NULL,
 		.p_cptr = NULL,
@@ -64,16 +64,12 @@ void sched_init()
 		.cutime = 0,
 		.cstime = 0,
 	};
-	init_task.task.start_time = ticks /* 0 */;
+	init_task.task.start_time = ticks;
+	init_task.task.pg_dir = pg_dir;
     tasks[0] = (struct task_struct *)&init_task;
 	for (size_t i = 1; i < NR_TASKS; ++i) {
 		tasks[i] = NULL;
 	}
-    pg_dir = boot_pg_dir;
-    memset(pg_dir, 0, PAGE_SIZE);
-	map_kernel(KERN_RWX);    /* INCOMPLETE!!!: 暂时不切换到应用态 */
-	init_task.task.pg_dir = pg_dir;
-    active_mapping();        /* 激活映射 */
 }
 
 /* 可以处理切换到当前进程的情况 */
@@ -150,6 +146,18 @@ size_t schedule()
 int sys_fork(struct trapframe *tf)
 {
     /* TODO */
+    return 0;
+}
+
+/**
+ * @brief 初始化进程 0
+ *
+ * 创建进程零，将内核移入进程中。
+ */
+int sys_init(struct trapframe *tf)
+{
+    current= (struct task_struct *)&init_task;
+    save_context(tf);
     return 0;
 }
 

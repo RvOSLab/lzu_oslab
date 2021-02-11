@@ -15,7 +15,7 @@ UECALL = 8
 .endm
 
 # 定义宏：保存上下文（所有通用寄存器及额外的CSR寄存器）
-# 我们规定：当 CPU 处于 U-Mode 时，sscratch 保存内核栈地址；处于 S-Mode 时，sscratch 为 0 。
+# sscratch 保存内核态堆栈指针
 .macro SAVE_ALL
 
     # 交换 sp 和 sscratch 寄存器
@@ -75,7 +75,6 @@ UECALL = 8
 .macro RESTORE_ALL
     mv sp, a0
     addi a0, a0, 36 * XLENB
-    csrw sscratch, a0
 
     # 恢复除了 x2 (sp) 以外的其余通用寄存器
     LOAD x1, 1
@@ -120,6 +119,7 @@ UECALL = 8
 
     # 最后恢复栈指针(x2, sp)为原指针（无论是用户态还是内核态）
     LOAD x2, 2
+    csrw sscratch, x2
 .endm
 
 # 代码段

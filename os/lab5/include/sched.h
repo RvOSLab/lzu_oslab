@@ -2,6 +2,7 @@
 #define __SCHED_H__
 #include <mm.h>
 #include <trap.h>
+#include <riscv.h>
 
 #define NR_TASKS             512                              /**< 系统最大进程数 */
 
@@ -31,6 +32,23 @@ struct task_struct {
     context context;                                          /**< 处理器状态 */
     uint64_t *pg_dir;                                         /**< 页目录地址 */
 };
+
+
+/**
+ * @brief 初始化进程 0
+ * 手动触发中断，调用 sys_init() 初始化进程0
+ * @see sys_init()
+ */
+#define init_task0()                                                 \
+({                                                                   \
+    __label__ ret;                                                   \
+    write_csr(scause, CAUSE_USER_ECALL);                             \
+    set_csr(sstatus, SSTATUS_SPP);                                   \
+    write_csr(sepc, &&ret - 4);                                      \
+    register uint64_t a7 asm("a7") = 0;                              \
+    __asm__ __volatile__("call __alltraps \n\t" ::"r"(a7):"memory"); \
+    ret: ;                                                           \
+})
 
 /**
  * @brief 进程数据结构占用的页

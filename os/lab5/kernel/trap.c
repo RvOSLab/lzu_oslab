@@ -1,6 +1,5 @@
 /**
  * @file trap.c
- * @author Hanabichan (93yutf@gmail.com)
  * @brief 定义了中断相关的常量、变量与函数
  *
  * 发生中断时CPU会干的事情：
@@ -87,14 +86,7 @@ struct trapframe *interrupt_handler(struct trapframe *tf)
 	case IRQ_U_TIMER:
 	case IRQ_S_TIMER:
 		clock_set_next_event();
-		/* Note:
-         * 1. 用户进程只能通过系统调用、中断和异常进入内核态，
-         *    这时系统自动关闭中断（禁止嵌套中断），用户进程不可能在内核态发生中断。
-         *    在内核态发生中断只可能是内核或进程 0。
-         *    因此，可以认为现在的代码无法正确计算进程在内核态下的运行时间。
-         * 2. 禁止嵌套中断是否会导致发生系统调用时，系统的中断丢失，比如无法接受键盘
-         *    输入、无法收到 IO 完成的中断。
-         */
+        enable_interrupt(); /* 允许嵌套中断 */
 		if (trap_in_kernel(tf)) {
 			++current->cstime;
 		} else {
@@ -103,7 +95,10 @@ struct trapframe *interrupt_handler(struct trapframe *tf)
         if (--current->counter)
             return tf;
         if (!trap_in_kernel(tf)) {
-            return switch_to(tf, schedule());
+            size_t nr = schedule();
+            current->counter = 15;              /* 仅仅是为了观察现象 */
+            kprintf("switch to task %u\n", nr);
+            return switch_to(tf, nr);
         }
 
 		break;
@@ -213,6 +208,12 @@ struct trapframe * exception_handler(struct trapframe *tf)
     return tf;
 }
 
+/**
+ * @brief 系统调用处理函数
+ *
+ * 检测系统调用号，调用响应的系统调用。
+ * 当接收到错误的系统调用号时，设置 errno 为 ENOSY 并返回错误码 -1
+ */
 static struct trapframe *syscall_handler(struct trapframe *tf)
 {
     uint64_t syscall_nr = tf->gpr.a7;
@@ -222,7 +223,7 @@ static struct trapframe *syscall_handler(struct trapframe *tf)
     } else {
         tf->gpr.a0 = syscall_table[syscall_nr](tf);
     }
-    tf->epc += 4;
+    tf->epc += 4; /* 执行下一条指令 */
     return tf;
 }
 

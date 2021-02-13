@@ -13,9 +13,9 @@ int main()
     mem_test();
     trap_init();
     sched_init();
+    clock_init();
     kputs("Hello LZU OS");
     init_task0();
-    clock_init();
     while (1)
         ; /* infinite loop */
     return 0;

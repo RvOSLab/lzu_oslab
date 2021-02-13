@@ -6,9 +6,9 @@
 #include <riscv.h>
 #include <sched.h>
 #include <mm.h>
+#include <string.h>
+extern void boot_stack_top();             /**< 启动阶段内核堆栈最高地址处 */
 
-extern char *boot_stack_top;
-extern uint64_t boot_pg_dir[512];
 /** 进程 0 */
 union task_union init_task;
 
@@ -50,29 +50,13 @@ void save_context(context *context)
  */
 void sched_init()
 {
-	init_task.task = (struct task_struct){
-		.state = TASK_RUNNING,
-		.counter = 15,
-		.priority = 15,
-		.p_pptr = NULL,
-		.p_cptr = NULL,
-		.p_ysptr = NULL,
-		.p_osptr = NULL,
-		.timeout = 0,
-		.utime = 0,
-		.stime = 0,
-		.cutime = 0,
-		.cstime = 0,
-	};
-	init_task.task.start_time = ticks;
-	init_task.task.pg_dir = pg_dir;
     tasks[0] = (struct task_struct *)&init_task;
 	for (size_t i = 1; i < NR_TASKS; ++i) {
 		tasks[i] = NULL;
 	}
+    current=&init_task.task;
 }
 
-/* 可以处理切换到当前进程的情况 */
 /**
  * @brief 切换进程
  *
@@ -98,7 +82,7 @@ context *switch_to(context *context, size_t task)
 /**
  * @brief 进程调度函数
  *
- * 使用公平调度算法。
+ * 使用公平调度算法(CFS)。
  * 进程 0 不参加调度，当且仅当只有进程 0 时选择进程 0
  *
  * @return 目标进程的进程号
@@ -140,23 +124,63 @@ size_t schedule()
 }
 
 /**
- * @brief 系统调用 fork()
- * @todo 完成 sys_fork()
- */
-int sys_fork(struct trapframe *tf)
-{
-    /* TODO */
-    return 0;
-}
-
-/**
  * @brief 初始化进程 0
  *
- * 创建进程零，将内核移入进程中。
+ * 创建用户态进程零，将内核移入进程中。
+ * @see init_task0()
+ * @note 只有在发生中断时才能保存处理器状态，
+ *       因此让 sys_init() 占据系统调用号 0,
+ *       但是实际上 sys_init() 被内核调用，并
+ *       不是系统调用。
  */
 int sys_init(struct trapframe *tf)
 {
-    current= (struct task_struct *)&init_task;
+	init_task.task = (struct task_struct){
+		.state = TASK_RUNNING,
+		.counter = 15,
+		.priority = 15,
+		.p_pptr = NULL,
+		.p_cptr = NULL,
+		.p_ysptr = NULL,
+		.p_osptr = NULL,
+		.timeout = 0,
+		.utime = 0,
+		.stime = 0,
+		.cutime = 0,
+		.cstime = 0,
+	};
+	init_task.task.start_time = ticks /* 0 */;
+	init_task.task.pg_dir = pg_dir;
+
+    /*
+     * 创建指向内核代码/数据的用户态映射。
+     *
+     * 进程 0 内核区为 [0x80200000, 0x88000000),
+     * 进程 0 用户区为 [0x00010000, 0x07E10000),
+     * 两部分指向完全相同的代码/数据。
+     */
+	uint64_t phy_mem_start;
+	uint64_t phy_mem_end;
+	uint64_t vir_mem_start;
+	phy_mem_start = SBI_END;
+	phy_mem_end = HIGH_MEM;
+	vir_mem_start = 0x10000;
+	while (phy_mem_start < phy_mem_end) {
+		put_page(phy_mem_start, vir_mem_start, USER_RWX | PAGE_PRESENT);
+		phy_mem_start += PAGE_SIZE;
+		vir_mem_start += PAGE_SIZE;
+	}
+
+    /* 创建进程 0 堆栈（从 0xBFFFFFF0 开始）
+     *
+     * 内核堆栈已使用的空间远小于一页，因此仅为用户态堆栈分配一页虚拟页。
+     * 为了确保切换到应用态后正确执行，将内核态堆栈的数据全部拷贝到用用户态堆栈中。
+     */
+    get_empty_page(0xBFFFEFF0, USER_RW);
+    get_empty_page(0xBFFFF000, USER_RW);
+    invalidate();
+    memcpy((void*)0xBFFFEFF0, (const void *)FLOOR(tf->gpr.sp), PAGE_SIZE);
+    tf->gpr.sp =  0xBFFFFFF0 - ((uint64_t)boot_stack_top - tf->gpr.sp);
     save_context(tf);
     return 0;
 }

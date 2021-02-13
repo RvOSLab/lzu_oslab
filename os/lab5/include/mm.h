@@ -11,9 +11,9 @@
 #define MEM_START       0x80000000                  /**< 物理内存地址空间 */
 #define MEM_END         0x88000000
 #define SBI_START       0x80000000                  /**< SBI 占据的地址空间 */
-#define SBI_END         0x82000000                  /**< 用户程序可用的物理内存地址空间 */
+#define SBI_END         0x80200000                  /**< 用户程序可用的物理内存地址空间 */
 #define HIGH_MEM        0x88000000
-#define LOW_MEM         0x83000000
+#define LOW_MEM         0x82000000
 #define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 */
 #define PAGING_PAGES    (PAGING_MEMORY >> 12)       /**< 系统物理内存页数 */
 #define MAP_NR(addr)    (((addr)-MEM_START) >> 12)  /**< 物理地址 addr 在 mem_map[] 中的下标 */
@@ -87,12 +87,14 @@ uint64_t get_free_page(void);
 void get_empty_page(uint64_t addr, uint8_t flag);
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();
-void map_kernel(uint8_t flag);
+void map_kernel();
 void active_mapping();
 // void wp_page_handler(struct trapframe *frame) /* 在完成进程后实现 */
 
 /**
  * @file mm.h
+ * @brief 声明内存模块
+ *
  * 在阅读代码时要分清物理地址和虚拟地址，否则会导致混乱。
  * 本模块注释中专门写了函数参数是物理地址还是虚拟地址，如果没有写，默认是虚拟地址。
  */

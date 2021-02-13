@@ -6,7 +6,6 @@
 #include <kdebug.h>
 #include <syscall.h>
 
-extern int sys_fork(struct trapframe *);
 extern int sys_init(struct trapframe *);
 
 /**
@@ -14,4 +13,4 @@ extern int sys_init(struct trapframe *);
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork};
+fn_ptr syscall_table[] = {sys_init};

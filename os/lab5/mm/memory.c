@@ -1,5 +1,9 @@
 /**
- * 实现虚拟内存
+ * @file memory.c
+ * @brief 实现虚拟内存
+ *
+ * 在阅读代码时要分清物理地址和虚拟地址，否则会导致混乱。
+ * 本模块注释中专门写了函数参数是物理地址还是虚拟地址，如果没有写，默认是虚拟地址。
  */
 #include <assert.h>
 #include <kdebug.h>
@@ -23,7 +27,7 @@ uint8_t mem_map[PAGING_PAGES] = { 0 };
  *
  * 本函数仅创建映射，不会修改 mem_map[] 引用计数
  */
-void map_kernel(uint8_t flag)
+void map_kernel()
 {
 	uint64_t phy_mem_start;
 	uint64_t phy_mem_end;
@@ -33,7 +37,7 @@ void map_kernel(uint8_t flag)
 	phy_mem_end = DEVICE_END;
 	vir_mem_start = DEVICE_ADDRESS;
 	while (phy_mem_start < phy_mem_end) {
-		put_page(phy_mem_start, vir_mem_start, flag | PAGE_PRESENT);
+		put_page(phy_mem_start, vir_mem_start, KERN_RW | PAGE_PRESENT);
 		phy_mem_start += PAGE_SIZE;
 		vir_mem_start += PAGE_SIZE;
 	}
@@ -42,7 +46,7 @@ void map_kernel(uint8_t flag)
 	phy_mem_end = MEM_END;
 	vir_mem_start = KERNEL_ADDRESS;
 	while (phy_mem_start < phy_mem_end) {
-		put_page(phy_mem_start, vir_mem_start, flag | PAGE_PRESENT);
+		put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
 		phy_mem_start += PAGE_SIZE;
 		vir_mem_start += PAGE_SIZE;
 	}
@@ -87,13 +91,12 @@ void mem_init()
 		mem_map[i++] = UNUSED;
 
 	/* 进入 main() 时开启了 RV39 大页模式，暂时创造一个虚拟地址到物理地址的映射让程序跑起来。
-     * 现在，我们要新建一个页目录并开启页大小为 4K 的 RV39 分页。
-     */
+     * 现在，我们要新建一个页目录并开启页大小为 4K 的 RV39 分页。*/
 	uint64_t page = get_free_page();
 	assert(page, "mem_init(): fail to allocate page");
 	uint64_t *kernel_pg_dir = (uint64_t *)VIRTUAL(page);
 	pg_dir = kernel_pg_dir;
-	map_kernel(KERN_RWX);
+	map_kernel();
 	active_mapping();
 }
 
@@ -171,7 +174,7 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 			uint64_t tmp;
 			assert(tmp = get_free_page(),
 			       "put_page(): Memory exhausts");
-			page_table[idx] = (tmp >> 2) | 0x11;
+			page_table[idx] = (tmp >> 2) | 0x01;
 		}
 		page_table =
 			(uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
@@ -191,7 +194,7 @@ void get_empty_page(uint64_t addr, uint8_t flag)
 {
 	uint64_t tmp;
 	assert(tmp = get_free_page(), "get_empty_page(): Memory exhausts");
-	put_page(tmp, addr, flag);
+	put_page(tmp, addr, flag | PAGE_PRESENT);
 }
 
 /**
@@ -318,7 +321,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 		if (!to_pg_dir[dest_dir_idx]) {
 			uint64_t tmp = get_free_page();
 			assert(tmp, "copy_page_tables(): memory exhausts");
-			to_pg_dir[dest_dir_idx] = (tmp >> 2) | 0x11;
+			to_pg_dir[dest_dir_idx] = (tmp >> 2) | 0x01;
 		}
 
 		uint64_t cnt;
@@ -344,7 +347,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 				uint64_t tmp = get_free_page();
 				assert(tmp,
 				       "copy_page_tables(): Memory exhausts");
-				*dest_pg_tb1 = (tmp >> 2) | 0x11;
+				*dest_pg_tb1 = (tmp >> 2) | 0x01;
 			} else {
 				panic("copy_page_tables(): page table %p already exist",
 				      GET_PAGE_ADDR(*dest_pg_tb1));
@@ -384,7 +387,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 					assert(tmp,
 					       "copy_page_tables(): memory exhausts");
 					to_pg_dir[dest_dir_idx] =
-						(tmp >> 2) | 0x11;
+						(tmp >> 2) | 0x01;
 				}
 				dest_pg_tb1 = (uint64_t *)VIRTUAL(
 					GET_PAGE_ADDR(to_pg_dir[dest_dir_idx]));
@@ -541,7 +544,7 @@ void mem_test()
 	uint64_t *new_pg_dir = (uint64_t *)VIRTUAL(page);
 	uint64_t *old_pg_dir = pg_dir;
 	pg_dir = new_pg_dir;
-	map_kernel(KERN_RWX);
+	map_kernel();
 	pg_dir = old_pg_dir;
 	copy_page_tables(0x200000, new_pg_dir, 0x200000, 1000 * PAGE_SIZE);
 

@@ -75,6 +75,7 @@ UECALL = 8
 .macro RESTORE_ALL
     mv sp, a0
     addi a0, a0, 36 * XLENB
+    csrw sscratch, a0
 
     # 恢复除了 x2 (sp) 以外的其余通用寄存器
     LOAD x1, 1
@@ -119,7 +120,6 @@ UECALL = 8
 
     # 最后恢复栈指针(x2, sp)为原指针（无论是用户态还是内核态）
     LOAD x2, 2
-    csrw sscratch, x2
 .endm
 
 # 代码段

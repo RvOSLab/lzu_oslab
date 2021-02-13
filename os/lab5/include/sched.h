@@ -3,6 +3,7 @@
 #include <mm.h>
 #include <trap.h>
 #include <riscv.h>
+#include <kdebug.h>
 
 #define NR_TASKS             512                              /**< 系统最大进程数 */
 
@@ -36,19 +37,24 @@ struct task_struct {
 
 /**
  * @brief 初始化进程 0
- * 手动触发中断，调用 sys_init() 初始化进程0
+ * 手动进入中断处理，调用 sys_init() 初始化进程0
  * @see sys_init()
+ * @note 这个宏使用了以下三个 GNU C 拓展：
+ *       - [Locally Declared Labels](https://gcc.gnu.org/onlinedocs/gcc/Local-Labels.html)
+ *       - [Labels as Values](https://gcc.gnu.org/onlinedocs/gcc/Labels-as-Values.html)
+ *       - [Statements and Declarations in Expressions](https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html#Statement-Exprs)
  */
-#define init_task0()                                                 \
-({                                                                   \
-    __label__ ret;                                                   \
-    write_csr(scause, CAUSE_USER_ECALL);                             \
-    set_csr(sstatus, SSTATUS_SPP);                                   \
-    set_csr(sstatus, SSTATUS_SPIE);                                  \
-    write_csr(sepc, &&ret - 4);                                      \
-    register uint64_t a7 asm("a7") = 0;                              \
-    __asm__ __volatile__("call __alltraps \n\t" ::"r"(a7):"memory"); \
-    ret: ;                                                           \
+#define init_task0()                                                        \
+({                                                                          \
+    __label__ ret;                                                          \
+    write_csr(scause, CAUSE_USER_ECALL);                                    \
+    clear_csr(sstatus, SSTATUS_SPP);                                        \
+    set_csr(sstatus, SSTATUS_SPIE);                                         \
+    set_csr(sstatus, SSTATUS_UPIE);                                         \
+    write_csr(sepc, &&ret - 4 - (SBI_END + LINEAR_OFFSET - 0x10000));       \
+    register uint64_t a7 asm("a7") = 0;                                     \
+    __asm__ __volatile__("call __alltraps \n\t" ::"r"(a7):"memory");        \
+    ret: ;                                                                  \
 })
 
 /**

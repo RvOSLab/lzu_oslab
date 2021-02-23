@@ -1,3 +1,41 @@
+/**
+ * @file sched.h
+ * @brief 声明进程相关的数据类型和宏
+ *
+ * 进程拥有 4G 虚拟地址空间，并被划分成多个段，布局如下：
+ * 0xFFFFFFFF----->+--------------+
+ *                 |              |
+ *                 |              |
+ *                 |    Kernel    |
+ *                 |              |
+ *                 |              |
+ * 0xC0000000----->---------------+
+ *                 |    Hole      |
+ * 0xBFFFFFF0----->---------------+
+ *                 |    Stack     |
+ *                 |      +       |
+ *                 |      |       |
+ *                 |      v       |
+ *                 |              |
+ *                 |              |
+ *                 |      ^       |
+ *                 |      |       |
+ *                 |      +       |
+ *                 | Dynamic data |
+ *        brk----->+--------------+
+ *                 |              |
+ *                 | Static data  |
+ *                 |              |
+ *                 +--------------+
+ *                 |              |
+ *                 |     Text     |
+ *                 |              |
+ * 0x00010000----->---------------+
+ *                 |   Reserved   |
+ * 0x00000000----->+--------------+
+ *
+ * 段与段之间不一定是相连的，中间可能存在空洞。
+ */
 #ifndef __SCHED_H__
 #define __SCHED_H__
 #include <mm.h>
@@ -18,22 +56,39 @@
 #define TASK_STOPPED         4                                /**< 进程停止 */
 /// @}
 
+/// @{ 进程内存布局
+#define START_CODE 0x10000                                    /**< 代码段起始地址 */
+#define START_DATA 0x10000000                                 /**< 数据段起始地址 */
+#define START_STACK 0xBFFFFFF0                                /**< 堆起始地址（最高地址处） */
+#define START_KERNEL 0xC0000000                               /**< 内核区起始地址 */
+/// @}
+
 typedef struct trapframe context;                             /**< 处理器上下文 */
 
 /** 进程控制块 PCB(Process Control Block) */
 struct task_struct {
-	uint32_t state;                                           /**< 进程调度状态 */
-	uint32_t counter;                                         /**< 时间片大小 */
-	uint32_t priority;                                        /**< 进程优先级 */
-	struct task_struct	*p_pptr, *p_cptr, *p_ysptr, *p_osptr; /**< 父、子、兄、弟进程 */
-	uint32_t timeout;
-	uint32_t utime,stime;                                     /**< 用户态、内核态耗时 */
-    uint32_t cutime,cstime;                                   /**< 进程及其子进程内核、用户态总耗时 */
-    uint32_t start_time;                                      /**< 进程创建的时间 */
-    context context;                                          /**< 处理器状态 */
-    uint64_t *pg_dir;                                         /**< 页目录地址 */
+    uint32_t exit_code;           /**< 返回码 */
+    uint32_t pid;                 /**< 进程 ID */
+    uint32_t pgid;                /**< 进程组 */
+	uint64_t start_code;          /**< 代码段起始地址 */
+    uint64_t start_data;          /**< 数据段起始地址 */
+    uint64_t end_data;            /**< 数据段结束地址 */
+    uint64_t brk;                 /**< 堆结束地址 */
+    uint64_t start_stack;         /**< 堆起始地址 */
+    uint64_t start_kernel;        /**< 内核区起始地址 */
+	uint32_t state;               /**< 进程调度状态 */
+	uint32_t counter;             /**< 时间片大小 */
+	uint32_t priority;            /**< 进程优先级 */
+	struct task_struct	*p_pptr;  /**< 父进程 */
+    struct task_struct *p_cptr;   /**< 子进程 */
+    struct task_struct *p_ysptr;  /**< 创建时间最晚的兄弟进程 */
+    struct task_struct *p_osptr;  /**< 创建时间最早的兄弟进程 */
+	uint32_t utime,stime;         /**< 用户态、内核态耗时 */
+    uint32_t cutime,cstime;       /**< 进程及其子进程内核、用户态总耗时 */
+    size_t start_time;            /**< 进程创建的时间 */
+    uint64_t *pg_dir;             /**< 页目录地址 */
+    context context;              /**< 处理器状态 */
 };
-
 
 /**
  * @brief 初始化进程 0
@@ -51,7 +106,7 @@ struct task_struct {
     clear_csr(sstatus, SSTATUS_SPP);                                        \
     set_csr(sstatus, SSTATUS_SPIE);                                         \
     set_csr(sstatus, SSTATUS_UPIE);                                         \
-    write_csr(sepc, &&ret - 4 - (SBI_END + LINEAR_OFFSET - 0x10000));       \
+    write_csr(sepc, &&ret - 4 - (SBI_END + LINEAR_OFFSET - START_CODE));    \
     register uint64_t a7 asm("a7") = 0;                                     \
     __asm__ __volatile__("call __alltraps \n\t" ::"r"(a7):"memory");        \
     ret: ;                                                                  \
@@ -77,8 +132,5 @@ size_t schedule();
 void save_context(context *context);
 context* push_context(char *stack, context *context);
 context * switch_to(context *context, size_t task);
-/**
- * @file sched.h
- * @brief 声明进程相关的数据类型和宏
- */
+
 #endif /* end of include guard: __SCHED_H__ */

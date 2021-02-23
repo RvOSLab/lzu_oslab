@@ -2,17 +2,17 @@
 #define __MM_H__
 #include <stddef.h>
 /// @{ @name 物理内存布局和物理地址操作
-#define PAGE_SIZE 4096       
+#define PAGE_SIZE 4096
 #define FLOOR(addr) ((addr) / PAGE_SIZE * PAGE_SIZE)/**< 向下取整到 4K 边界 */
 #define CEIL(addr)               \
-    (((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE) /**< 向上取整到 4K 边界 */ 
+    (((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE) /**< 向上取整到 4K 边界 */
 #define DEVICE_START    0x10000000                  /**< 设备树地址空间，暂时不使用 */
-#define DEVICE_END      0x10010000                 
+#define DEVICE_END      0x10010000
 #define MEM_START       0x80000000                  /**< 物理内存地址空间 */
 #define MEM_END         0x88000000
 #define SBI_START       0x80000000                  /**< SBI 占据的地址空间 */
-#define SBI_END         0x82000000                  /**< 用户程序可用的物理内存地址空间 */
-#define HIGH_MEM        0x88000000                  
+#define SBI_END         0x80200000                  /**< 用户程序可用的物理内存地址空间 */
+#define HIGH_MEM        0x88000000
 #define LOW_MEM         0x83000000
 #define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 */
 #define PAGING_PAGES    (PAGING_MEMORY >> 12)       /**< 系统物理内存页数 */
@@ -32,7 +32,7 @@
 /// @}
 
 /// @{ @name 页表项标志位
-#define PAGE_DIRTY        0x80                        
+#define PAGE_DIRTY        0x80
 #define PAGE_ACCESSED    0x40
 #define PAGE_USER        0x10
 #define PAGE_READABLE   0x02

@@ -5,6 +5,7 @@
 #include <mm.h>
 int main()
 {
+    kputs("\nLZU OS STARTING....................");
     print_system_infomation();
     mem_init();
     mem_test();

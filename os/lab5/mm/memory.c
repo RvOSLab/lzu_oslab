@@ -54,6 +54,7 @@ void map_kernel()
 
 /**
  * @brief 激活当前进程页表
+ * @note 置位 status 寄存器 SUM 标志位，允许内核读写用户态内存
  */
 void active_mapping()
 {
@@ -76,7 +77,6 @@ void active_mapping()
  */
 void mem_init()
 {
-	/* 初始化 mem_map[] */
 	size_t i;
 	for (i = 0; i < PAGING_PAGES; i++)
 		mem_map[i] = USED;
@@ -138,7 +138,8 @@ void free_page(uint64_t addr)
  */
 uint64_t get_free_page(void)
 {
-	int i = MAP_NR(HIGH_MEM) - 1;
+    /* fix warrning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+	size_t i = MAP_NR(HIGH_MEM) - 1;
 	for (; i >= MAP_NR(LOW_MEM); --i) {
 		if (mem_map[i] == 0) {
 			mem_map[i] = 1;
@@ -221,7 +222,7 @@ void free_page_tables(uint64_t from, uint64_t size)
 	uint64_t vpns[3] = { GET_VPN1(from), GET_VPN2(from), GET_VPN3(from) };
 	uint64_t dir_idx = vpns[0];
 	uint64_t dir_idx_end = dir_idx + ((size * 0x200000) / 0x40000000 - 1) +
-			       ((size * 0x200000) % 0x3FFFFFFF != 0);
+			       ((size * 0x200000) % 0x40000000 != 0);
 	assert(dir_idx_end < 512,
 	       "free_page_tables(): call with wrong argument");
 	for (; dir_idx <= dir_idx_end; ++dir_idx) {
@@ -276,13 +277,20 @@ void free_page_tables(uint64_t from, uint64_t size)
  * 本函数并没有拷贝内存，而是让两段虚拟地址空间共享同一映射。`size`将被对齐到 2M，
  * 每次拷贝 N * 2M 地址空间（二级页表项映射的内存大小）。
  *
- * @param from 源
+ * 算法：
+ *     将页表看成一棵高度为 3 的多叉树。将当前进程虚拟地址 [from, from + size) 拷贝到
+ *     目标进程虚拟地址空间 [to, to + size) 就是层次遍历两颗树，将 [from, from + size)
+ *     对应的页表项拷贝到 [to, to + size) 对应的页表项中。
+ *
+ *     实现的关键在于维护当前进程和目标进程虚拟地址（页表项）之间的对应关系。
+ *
+ * @param from 当前进程虚拟地址
  * @param to_pg_dir 目的进程页目录 **线性映射虚拟地址**
- * @param from 目的地
+ * @param from 目标进程虚拟地址
  * @param size 要共享的字节数
- * @return 由于没有实现交换，因此总是成功，返回 0
- * @todo  重构接口，将`to_pg_dir`改为进程控制块指针
- * @see free_page_tables(), map_kernel()
+ * @return 由于滥用`assert()`，导致返回值失效，暂时返回 1
+ * @todo  重构，解决滥用`assert()`的问题，当出错时清理资源并返回 0
+ * @see free_page_tables(), map_kernel()，copy_mem()
  * @note
  * - `to`开始的 N * 2M 虚拟地址空间必须是 **未映射的**,否则 panic。
  * - 两虚拟地址空间要么都是用户空间，要么都是内核空间
@@ -303,19 +311,26 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 	uint64_t src_dir_idx = src_vpns[0];
 	uint64_t src_dir_idx_end = src_dir_idx +
 				   ((size * 0x200000) / 0x40000000 - 1) +
-				   ((size * 0x200000) % 0x3FFFFFFF != 0);
+				   ((size * 0x200000) % 0x40000000 != 0);
 	uint64_t dest_vpns[3] = { GET_VPN1(to), GET_VPN2(to), GET_VPN3(to) };
 	uint64_t dest_dir_idx = dest_vpns[0];
 	uint64_t dest_dir_idx_end = dest_dir_idx +
 				    ((size * 0x200000) / 0x40000000 - 1) +
-				    ((size * 0x200000) % 0x3FFFFFFF != 0);
+				    ((size * 0x200000) % 0x40000000 != 0);
 	assert(src_dir_idx_end < 512,
 	       "copy_page_tables(): called with wrong argument");
 	assert(dest_dir_idx_end < 512,
 	       "copy_page_tables(): called with wrong argument");
 
-	for (; src_dir_idx <= src_dir_idx_end; ++src_dir_idx) {
+	for (; src_dir_idx <= src_dir_idx_end; ++src_dir_idx, ++src_vpns[0]) {
 		if (!pg_dir[src_dir_idx]) {
+            dest_vpns[1] += 512 - src_vpns[1];
+            if (dest_vpns[1] >= 512) {
+                dest_vpns[1] %= 512;
+                ++dest_vpns[0];
+            }
+            dest_dir_idx = dest_vpns[0];
+            assert(dest_dir_idx < 512, "exceed boundary of to_pg_dir[]");
 			continue;
 		}
 		if (!to_pg_dir[dest_dir_idx]) {
@@ -339,8 +354,22 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 						to_pg_dir[dest_dir_idx])) +
 					dest_vpns[1];
 
-		for (; cnt-- > 0; ++src_pg_tb1) {
+		for (; cnt-- > 0; ++src_pg_tb1, ++src_vpns[1]) {
 			if (!*src_pg_tb1) {
+                ++dest_vpns[1];
+                ++dest_pg_tb1;
+                if (dest_vpns[1] >= 512) {
+                    dest_vpns[1] = 0;
+                    ++dest_vpns[0];
+                    ++dest_dir_idx;
+                    assert(dest_dir_idx < 512,
+                          "exceed boundary of to_pg_dir[]");
+                    assert(dest_dir_idx == dest_vpns[0],
+                           "dest_dir_idx don't sync with dest_vpns[]");
+		            dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
+						    to_pg_dir[dest_dir_idx])) +
+					    dest_vpns[1];
+                }
 				continue;
 			}
 			if (!*dest_pg_tb1) {
@@ -377,22 +406,17 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 			}
 			++dest_pg_tb1;
 			++dest_vpns[1];
-			assert(dest_vpns[1] < 512,
-			       "copy_page_tables(): dest_vpns[] error");
-			if (dest_pg_tb1 > (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
-						  to_pg_dir[dest_vpns[0]])) +
-						  511) {
-				if (!to_pg_dir[++dest_dir_idx]) {
-					uint64_t tmp = get_free_page();
-					assert(tmp,
-					       "copy_page_tables(): memory exhausts");
-					to_pg_dir[dest_dir_idx] =
-						(tmp >> 2) | 0x01;
-				}
-				dest_pg_tb1 = (uint64_t *)VIRTUAL(
-					GET_PAGE_ADDR(to_pg_dir[dest_dir_idx]));
-				dest_vpns[1] = 0;
-			}
+            assert(dest_vpns[0] == dest_dir_idx,
+                    "dest_dir_idx don't sync with dest_vpns[0]");
+            if (dest_vpns[1] >= 512) {
+                dest_vpns[1] = 0;
+                ++dest_vpns[0];
+                ++dest_dir_idx;
+                assert(dest_dir_idx < 512, "exceed boundary of to_pg_dir[]");
+                dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
+						to_pg_dir[dest_dir_idx])) +
+					dest_vpns[1];
+            }
 		}
 		src_vpns[1] = 0;
 	}
@@ -425,7 +449,9 @@ void un_wp_page(uint64_t *table_entry)
 
 /**
  * @brief 取消某地址的写保护
+ *
  * 地址必须合法，否则 panic
+ *
  * @param addr 虚拟地址
  */
 void write_verify(uint64_t addr)
@@ -434,27 +460,14 @@ void write_verify(uint64_t addr)
 	uint64_t *page_table = pg_dir;
 	for (size_t level = 0; level < 2; ++level) {
 		uint64_t idx = vpns[level];
-		if (!page_table[idx]) {
-			panic("write_verify(): addr %p is not available", addr);
-		}
+		assert (page_table[idx],
+                "write_verify(): addr %p is not available", addr);
 		page_table =
 			(uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
 	}
 	un_wp_page(&page_table[vpns[2]]);
 }
 
-/**
- *@brief 写保护异常处理函数
- *@todo 实现进程后完成该函数
- */
-/*
- * void wp_page_handler(struct trapframe *frame)
- * {
- *     uint64_t addr = frame->stval;
- *     [> 检测该地址是否位于进程的只读段，如果是，则直接退出 <]
- *     write_verify(addr);
- * }
- */
 
 /**
  * @brief 测试内存模块是否正常
@@ -505,12 +518,12 @@ void mem_test()
 
     /* 分配 1000 个物理页并映射到虚拟地址 0x200000 开始的 1000 个虚拟页，
      * 这个虚拟地址空间可以看成一个进程的虚拟地址空间 */
-	uint64_t page_traker[1000];
+	uint64_t page_tracker[1000];
 	uint64_t p = 0x200000;
 	for (size_t i = 0; i < 1000; ++i) {
-		page_traker[i] = get_free_page();
-		assert(page_traker[i]);
-		put_page(page_traker[i], p, USER_RWX | PAGE_PRESENT);
+		page_tracker[i] = get_free_page();
+		assert(page_tracker[i]);
+		put_page(page_tracker[i], p, USER_RWX | PAGE_PRESENT);
 		p += PAGE_SIZE;
 	}
 
@@ -532,7 +545,7 @@ void mem_test()
 				       1,
 			       "page table reference is wrong");
 		}
-		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_tracker[i],
 		       "virtual address %p maps to physical address %p", addr,
 		       GET_PAGE_ADDR(page_table[vpns[2]]));
 	}
@@ -540,7 +553,7 @@ void mem_test()
     /* 新建一个页目录（模拟创建新进程），将当前“进程”对应的虚拟地址空间 [0x200000, 0x200000 + 1000*PAGE_SIZE)
      * 拷贝到新“进程”应的虚拟地址空间 [0x200000, 0x200000 + 1000*PAGE_SIZE) */
 	uint64_t page = get_free_page();
-	assert(page);
+	assert(page != 0, "failed to allocate memory");
 	uint64_t *new_pg_dir = (uint64_t *)VIRTUAL(page);
 	uint64_t *old_pg_dir = pg_dir;
 	pg_dir = new_pg_dir;
@@ -566,11 +579,11 @@ void mem_test()
 				       1,
 			       "page table reference is wrong");
 		}
-		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_tracker[i],
 		       "virtual address %p maps to physical address %p", addr,
 		       GET_PAGE_ADDR(page_table[vpns[2]]));
         /* 两个“进程”的虚拟地址同时映射到一个物理地址 */
-		assert(mem_map[MAP_NR(page_traker[i])] == 2,
+		assert(mem_map[MAP_NR(page_tracker[i])] == 2,
 		       "page reference is wrong");
         /* 共享同一物理地址后进行写保护 */
 		assert(GET_FLAG(page_table[vpns[2]]) ==
@@ -598,7 +611,7 @@ void mem_test()
 				       1,
 			       "page table reference is wrong");
 		}
-		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_tracker[i],
 		       "virtual address %p maps to physical address %p", addr,
 		       GET_PAGE_ADDR(page_table[vpns[2]]));
 		assert(mem_map[MAP_NR(GET_PAGE_ADDR(page_table[vpns[2]]))] == 2,
@@ -631,7 +644,7 @@ void mem_test()
 				       1,
 			       "page table reference is wrong");
 		}
-		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_traker[i],
+		assert(GET_PAGE_ADDR(page_table[vpns[2]]) == page_tracker[i],
 		       "virtual address %p maps to physical address %p", addr,
 		       GET_PAGE_ADDR(page_table[vpns[2]]));
         /* 新“进程”虚拟地址空间被释放，旧“进程”唯一地占有物理页 */

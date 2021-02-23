@@ -26,6 +26,7 @@ UECALL = 8
 
     STORE x1, 1
     csrr  x1, sscratch
+    csrw sscratch, sp      # 避免发生嵌套中断时 sp 指向用户态堆栈
     STORE x1, 2
     STORE x3, 3
     STORE x4, 4

@@ -42,6 +42,7 @@
 
 #define KERN_RWX       (PAGE_READABLE   | PAGE_WRITABLE | PAGE_EXECUTABLE)
 #define KERN_RW        (PAGE_READABLE   | PAGE_WRITABLE)
+#define KERN_RX        (PAGE_READABLE   | PAGE_EXECUTABLE)
 #define USER_RWX       (PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE | PAGE_EXECUTABLE)
 #define USER_RX        (PAGE_USER       | PAGE_READABLE | PAGE_EXECUTABLE)
 #define USER_RW        (PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE)
@@ -83,13 +84,14 @@ void mem_test();
 void mem_init();
 void free_page(uint64_t addr);
 void free_page_tables(uint64_t from, uint64_t size);
+int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to, uint64_t size);
 uint64_t get_free_page(void);
+void write_verify(uint64_t addr);
 void get_empty_page(uint64_t addr, uint8_t flag);
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();
 void map_kernel();
 void active_mapping();
-// void wp_page_handler(struct trapframe *frame) /* 在完成进程后实现 */
 
 /**
  * @file mm.h

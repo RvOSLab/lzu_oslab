@@ -19,12 +19,12 @@ _start:
     add t0, t0, t1
     jalr x0, 0(t0)
 
-    .section .bss
+    # .section .bss
+    .section .data
 boot_stack:
-    .space 4096 * 8
+    .space 4096 * 4
 boot_stack_top:
 
-    .section .data
 boot_pg_dir:
     .zero 2 * 8
     .quad (0x80000000 >> 2) | 0x0F

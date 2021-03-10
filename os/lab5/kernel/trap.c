@@ -30,7 +30,7 @@ static struct trapframe* syscall_handler(struct trapframe* tf);
 void wp_page_handler(struct trapframe* tf)
 {
     uint64_t badvaddr = tf->badvaddr;
-    if (badvaddr < current->brk)
+    if (badvaddr < current->start_data)
         panic("Try to write read-only memory");
     write_verify(badvaddr);
 }
@@ -109,7 +109,7 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
             size_t nr = schedule();
             tasks[0]->counter = 15;
             kprintf("switch to task %x\n", nr);
-            return switch_to(tf, nr);
+            switch_to(nr);
         }
 
         break;
@@ -194,7 +194,15 @@ struct trapframe* exception_handler(struct trapframe* tf)
         sbi_shutdown();
         break;
     case CAUSE_INSTRUCTION_PAGE_FAULT:
+        kputs("instruction page fault");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
     case CAUSE_LOAD_PAGE_FAULT:
+        kputs("load page fault");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
     case CAUSE_STORE_PAGE_FAULT:
         wp_page_handler(tf);
         break;

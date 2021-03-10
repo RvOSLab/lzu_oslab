@@ -92,7 +92,7 @@ long sys_fork(struct trapframe *tf)
     tasks[nr] = p;
     kprintf("process %x forks process %x\n", (uint64_t)current->pid, (uint64_t)nr);
 
-    /* 在此之间发生错误，将不会创建进程，因此系统处于安全状态 */
+    /* 在此之间发生错误，将不会创建进程，系统处于安全状态 */
     copy_mem(p);
 
     p->state = TASK_UNINTERRUPTIBLE;

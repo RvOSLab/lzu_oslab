@@ -63,7 +63,6 @@ void sched_init()
         .counter = 15,
         .priority = 15,
         .start_code = START_CODE,
-        .start_data = START_DATA,
         .start_stack = START_STACK,
         .start_kernel = START_KERNEL,
         .start_time = ticks /* 0 */,
@@ -76,23 +75,56 @@ void sched_init()
 /**
  * @brief 切换进程
  *
- * 保存当前进程处理器状态 `context`，切换到进程号为 `task` 的进程
+ * 保存当前进程处理器状态 `context`，切换到进程号为 `task` 的进程。
  *
  * @return 目标进程的处理器状态指针
- * @note 本函数可以正确处理切换到当前进程的情况
  */
-context* switch_to(context* context, size_t task)
+void switch_to(size_t task)
 {
     if (current == tasks[task]) {
-        return context;
+        return;
     }
 
-    save_context(context);
+    /*
+     * 本函数仅实现进程切换，发生进程切换时，进程从此函数切换到别的进程，
+     * 恢复时返回到本函数并直接退出，不做多余的事情。
+     *
+     * caller-saved registers 会在返回后由调用者恢复，callee-saved registers
+     * 会在本函数返回时恢复。因此，只要只需要存储必要的信息，确保退出函数栈帧
+     * 时能够恢复 callee-saved registers 即可，不需要保存全部通用寄存器。
+     *
+     */
+    register uint64_t t0 asm("t0") = (uint64_t)&current->context;
+    __asm__ __volatile__ (
+            "sd sp, 16(%0)\n\t"
+            "sd s0, 64(%0)\n\t"
+            "csrr t1, sstatus\n\t"
+            "sd t1, 256(%0)\n\t"
+            "csrr t1, stval\n\t"
+            "sd t1, 272(%0)\n\t"
+            "csrr t1, scause\n\t"
+            "sd t1, 280(%0)\n\t"
+            : /* empty output list */
+            : "r" (t0)
+            : "memory", "t1"
+            );
+    current->context.status |= SSTATUS_SPP; /* 确保切换后处理器处于 S-mode */
+    current->context.epc = (uint64_t)&&ret; /* 返回后直接退出函数 */
+
     current = tasks[task];
     pg_dir = current->pg_dir;
     active_mapping();
-    char* stack = (char*)current + PAGE_SIZE;
-    return push_context(stack, &current->context);
+    char* stack;
+
+    /* 用户态：内核堆栈为空 */
+    if (current->context.gpr.sp < START_KERNEL) {
+        stack  = (char*)current + PAGE_SIZE;
+    } else { /* 内核态：堆栈不为空 */
+        stack = (char*)current->context.gpr.sp;
+    }
+    __trapret(push_context(stack, &current->context));
+ret:
+    return;
 }
 
 /**
@@ -187,6 +219,10 @@ long sys_init(struct trapframe* tf)
     tf->gpr.sp = START_STACK - ((uint64_t)boot_stack_top - tf->gpr.sp);
     /* GCC 使用 s0 指向函数栈帧起始地址（高地址），因此这里也要修改，否则切换到进程0会访问到内核区 */
     tf->gpr.s0 = START_STACK;
+    current->start_rodata = (uint64_t)&rodata_start - (0xC0000000 - 0x00010000);
+    current->start_data = (uint64_t)&data_start - (0xC0000000 - 0x00010000);
+    current->end_data = (uint64_t)&kernel_end - (0xC0000000 - 0x00010000);
+    current->brk = (uint64_t)kernel_end - (0xC0000000 - 0x00010000);
     save_context(tf);
     return 0;
 }

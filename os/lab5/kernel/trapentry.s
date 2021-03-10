@@ -115,7 +115,7 @@ UECALL = 8
     csrw sepc, x31
     LOAD x31, 34
     csrw stval, x31
-    LOAD x31, 36
+    LOAD x31, 35
     csrw scause, x31
     LOAD x31, 31
 
@@ -135,6 +135,7 @@ __alltraps:
 __trapret:
     # 恢复上下文
     RESTORE_ALL
+    # csrrs x0, sstatus, 0x00000002
     # 从内核态中断中返回
     sret
 

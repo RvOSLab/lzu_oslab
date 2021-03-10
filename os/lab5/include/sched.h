@@ -58,7 +58,6 @@
 
 /// @{ 进程内存布局
 #define START_CODE 0x10000                                    /**< 代码段起始地址 */
-#define START_DATA 0x10000000                                 /**< 数据段起始地址 */
 #define START_STACK 0xBFFFFFF0                                /**< 堆起始地址（最高地址处） */
 #define START_KERNEL 0xC0000000                               /**< 内核区起始地址 */
 /// @}
@@ -71,6 +70,7 @@ struct task_struct {
     uint32_t pid;                 /**< 进程 ID */
     uint32_t pgid;                /**< 进程组 */
 	uint64_t start_code;          /**< 代码段起始地址 */
+    uint64_t start_rodata;        /**< 只读数据段起始地址 */
     uint64_t start_data;          /**< 数据段起始地址 */
     uint64_t end_data;            /**< 数据段结束地址 */
     uint64_t brk;                 /**< 堆结束地址 */
@@ -131,6 +131,5 @@ void sched_init();
 size_t schedule();
 void save_context(context *context);
 context* push_context(char *stack, context *context);
-context * switch_to(context *context, size_t task);
-
+void switch_to(size_t task);
 #endif /* end of include guard: __SCHED_H__ */

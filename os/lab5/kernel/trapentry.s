@@ -18,16 +18,27 @@ UECALL = 8
 # sscratch 保存内核态堆栈指针
 .macro SAVE_ALL
 
-    # 交换 sp 和 sscratch 寄存器
-    csrrw sp, sscratch, sp
-
-    # 将栈指针下移为TrapFrame预留足够的空间用于将所有通用寄存器值存入栈中（36个寄存器的空间）
+    slli sp, sp, 33
+    bltz sp, trap_from_kernel
+    srai sp, sp, 1
+    li gp, 1 << 63
+    or sp, sp, tp              # tp 在 RISCV 中有特殊作用，本内核没有使用 tp，因此可以任意修改。
+                               # 这是技穷后的无奈之举，只要能找到别的办法，就绝不修改 tp 寄存器。
+    srli sp, sp, 32
+    csrrw sp, sscratch, sp     # 交换 sp 和 sscratch 寄存器
     addi sp, sp, -36*XLENB
-
     STORE x1, 1
-    csrr  x1, sscratch
-    csrw sscratch, sp      # 避免发生嵌套中断时 sp 指向用户态堆栈
+    csrr x1, sscratch
     STORE x1, 2
+    jal x0, save_registers
+trap_from_kernel:
+    srai sp, sp, 1
+    srli sp, sp, 32
+    addi sp, sp, -36*XLENB
+    STORE x1, 1
+    STORE x2, 2
+    # 将栈指针下移为TrapFrame预留足够的空间用于将所有通用寄存器值存入栈中（36个寄存器的空间）
+save_registers:
     STORE x3, 3
     STORE x4, 4
     STORE x5, 5
@@ -74,6 +85,9 @@ UECALL = 8
 
 # 定义宏：恢复寄存器
 .macro RESTORE_ALL
+    # 假如在用户态发生中断，sp 小于 0xC0000000，内核没有这个映射，
+    # 无法访问用户态虚拟页。因此会发生死锁，每次访问都会触发异常，
+    # 再次执行 __alltraps，无限重复
     mv sp, a0
     addi a0, a0, 36 * XLENB
     csrw sscratch, a0
@@ -135,7 +149,6 @@ __alltraps:
 __trapret:
     # 恢复上下文
     RESTORE_ALL
-    # csrrs x0, sstatus, 0x00000002
     # 从内核态中断中返回
     sret
 

@@ -28,7 +28,9 @@ static const struct MemmapEntry {
 };
 ```
 
-本实验中，RAM 地址从`0x8000_0000`到`0x8800_0000`，共 128M。其中`0x8000_0000`到`0x8200_0000`存放 SBI，`0x8200_0000`开始存放内核，内核之后的地址空间由用户进程使用。地址空间底部的空洞和物理地址不用深究。
+本实验中，RAM 地址从`0x8000_0000`到`0x8800_0000`，共 128M。其中`0x8000_0000`到`0x8200_0000`存放 SBI，`0x8200_0000`开始存放内核，内核之后的地址空间由用户进程使用。
+
+物理地址空间中的空洞没有任何意义，不能使用。除 RAM 外，物理地址空间中还有大量内存映射 IO，我们会在后续的实验中介绍。这里通过查看 qemu 源代码获取物理地址空间布局，实际上 RISCV 使用设备树（*device tree*）协议来描述硬件信息，并在启动后扫描硬件并将结果以 DTB（*Device Tree Blob*)格式写入到物理内存中，将内存起始地址传入 a1 寄存器。内核可以解析 DTB 来获取硬件信息，避免硬编码。设备树协议将在后续实验中介绍。
 
 ```c
 // include/mm.h: 定义物理内存空间相关的宏
@@ -83,10 +85,10 @@ extern unsigned char mem_map[PAGING_PAGES];
 void mem_init()
 {
 	size_t i = MAP_NR(HIGH_MEM);
-	/** 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
+	/* 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
 	while (i > MAP_NR(LOW_MEM))
 		mem_map[--i] = UNUSED;
-	/** 设SBI与内核内存空间[MEM_START,LOW_MEM)的内存空间为不可用 */
+	/* 设SBI与内核内存空间[MEM_START,LOW_MEM)的内存空间为不可用 */
 	while (i > MAP_NR(MEM_START))
 		mem_map[--i] = USED;
 }

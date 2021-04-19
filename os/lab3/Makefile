@@ -17,8 +17,8 @@ KERN_ASM := kernel.asm
 # -fno-stack-protector 不使用栈保护
 # -fno-strict-aliasing 允许未定义的类型间强制转换
 # -nostdinc 不使用系统标准库
-# -I . 优先在当前目录搜索头文件
-CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include 
+# -I include 优先在include目录搜索头文件
+CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include
 
 # .PHONY表示后面这些都是伪造的target，无论同名文件是否存在都会运行
 .PHONY : all build run run-gui symbol debug clean disassembly format
@@ -26,22 +26,22 @@ CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-stric
 # make 不加参数默认选取第一个 target 运行，此处 all 就是第一个 target，要想生成 target 需要先决条件 build（见下）
 all : build
 
-build : 
+build :
 	make -C init build
 	make -C lib build
 	make -C mm build
 	$(LD) -T tools/linker.ld -M=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o lib/libstd.a mm/libmm.a
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
-# bios 使用 QEMU 默认的 BIOS，即使用 QEMU 自带的 OpenSBI v0.7。
+# bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
 run : build
 	@$(QEMU) \
     		-machine virt \
     		-nographic \
     		-bios tools/fw_jump.bin \
-    		-device loader,file=$(KERN_IMG),addr=0x80200000 
+    		-device loader,file=$(KERN_IMG),addr=0x80200000
 
-# run-gui，启动图形形式的 QEMU 运行操作系统，需要 vncviewer 连接，先决条件是 build （见上）
+# run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build
 	@$(QEMU) \
     		-machine virt \
@@ -70,7 +70,7 @@ disassembly : $(KERN_BIN)
 	$(OBJDUMP) -d $(KERN_BIN) > $(KERN_ASM)
 
 # 格式化代码
-format: 
+format:
 	@find . -regex '.*\.\(c\|h\)' -exec clang-format -i {} \;
 # 清理编译产生的文件。
 # 命令前面加上“-”，即使这条命令出错，make 也会继续执行后续命令

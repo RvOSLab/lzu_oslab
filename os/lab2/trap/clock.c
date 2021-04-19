@@ -16,7 +16,7 @@ static uint64_t timebase;
 
 /**
  * @brief 获取开机后经过的时钟周期数
- * @return uint64_t 
+ * @return uint64_t
  */
 static inline uint64_t get_cycles()
 {
@@ -35,7 +35,7 @@ void clock_init()
     timebase = 100000;
     ticks = 0;
     /* 开启时钟中断（设置CSR_MIE） */
-    set_csr(0x104, 1 << 5);
+    set_csr(sie, 1 << 5);
     clock_set_next_event();
     kputs("Setup Timer!");
 }

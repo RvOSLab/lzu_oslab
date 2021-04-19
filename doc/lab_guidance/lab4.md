@@ -39,9 +39,9 @@ SHELL> perf stat -e dTLB-loads,dTLB-load-misses,iTLB-loads,iTLB-load-misses -p 5
 ^C
  Performance counter stats for process id '5200':
 
-     1,760,539,473      dTLB-loads:u                                                
+     1,760,539,473      dTLB-loads:u
          6,163,558      dTLB-load-misses:u        #    0.35% of all dTLB cache accesses
-         9,156,828      iTLB-loads:u                                                
+         9,156,828      iTLB-loads:u
          4,551,108      iTLB-load-misses:u        #   49.70% of all iTLB cache accesses
 
       21.205687845 seconds time elapsed
@@ -366,7 +366,5 @@ void active_mapping()
 
 1. RISCV 提供的虚拟地址空间是连续的吗？如果不是，请指出合法的虚拟地址空间？
 2. RISCV 提供的虚拟地址空间和进程的虚拟地址空间是一个东西吗？
-
 3. 为什么临时页表要有$[0x80000000, 0xC0000000) \longrightarrow[0x80000000, 0xC0000000)$的映射？
-
 4. 为什么要再分配页目录和页表，而不直接修改原来的页表？

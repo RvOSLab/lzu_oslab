@@ -77,6 +77,13 @@ void sched_init()
  *
  * 保存当前进程处理器状态 `context`，切换到进程号为 `task` 的进程。
  *
+ * 本函数仅实现进程切换，发生进程切换时，进程从此函数切换到别的进程，
+ * 恢复时返回到本函数并直接退出，不做多余的事情。
+ *
+ * caller-saved registers 会在返回后由调用者恢复，callee-saved registers
+ * 会在本函数返回时恢复。因此，只要只需要存储必要的信息，确保退出函数栈帧
+ * 时能够恢复 callee-saved registers 即可，不需要保存全部通用寄存器。
+ *
  * @return 目标进程的处理器状态指针
  */
 void switch_to(size_t task)
@@ -85,15 +92,7 @@ void switch_to(size_t task)
         return;
     }
 
-    /*
-     * 本函数仅实现进程切换，发生进程切换时，进程从此函数切换到别的进程，
-     * 恢复时返回到本函数并直接退出，不做多余的事情。
-     *
-     * caller-saved registers 会在返回后由调用者恢复，callee-saved registers
-     * 会在本函数返回时恢复。因此，只要只需要存储必要的信息，确保退出函数栈帧
-     * 时能够恢复 callee-saved registers 即可，不需要保存全部通用寄存器。
-     *
-     */
+
     register uint64_t t0 asm("t0") = (uint64_t)&current->context;
     __asm__ __volatile__ (
             "sd sp, 16(%0)\n\t"

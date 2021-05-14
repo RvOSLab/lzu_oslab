@@ -162,6 +162,7 @@ uint64_t get_free_page(void)
  * @param flag   标志位
  * @return 物理地址 page
  * @see panic(), map_kernel_page()
+ * @note 地址需要按页对齐
  */
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 {

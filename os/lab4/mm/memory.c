@@ -138,7 +138,6 @@ void free_page(uint64_t addr)
  */
 uint64_t get_free_page(void)
 {
-    /* fix warrning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 	size_t i = MAP_NR(HIGH_MEM) - 1;
 	for (; i >= MAP_NR(LOW_MEM); --i) {
 		if (mem_map[i] == 0) {

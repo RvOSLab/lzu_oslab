@@ -79,7 +79,7 @@ struct task_struct {
 	uint32_t state;               /**< 进程调度状态 */
 	uint32_t counter;             /**< 时间片大小 */
 	uint32_t priority;            /**< 进程优先级 */
-	struct task_struct	*p_pptr;  /**< 父进程 */
+	struct task_struct *p_pptr;   /**< 父进程 */
     struct task_struct *p_cptr;   /**< 子进程 */
     struct task_struct *p_ysptr;  /**< 创建时间最晚的兄弟进程 */
     struct task_struct *p_osptr;  /**< 创建时间最早的兄弟进程 */

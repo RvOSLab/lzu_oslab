@@ -21,7 +21,7 @@ UECALL = 8
     slli sp, sp, 33
     bltz sp, trap_from_kernel
     srai sp, sp, 1
-    li gp, 1 << 63
+    li tp, 1 << 63
     or sp, sp, tp              # tp 在 RISCV 中有特殊作用，本内核没有使用 tp，因此可以任意修改。
                                # 这是技穷后的无奈之举，只要能找到别的办法，就绝不修改 tp 寄存器。
     srli sp, sp, 32

@@ -1,103 +1,93 @@
 # Lab1
 
-本实验所需源码可从 [lzu_oslab库](https://github.com/LZU-OSLab/lzu_oslab.git) 下载。
+本实验所需源码可从 [lzu_oslab库](https://github.com/LZU-OSLab/lzu_oslab) 下载。
 
 ## 实验环境配置
 
 ### 一键部署
 
-目前一键部署脚本只通过了Ubuntu 18.04.5 x86测试。
+脚本适用于 Ubuntu 及其衍生发行版，目前一键部署脚本通过 `Ubuntu 18.04.5 x86`与 `Ubuntu 20.04 AMD64`测试。
 
 1. 下载源码
+
+   - 首先通过包管理器安装 `git`
+
+   ```shell
+   sudo apt update
+   sudo apt install git
+   ```
 
    - 任意选择目录，下载源代码
 
    ```shell
-   wget https://github.com/LZU-OSLab/lzu_oslab.git
+   git clone https://github.com/LZU-OSLab/lzu_oslab.git
    ```
-
 2. 进入目录，部署QEMU和GDB
 
-   - QEMU用于模拟RISC-V的运行环境。该实验的环境使用脚本`setup.sh`一键部署。
+   - QEMU用于模拟RISC-V的运行环境。该实验的环境使用脚本 `setup.sh`一键部署。
 
    ```shell
-   cd lzu_oslab	# 进入目录
-   ./setup.sh		# 一键部署
+   cd lzu_oslab    # 进入目录
+   ./setup.sh    # 一键部署
    ```
-
 
 ### 手动配置
 
 以下内容即setup.sh的实现逻辑。
 
-1. 安装环境部署和内核编译所必要的软件包。
+1. 安装内核编译与环境部署所必要的软件包并从 github 下载源代码。（初次使用sudo会需要输入密码）
 
    ```shell
-   sudo apt install -y build-essential pkg-config libglib2.0-dev libpixman-1-dev binutils libgtk-3-dev texinfo axel git make gcc-riscv64-linux-gnu libncurses5-dev tmux
-   ```
+   sudo apt update
+   sudo apt install -y build-essential gettext pkg-config libglib2.0-dev python3-dev libpixman-1-dev binutils libgtk-3-dev texinfo make gcc-riscv64-linux-gnu libncurses5-dev ninja-build tmux axel git
 
-2. 下载必要源码包，并解压。
+   git clone https://github.com/LZU-OSLab/lzu_oslab.git
+   ```
+2. 创建并进入资源目录，下载qemu与gdb的源码包，并解压。
 
    ```shell
-   mkdir resource	#创建资源目录
-   cd resource		#进入资源目录
-   
-   axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521696/download/qemu-5.1.0.tar.xz		#下载qemu安装包。axel 是一个多线程下载器，可以使用其他下载器。
-   axel -n 15 https://gitee.com/Hanabichan/lzu-oslab-resource/attach_files/521695/download/gdb-10.1.tar.xz			#下载gdb安装包
-   ```
+   mkdir resource
+   cd resource
 
-   ```shell
-   tar xJf qemu-5.1.0.tar.xz		#解压qemu包
-   tar xJf gdb-10.1.tar.xz			#解压gdb包
-   ```
+   #下载qemu安装包。axel 是一个多线程下载器，可以使用其他下载器，若出现错误或长时间无响应可以减少线程数（15）
+   axel -n 15 https://download.qemu.org/qemu-6.0.0.tar.xz
+   axel -n 15 https://mirror.lzu.edu.cn/gnu/gdb/gdb-10.2.tar.xz
 
+   # 解压
+   tar xJf qemu-6.0.0.tar.xz
+   tar xJf gdb-10.2.tar.xz
+   ```
 3. 编译并安装qemu虚拟机
 
-   - 进入目录
-
    ```shell
-   cd qemu-5.1.0
-   ```
+   cd qemu-6.0.0
 
-   - 指定系统版本，构建对应RISC-V架构的内容。
-- `./configure` 命令配置安装平台的目标特征。
-   - gtk是一套跨平台的图形用户界面工具包，配置后qemu支持使用GUI。
-
-   ```shell
+   # 使用 ./configure 配置安装平台的目标特征：指定系统版本，构建对应RISC-V架构的内容。
+   # GTK是一套跨平台的图形用户界面工具包，配置后qemu支持使用GUI。
    ./configure --target-list=riscv32-softmmu,riscv64-softmmu --enable-gtk
-   ```
 
-   - 编译并安装qemu。
-
-   - \$(nproc)是CPU核心数，-j表示多线程编辑并行编译，-j​\$(nproc)表示最多允许线程数和CPU核心数相同。
-
-   ```shell
-   make -j$(nproc)		#编译
-   sudo make install	#安装
+   # 编译并安装
+   # $(nproc)是CPU核心数，-j表示多线程编辑并行编译，-j$(nproc)表示最多允许线程数和CPU核心数相同。
+   make -j$(nproc)
+   sudo make install
    ```
 
 4. 编译并安装gdb
 
-   - 进入gdb的目录
-
    ```shell
-   cd ../gdb-10.1/
-   ```
-
-   - 指定编译内容，开启tui模式
-
-   ```shell
-   ./configure --target=riscv64-unknown-elf --enable-tui=yes
+   cd ../gdb-10.2/
+   
+   # 指定编译配置，开启tui（字符界面）模式，添加 Python3 调试脚本支持
+   ./configure --target=riscv64-unknown-elf --enable-tui=yes -with-python=python3
    make -j$(nproc)
-   sudo make install	#安装
+   sudo make install
    ```
-
 5. 打印版本信息，检查环境安装是否成功并删除安装包
 
    ```shell
-   riscv64-unknown-elf-gdb -v		# 打印gdb版本信息
-   qemu-system-riscv64 --version	# 打印qemu版本信息
-     
+   riscv64-unknown-elf-gdb -v    # 打印gdb版本信息
+   qemu-system-riscv64 --version    # 打印qemu版本信息
+
    cd ../..
    rm -rf resource
    ```
@@ -129,28 +119,24 @@ SBI 被加载到物理地址 0x80000000 处，通常占据 200 K 空间。SBI �
 
 1. **熟悉实验环境，使用 gdb 连接到 qemu 模拟器，反汇编并单步跟踪**
 
-在命令行中输入`make debug`即可进入调试界面。注意不要提前启动 tmux。<CTRL + A>X可以退出qemu。
-
-
+在命令行中输入 `make debug`即可进入调试界面。注意不要提前启动 tmux。<CTRL + A>X可以退出qemu。
 
 2. **了解 RISC-V 汇编，设置堆栈并跳转到 main 函数**
 
 **详细步骤：**
 
-1. 声明全局符号`boot_stack`和`_start`（入口函数）。伪指令`.globl`声明全局符号。
-2. 将`_start`放置在节`.text.entry`中。伪指令`.section`声明后续代码所在的节。
-3. 实现`_start`，将临时堆栈堆栈栈顶`boot_stack_top`地址加载到堆栈指针`sp`中。伪指令`la`将符号地址加载到寄存器中。
-4. 跳转到`main`函数。伪指令`call`用于调用函数。
-5. 分配堆栈`boot_stack`，栈顶为`boot_stack_top`，大小为 16 页（4096 *16 字节），该堆栈放置在`.bss`节中。伪指令`.section`声明后续数据所在的节，`.space`分配内存。
+1. 声明全局符号 `boot_stack`和 `_start`（入口函数）。伪指令 `.globl`声明全局符号。
+2. 将 `_start`放置在节 `.text.entry`中。伪指令 `.section`声明后续代码所在的节。
+3. 实现 `_start`，将临时堆栈堆栈栈顶 `boot_stack_top`地址加载到堆栈指针 `sp`中。伪指令 `la`将符号地址加载到寄存器中。
+4. 跳转到 `main`函数。伪指令 `call`用于调用函数。
+5. 分配堆栈 `boot_stack`，栈顶为 `boot_stack_top`，大小为 16 页（4096 *16 字节），该堆栈放置在 `.bss`节中。伪指令 `.section`声明后续数据所在的节，`.space`分配内存。
 
 **提示：**
 
-- 如果`main()`函数不打印任何字符，不论是否成功跳转到`main()`都不会有现象，只能通过 gdb 观察，可以考虑先在`main()`中打印`Hello LZU OS`，再写 entry.s。
+- 如果 `main()`函数不打印任何字符，不论是否成功跳转到 `main()`都不会有现象，只能通过 gdb 观察，可以考虑先在 `main()`中打印 `Hello LZU OS`，再写 entry.s。
 - 请不要有心理负担，本题只要求你有 RISC-V 的最基础知识，程序只有几行。
 
-
-
-3. **了解 RISC-V SBI，使用封装好的 ecall 检测环境，并打印`Hello LZU OS`。**
+3. **了解 RISC-V SBI，使用封装好的 ecall 检测环境，并打印 `Hello LZU OS`。**
 
 ecall 调用已经封装成了 C 函数，不用深究原理，直接调用即可。
 
@@ -159,10 +145,9 @@ ecall 调用已经封装成了 C 函数，不用深究原理，直接调用即�
 **提示：**
 
 - sbi.h 中定义了一些 SBI ID、拓展 ID 相关的宏，可以直接使用。
-
-- `struct sbiret`中的`error`成员为`SBI_SUCCESS`表示 ecall 调用成功。
-- `sbi_console_putchar()`提供了在调试控制台打印字符的功能。该函数打印的字符只能在终端下的 qemu 中看到。该函数可以打印换行符`\n`。
-- 实验到这里还没有实现格式化打印函数`printf()`，如果需要格式化打印（如打印数字），请手动完成字符串到数字的转换，或者自行实现`printf()`。
+- `struct sbiret`中的 `error`成员为 `SBI_SUCCESS`表示 ecall 调用成功。
+- `sbi_console_putchar()`提供了在调试控制台打印字符的功能。该函数打印的字符只能在终端下的 qemu 中看到。该函数可以打印换行符 `\n`。
+- 实验到这里还没有实现格式化打印函数 `printf()`，如果需要格式化打印（如打印数字），请手动完成字符串到数字的转换，或者自行实现 `printf()`。
 
 Makefile 中已经完成了项目的构建，以上两个题目都不需要修改 Makefile。
 
@@ -185,7 +170,6 @@ Makefile 中已经完成了项目的构建，以上两个题目都不需要修�
 理解 RISC-V 指令集和汇编语言：
 
 - [RISC-V Assembly Language](https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md)：RISC-V 官方的汇编语言教程。篇幅很短，都是例子，需要有 RISC-V 指令的基础。
-
 - [RISC-V Reader（中译版）](http://crva.ict.ac.cn/documents/RISC-V-Reader-Chinese-v2p1.pdf)：完整的 RISC-V 教程，包括主要的指令集拓展和汇编语言。该书假设读者有计算机组成原理、体系结构的知识，了解至少一种指令集，有使用汇编语言编程的经验。
 - 《计算机组成与设计-硬件/软件接口（原书第 5 版）》：RISC-V 的两位主要设计者撰写的教材。第二章介绍 RISC-V 指令，并使用 RISC-V 指令编程。该书假设读者没有任何关于计算机组成原理和汇编语言的知识。
 
@@ -198,14 +182,14 @@ Makefile 中已经完成了项目的构建，以上两个题目都不需要修�
 
 工具的使用：
 
-- [RMS's gdb Debugger Tutorial](http://www.unknownroad.com/rtfm/gdbtut/gdbtoc.html)：一个简单易读的 GDB 基础教程。这里的 RMS 似乎不是 Richard M Stallman（传奇黑客，自由软件之父，GNU 项目发起者，GCC/GDB/Emacs 等自由软件作者）。
+- [RMS&#39;s gdb Debugger Tutorial](http://www.unknownroad.com/rtfm/gdbtut/gdbtoc.html)：一个简单易读的 GDB 基础教程。这里的 RMS 似乎不是 Richard M Stallman（传奇黑客，自由软件之父，GNU 项目发起者，GCC/GDB/Emacs 等自由软件作者）。
 - [Debugging with GDB](https://sourceware.org/gdb/current/onlinedocs/gdb/): GDB 手册。介绍使用方法的篇幅只有100 多页，可以按需阅读。
 - [GNU Make Manual](https://www.gnu.org/software/make/manual/make.html): GNU make 使用手册。本实验编写的 Makefile 比较简单，读完前四章大部分内容和隐式规则即可。
 - [Tmux 配置：打造最适合自己的终端复用工具](https://www.cnblogs.com/zuoruining/p/11074367.html)：比较详细的 tmux 教程。
 
 **建议**：
 
-RISC-V 汇编远比 x86 简单，学习起来很快。RISC-V 是精简指令集，设计者认为大道至简，指令集只需要实现了最基础、最常用的功能，复杂指令应该由编译器设计者通过组合简单指令实现。为了方便汇编程序员编程，汇编器添加了很多伪指令来降低程序员的工作量。比如，RISC-V 指令集中没有将 32 位立即数加载到寄存器中的指令，汇编器提供了伪指令`li reg, imm`来实现这个功能，在汇编后这条伪指令会被翻译为多条机器指令。因此，在学习 RISC-V 汇编语言之前需要先学习 RV32I 指令集。建议以以下顺序阅读 RISC-V 汇编的参考资料：
+RISC-V 汇编远比 x86 简单，学习起来很快。RISC-V 是精简指令集，设计者认为大道至简，指令集只需要实现了最基础、最常用的功能，复杂指令应该由编译器设计者通过组合简单指令实现。为了方便汇编程序员编程，汇编器添加了很多伪指令来降低程序员的工作量。比如，RISC-V 指令集中没有将 32 位立即数加载到寄存器中的指令，汇编器提供了伪指令 `li reg, imm`来实现这个功能，在汇编后这条伪指令会被翻译为多条机器指令。因此，在学习 RISC-V 汇编语言之前需要先学习 RV32I 指令集。建议以以下顺序阅读 RISC-V 汇编的参考资料：
 
 1. 阅读《计算机组成与设计-硬件/软件接口（原书第 5 版）》第 2 章，了解 RISC-V 设计原则和 RV32I 指令集
 2. 阅读[RISC-V Reader（中译版）](http://crva.ict.ac.cn/documents/RISC-V-Reader-Chinese-v2p1.pdf)第二、三、九章学习 RISC-V 汇编

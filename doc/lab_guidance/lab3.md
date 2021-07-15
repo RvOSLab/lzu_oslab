@@ -28,7 +28,7 @@ static const struct MemmapEntry {
 };
 ```
 
-本实验中，RAM 地址从`0x8000_0000`到`0x8800_0000`，共 128M。其中`0x8000_0000`到`0x8200_0000`存放 SBI，`0x8200_0000`开始存放内核，内核之后的地址空间由用户进程使用。
+本实验中，RAM 地址从`0x8000_0000`到`0x8800_0000`，共 128M。其中`0x8000_0000`到`0x8020_0000`存放 SBI，`0x8020_0000`开始存放内核，内核之后的地址空间由用户进程使用。
 
 物理地址空间中的空洞没有任何意义，不能使用。除 RAM 外，物理地址空间中还有大量内存映射 IO，我们会在后续的实验中介绍。这里通过查看 qemu 源代码获取物理地址空间布局，实际上 RISCV 使用设备树（*device tree*）协议来描述硬件信息，并在启动后扫描硬件并将结果以 DTB（*Device Tree Blob*)格式写入到物理内存中，将内存起始地址传入 a1 寄存器。内核可以解析 DTB 来获取硬件信息，避免硬编码。设备树协议将在后续实验中介绍。
 
@@ -38,17 +38,16 @@ static const struct MemmapEntry {
 #define FLOOR(addr) ((addr) / PAGE_SIZE * PAGE_SIZE)
 #define CEIL(addr)                                                             \
 	(((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE)
-#define DEVICE_START    0x10000000
+#define DEVICE_START    0x10000000                  /**< 设备树地址空间，暂时不使用 */
 #define DEVICE_END      0x10010000
-#define MEM_START       0x80000000
+#define MEM_START       0x80000000                  /**< 物理内存地址空间 */
 #define MEM_END         0x88000000
-#define SBI_START       0x80000000
-#define SBI_END         0x82000000
-#define HIGH_MEM        0x88000000
-#define LOW_MEM         0x83000000
-#define PAGING_MEMORY   (1024 * 1024 * 128)
-#define PAGING_PAGES    (PAGING_MEMORY >> 12)
-
+#define SBI_START       0x80000000                  /**< SBI 物理内存起始地址 */
+#define SBI_END         0x80200000                  /**< 用户程序（包括内核）可用的物理内存地址空间开始 */
+#define HIGH_MEM        0x88000000                  /**< 空闲内存区结束 */
+#define LOW_MEM         0x82000000                  /**< 空闲内存区开始（可用于用户进程和数据放置） */
+#define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 (bytes) */
+#define PAGING_PAGES    (PAGING_MEMORY >> 12)       /**< 系统物理内存页数 */
 ```
 
 为了实现的简单，直接给内核分配了一段足够大的内存 [SBI_END, LOW_MEM)。注意，实验中的地址空间都是左闭右开的区间。

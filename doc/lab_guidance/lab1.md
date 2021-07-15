@@ -85,8 +85,9 @@
 5. 打印版本信息，检查环境安装是否成功并删除安装包
 
    ```shell
-   riscv64-unknown-elf-gdb -v    # 打印gdb版本信息
-   qemu-system-riscv64 --version    # 打印qemu版本信息
+   # 打印 gdb 与 qemu 的版本信息
+   riscv64-unknown-elf-gdb -v
+   qemu-system-riscv64 --version
 
    cd ../..
    rm -rf resource

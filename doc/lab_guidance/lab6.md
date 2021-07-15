@@ -84,7 +84,7 @@ struct pushregs {
  * @brief 保存上下文的栈的结构体抽象，和trap.S中分配的36*XLENB相对应
  */
 struct trapframe {
-	struct pushregs gpr; // x0-x31
+	struct pushregs gpr; // x0-x31 (general purpose register)
 	uint64_t status;     // sstatus
 	uint64_t epc;        // sepc
 	uint64_t badvaddr;   // stval

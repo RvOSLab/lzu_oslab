@@ -39,14 +39,14 @@ run : build
 	@$(QEMU) \
     		-machine virt \
     		-nographic \
-    		-bios default \
+    		-bios tools/fw_jump.bin \
     		-device loader,file=$(KERN_IMG),addr=0x80200000
 
 # run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build
 	@$(QEMU) \
     		-machine virt \
-    		-bios default \
+    		-bios tools/fw_jump.bin \
     		-device loader,file=$(KERN_IMG),addr=0x80200000 \
     		-monitor stdio \
 
@@ -56,7 +56,7 @@ run-gui : build
 	#             -machine virt \
 	#             -s -S \
 	#             -nographic \
-	#             -bios default \
+	#             -bios tools/fw_jump.bin \
 	#             -device loader,file=$(KERN_IMG),addr=0x80200000
 
 debug : build
@@ -64,7 +64,7 @@ debug : build
 				-machine virt \
 				-s -S \
 				-nographic \
-				-bios default \
+				-bios tools/fw_jump.bin \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
 	$(TMUX) attach-session -t debug
 # 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)

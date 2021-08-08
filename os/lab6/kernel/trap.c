@@ -34,12 +34,15 @@ void handle_virtio()
 void uart_handler()
 {
     int8_t c = uart_read();
-    kprintf("%c", c);
+    if(c > -1)
+        kprintf("%c", c);
+
 }
 
 static struct trapframe* external_handler(struct trapframe* tf)
 {
-    switch (plic_claim()) {
+    uint32_t int_id;
+    switch (int_id = plic_claim()) {
         case 1 ... 8:
             handle_virtio();
             break;
@@ -51,6 +54,7 @@ static struct trapframe* external_handler(struct trapframe* tf)
         default:
             panic("Unknown external interrupt");
     }
+    plic_complete(int_id);
     return tf;
 }
 
@@ -82,17 +86,16 @@ void trap_init()
     write_csr(stvec, &__alltraps);
     /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
     set_csr(sstatus, SSTATUS_SIE);
-    /* set_csr(mie, 9); */
-    /*
-     * unsigned long sie = read_csr(sie);
-     * kprintf("sie: %x\n", sie);
-     * set_csr(sie, 9);
-     * kprintf("sie: %x\n", sie);
-     */
+
     kprintf("sstatus: %x\n", read_csr(sstatus));
     plic_init();
     kprintf("complete plic\n");
     uart_init();
+
+    /* 启用外中断 */
+    set_csr(sie, 1 << IRQ_S_EXT);
+    unsigned long sie = read_csr(sie);
+    kprintf("sie: %x\n", sie);
 }
 
 /**
@@ -127,7 +130,6 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         kputs("User software interrupt\n");
         break;
     case IRQ_S_SOFT:
-        kputs("Supervisor software interrupt\n");
         break;
     case IRQ_H_SOFT:
         kputs("Hypervisor software interrupt\n");
@@ -162,13 +164,12 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         kputs("User external interrupt\n");
         break;
     case IRQ_S_EXT:
-        kputs("Supervisor external interrupt\n");
+        external_handler(tf);
         break;
     case IRQ_H_EXT:
         kputs("Hypervisor external interrupt\n");
         break;
     case IRQ_M_EXT:
-        external_handler(tf);
         kputs("Machine external interrupt\n");
     default:
         print_trapframe(tf);

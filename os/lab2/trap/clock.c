@@ -35,7 +35,7 @@ void clock_init()
     timebase = 100000;
     ticks = 0;
     /* 开启时钟中断（设置CSR_MIE） */
-    set_csr(sie, 1 << 5);
+    set_csr(sie, 1 << IRQ_S_TIMER);
     clock_set_next_event();
     kputs("Setup Timer!");
 }

@@ -12,20 +12,21 @@
 /// @}
 
 /// @{ @name UART 寄存器偏移
-#define UART_RBR    0x00
-#define UART_THR    0x00
-#define UART_DLL    0x00
-#define UART_IER    0x01
-#define UART_DLM    0x01
-#define UART_IIR    0x02
-#define UART_FCR    0x02
-#define UART_LCR    0x03
-#define UART_MCR    0x04
-#define UART_LSR    0x05
-#define UART_MSR    0x06
-#define UART_SCR    0x07
+#define UART_RBR    0x00 /** Receiver Buffer Register **/
+#define UART_THR    0x00 /** Transmitter Holding Register **/
+#define UART_DLL    0x00 /** Divisor Latch (Least Significant Byte) Register **/
+#define UART_DLM    0x01 /** Divisor Latch (Most Significant Byte) Register **/
+#define UART_IER    0x01 /** Interrupt Enable Register **/
+#define UART_IIR    0x02 /** Interrupt Identification Register **/
+#define UART_FCR    0x02 /** FIFO Control Register **/
+#define UART_LCR    0x03 /** Line Control Register **/
+#define UART_MCR    0x04 /** Modem Control Register **/
+#define UART_LSR    0x05 /** Line Status Register **/
+#define UART_MSR    0x06 /** Modem Status Register **/
+#define UART_SCR    0x07 /** Scratch Register **/
 /// @}
 //
 void uart_init();
 int8_t uart_read();
+void uart_write(int8_t c);
 #endif /* end of include guard: __UART_H__ */

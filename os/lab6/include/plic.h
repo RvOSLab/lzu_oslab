@@ -16,7 +16,7 @@
 /// @{ @name PLIC 偏移
 #define PLIC_PRIORITY 0x0000000           /**< 设置中断优先级 */
 #define PLIC_PENDING 0x00001000           /**< 待处理的中断位图 */
-#define PLIC_ENABLE 0x00002000            /**< 使能中断 */
+#define PLIC_ENABLE 0x00002080            /**< 使能中断 */
 #define PLIC_THRESHOLD 0x00200000         /**< 发生中断的阈值，当且仅当中断优先级高于此阈值时发生中断 */
 #define PLIC_CLAIM 0x00200004             /**< 获取优先级最高的待处理中断 */
 #define PLIC_COMPLETE 0x00200004          /**< 告知 PLIC 已完成中断处理 */

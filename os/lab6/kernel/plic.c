@@ -8,10 +8,8 @@
 void plic_init()
 {
     plic_set_threshold(0);
-    for (uint32_t id = 0; id <= 32; ++id) {
-        plic_enable_interuupt(id);
-        plic_set_priority(id, 1);
-    }
+    plic_enable_interuupt(0xa);
+    plic_set_priority(0xa, 1);
 }
 
 void plic_enable_interuupt(uint32_t id)

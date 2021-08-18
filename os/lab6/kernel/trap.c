@@ -35,7 +35,7 @@ void uart_handler()
 {
     int8_t c = uart_read();
     if(c > -1)
-        kprintf("%c", c);
+        uart_write(c);
 
 }
 

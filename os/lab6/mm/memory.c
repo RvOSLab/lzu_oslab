@@ -180,7 +180,7 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 			uint64_t tmp;
 			assert(tmp = get_free_page(),
 			       "put_page(): Memory exhausts");
-			page_table[idx] = (tmp >> 2) | 0x01;
+			page_table[idx] = (tmp >> 2) | 0xC1;
 		}
 		page_table =
 			(uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
@@ -341,7 +341,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 		if (!to_pg_dir[dest_dir_idx]) {
 			uint64_t tmp = get_free_page();
 			assert(tmp, "copy_page_tables(): memory exhausts");
-			to_pg_dir[dest_dir_idx] = (tmp >> 2) | 0x01;
+			to_pg_dir[dest_dir_idx] = (tmp >> 2) | 0xC1;
 		}
 
 		uint64_t cnt;
@@ -381,7 +381,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
 				uint64_t tmp = get_free_page();
 				assert(tmp,
 				       "copy_page_tables(): Memory exhausts");
-				*dest_pg_tb1 = (tmp >> 2) | 0x01;
+				*dest_pg_tb1 = (tmp >> 2) | 0xC1;
 			} else {
 				panic("copy_page_tables(): page table %p already exist",
 				      GET_PAGE_ADDR(*dest_pg_tb1));

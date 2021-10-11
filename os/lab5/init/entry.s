@@ -27,9 +27,9 @@ boot_stack_top:
 
 boot_pg_dir:
     .zero 2 * 8
-    .quad (0x80000000 >> 2) | 0x0F
-    .quad (0x80000000 >> 2) | 0x0F
-    .quad 0x00 | 0x0F
+    .quad (0x80000000 >> 2) | 0xCF
+    .quad (0x80000000 >> 2) | 0xCF
+    .quad 0x00 | 0xCF
     .zero 503 * 8
     .quad 0
     .quad 0

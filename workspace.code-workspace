@@ -1,0 +1,781 @@
+{
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools"
+		]
+	},
+	"folders": [
+		{
+			"name": "lab1",
+			"path": "os/lab1"
+		},
+		{
+			"name": "lab2",
+			"path": "os/lab2"
+		},
+		{
+			"name": "lab3",
+			"path": "os/lab3"
+		},
+		{
+			"name": "lab4",
+			"path": "os/lab4"
+		},
+		{
+			"name": "lab5",
+			"path": "os/lab5"
+		},
+		{
+			"name": "lab6",
+			"path": "os/lab6"
+		}
+	],
+	"settings": {
+		"C_Cpp.default.includePath": [
+			"${workspaceFolder}/include",
+			"${workspaceFolder}/",
+		],
+		"C_Cpp.default.systemIncludePath": [],
+		"C_Cpp.default.forcedInclude": ["${workspaceFolder}/../../vsc_diag_suppress.h"],
+		"files.associations": {
+			"*.c": "c",
+			"*.h": "c"
+		}
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"type": "shell",
+				"label": "lab1-make-clean",
+				"command": [
+					"make clean"
+				],
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"presentation": {
+					"echo": false,
+					"reveal": "never",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab1}"
+				},
+			},
+			{
+				"type": "shell",
+				"label": "lab1-make-all",
+				"command": "make all",
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"dependsOn": [
+					"lab1-make-clean"
+				],
+				"problemMatcher": "$gcc",
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab1}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab1-qemu-debug",
+				"command": "qemu-system-riscv64 -machine virt -s -S -nographic -bios ${workspaceFolder:lab1}/fw_jump.bin -device loader,file=kernel.img,addr=0x80200000",
+				"args": [],
+				"isBackground": true,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"problemMatcher": [
+					{
+						"pattern": [
+							{
+								"regexp": ".",
+								"file": 1,
+								"location": 2,
+								"message": 3
+							}
+						],
+						"background": {
+							"activeOnStart": true,
+							"beginsPattern": ".",
+							"endsPattern": "."
+						}
+					}
+				],
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": true,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"dependsOn": [
+					"lab1-make-all"
+				],
+				"options": {
+					"cwd": "${workspaceFolder:lab1}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab2-make-clean",
+				"command": [
+					"make clean"
+				],
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"presentation": {
+					"echo": false,
+					"reveal": "never",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab2}"
+				},
+			},
+			{
+				"type": "shell",
+				"label": "lab2-make-all",
+				"command": "make all",
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"dependsOn": [
+					"lab2-make-clean"
+				],
+				"problemMatcher": "$gcc",
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab2}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab2-qemu-debug",
+				"command": "qemu-system-riscv64 -machine virt -s -S -nographic -bios ${workspaceFolder:lab2}/tools/fw_jump.bin -device loader,file=kernel.img,addr=0x80200000",
+				"args": [],
+				"isBackground": true,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"problemMatcher": [
+					{
+						"pattern": [
+							{
+								"regexp": ".",
+								"file": 1,
+								"location": 2,
+								"message": 3
+							}
+						],
+						"background": {
+							"activeOnStart": true,
+							"beginsPattern": ".",
+							"endsPattern": "."
+						}
+					}
+				],
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": true,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"dependsOn": [
+					"lab2-make-all"
+				],
+				"options": {
+					"cwd": "${workspaceFolder:lab2}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab3-make-clean",
+				"command": [
+					"make clean"
+				],
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"presentation": {
+					"echo": false,
+					"reveal": "never",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab3}"
+				},
+			},
+			{
+				"type": "shell",
+				"label": "lab3-make-all",
+				"command": "make all",
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"dependsOn": [
+					"lab3-make-clean"
+				],
+				"problemMatcher": "$gcc",
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab3}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab3-qemu-debug",
+				"command": "qemu-system-riscv64 -machine virt -s -S -nographic -bios ${workspaceFolder:lab3}/tools/fw_jump.bin -device loader,file=kernel.img,addr=0x80200000",
+				"args": [],
+				"isBackground": true,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"problemMatcher": [
+					{
+						"pattern": [
+							{
+								"regexp": ".",
+								"file": 1,
+								"location": 2,
+								"message": 3
+							}
+						],
+						"background": {
+							"activeOnStart": true,
+							"beginsPattern": ".",
+							"endsPattern": "."
+						}
+					}
+				],
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": true,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"dependsOn": [
+					"lab3-make-all"
+				],
+				"options": {
+					"cwd": "${workspaceFolder:lab3}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab4-make-clean",
+				"command": [
+					"make clean"
+				],
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"presentation": {
+					"echo": false,
+					"reveal": "never",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab4}"
+				},
+			},
+			{
+				"type": "shell",
+				"label": "lab4-make-all",
+				"command": "make all",
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"dependsOn": [
+					"lab4-make-clean"
+				],
+				"problemMatcher": "$gcc",
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab4}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab4-qemu-debug",
+				"command": "qemu-system-riscv64 -machine virt -s -S -nographic -bios ${workspaceFolder:lab4}/tools/fw_jump.bin -device loader,file=kernel.img,addr=0x80200000",
+				"args": [],
+				"isBackground": true,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"problemMatcher": [
+					{
+						"pattern": [
+							{
+								"regexp": ".",
+								"file": 1,
+								"location": 2,
+								"message": 3
+							}
+						],
+						"background": {
+							"activeOnStart": true,
+							"beginsPattern": ".",
+							"endsPattern": "."
+						}
+					}
+				],
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": true,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"dependsOn": [
+					"lab4-make-all"
+				],
+				"options": {
+					"cwd": "${workspaceFolder:lab4}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab5-make-clean",
+				"command": [
+					"make clean"
+				],
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"presentation": {
+					"echo": false,
+					"reveal": "never",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab5}"
+				},
+			},
+			{
+				"type": "shell",
+				"label": "lab5-make-all",
+				"command": "make all",
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"dependsOn": [
+					"lab5-make-clean"
+				],
+				"problemMatcher": "$gcc",
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab5}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab5-qemu-debug",
+				"command": "qemu-system-riscv64 -machine virt -s -S -nographic -bios default -device loader,file=kernel.img,addr=0x80200000",
+				"args": [],
+				"isBackground": true,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"problemMatcher": [
+					{
+						"pattern": [
+							{
+								"regexp": ".",
+								"file": 1,
+								"location": 2,
+								"message": 3
+							}
+						],
+						"background": {
+							"activeOnStart": true,
+							"beginsPattern": ".",
+							"endsPattern": "."
+						}
+					}
+				],
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": true,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"dependsOn": [
+					"lab5-make-all"
+				],
+				"options": {
+					"cwd": "${workspaceFolder:lab5}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab6-make-clean",
+				"command": [
+					"make clean"
+				],
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"presentation": {
+					"echo": false,
+					"reveal": "never",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab6}"
+				},
+			},
+			{
+				"type": "shell",
+				"label": "lab6-make-all",
+				"command": "make all",
+				"args": [],
+				"isBackground": false,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"dependsOn": [
+					"lab6-make-clean"
+				],
+				"problemMatcher": "$gcc",
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"options": {
+					"cwd": "${workspaceFolder:lab6}"
+				}
+			},
+			{
+				"type": "shell",
+				"label": "lab6-qemu-debug",
+				"command": "qemu-system-riscv64 -machine virt -s -S -nographic -bios default -device loader,file=kernel.img,addr=0x80200000",
+				"args": [],
+				"isBackground": true,
+				"runOptions": {
+					"instanceLimit": 1
+				},
+				"problemMatcher": [
+					{
+						"pattern": [
+							{
+								"regexp": ".",
+								"file": 1,
+								"location": 2,
+								"message": 3
+							}
+						],
+						"background": {
+							"activeOnStart": true,
+							"beginsPattern": ".",
+							"endsPattern": "."
+						}
+					}
+				],
+				"presentation": {
+					"echo": true,
+					"reveal": "always",
+					"focus": true,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"dependsOn": [
+					"lab6-make-all"
+				],
+				"options": {
+					"cwd": "${workspaceFolder:lab6}"
+				}
+			}
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "调试lab1",
+				"type": "cppdbg",
+				"request": "launch",
+				"miDebuggerServerAddress": "localhost:1234",
+				"program": "${workspaceFolder:lab1}/kernel.bin",
+				"sourceFileMap": {
+					"kernel.map": "${workspaceFolder:lab1}/kernel.map"
+				},
+				"logging": {
+					"engineLogging": false
+				},
+				"MIMode": "gdb",
+				"externalConsole": false,
+				"miDebuggerPath": "riscv64-unknown-elf-gdb",
+				"internalConsoleOptions": "openOnSessionStart",
+				"presentation": {
+					"hidden": false,
+					"group": "",
+					"order": 1
+				},
+				"preLaunchTask": "lab1-qemu-debug",
+				// "postDebugTask": "lab1-make-clean",
+				"cwd": "${workspaceFolder:lab1}",
+				"setupCommands": [
+					{
+						"text": "-enable-pretty-printing",
+						"description": "Enable GDB pretty printing",
+						"ignoreFailures": true
+					}
+				]
+			},
+			{
+				"name": "调试lab2",
+				"type": "cppdbg",
+				"request": "launch",
+				"miDebuggerServerAddress": "localhost:1234",
+				"program": "${workspaceFolder:lab2}/kernel.bin",
+				"sourceFileMap": {
+					"kernel.map": "${workspaceFolder:lab2}/kernel.map"
+				},
+				"logging": {
+					"engineLogging": false
+				},
+				"MIMode": "gdb",
+				"externalConsole": false,
+				"miDebuggerPath": "riscv64-unknown-elf-gdb",
+				"internalConsoleOptions": "openOnSessionStart",
+				"presentation": {
+					"hidden": false,
+					"group": "",
+					"order": 1
+				},
+				"preLaunchTask": "lab2-qemu-debug",
+				// "postDebugTask": "lab2-make-clean",
+				"cwd": "${workspaceFolder:lab2}",
+				"setupCommands": [
+					{
+						"text": "-enable-pretty-printing",
+						"description": "Enable GDB pretty printing",
+						"ignoreFailures": true
+					}
+				]
+			},
+			{
+				"name": "调试lab3",
+				"type": "cppdbg",
+				"request": "launch",
+				"miDebuggerServerAddress": "localhost:1234",
+				"program": "${workspaceFolder:lab3}/kernel.bin",
+				"sourceFileMap": {
+					"kernel.map": "${workspaceFolder:lab3}/kernel.map"
+				},
+				"logging": {
+					"engineLogging": false
+				},
+				"MIMode": "gdb",
+				"externalConsole": false,
+				"miDebuggerPath": "riscv64-unknown-elf-gdb",
+				"internalConsoleOptions": "openOnSessionStart",
+				"presentation": {
+					"hidden": false,
+					"group": "",
+					"order": 1
+				},
+				"preLaunchTask": "lab3-qemu-debug",
+				// "postDebugTask": "lab3-make-clean",
+				"cwd": "${workspaceFolder:lab3}",
+				"setupCommands": [
+					{
+						"text": "-enable-pretty-printing",
+						"description": "Enable GDB pretty printing",
+						"ignoreFailures": true
+					}
+				]
+			},
+			{
+				"name": "调试lab4",
+				"type": "cppdbg",
+				"request": "launch",
+				"miDebuggerServerAddress": "localhost:1234",
+				"program": "${workspaceFolder:lab4}/kernel.bin",
+				"sourceFileMap": {
+					"kernel.map": "${workspaceFolder:lab4}/kernel.map"
+				},
+				"logging": {
+					"engineLogging": false
+				},
+				"MIMode": "gdb",
+				"externalConsole": false,
+				"miDebuggerPath": "riscv64-unknown-elf-gdb",
+				"internalConsoleOptions": "openOnSessionStart",
+				"presentation": {
+					"hidden": false,
+					"group": "",
+					"order": 1
+				},
+				"preLaunchTask": "lab4-qemu-debug",
+				// "postDebugTask": "lab4-make-clean",
+				"cwd": "${workspaceFolder:lab4}",
+				"setupCommands": [
+					{
+						"text": "-enable-pretty-printing",
+						"description": "Enable GDB pretty printing",
+						"ignoreFailures": true
+					}
+				]
+			},
+			{
+				"name": "调试lab5",
+				"type": "cppdbg",
+				"request": "launch",
+				"miDebuggerServerAddress": "localhost:1234",
+				"program": "${workspaceFolder:lab5}/kernel.bin",
+				"sourceFileMap": {
+					"kernel.map": "${workspaceFolder:lab5}/kernel.map"
+				},
+				"logging": {
+					"engineLogging": false
+				},
+				"MIMode": "gdb",
+				"externalConsole": false,
+				"miDebuggerPath": "riscv64-unknown-elf-gdb",
+				"internalConsoleOptions": "openOnSessionStart",
+				"presentation": {
+					"hidden": false,
+					"group": "",
+					"order": 1
+				},
+				"preLaunchTask": "lab5-qemu-debug",
+				// "postDebugTask": "lab5-make-clean",
+				"cwd": "${workspaceFolder:lab5}",
+				"setupCommands": [
+					{
+						"text": "-enable-pretty-printing",
+						"description": "Enable GDB pretty printing",
+						"ignoreFailures": true
+					}
+				]
+			},
+			{
+				"name": "调试lab6",
+				"type": "cppdbg",
+				"request": "launch",
+				"miDebuggerServerAddress": "localhost:1234",
+				"program": "${workspaceFolder:lab6}/kernel.bin",
+				"sourceFileMap": {
+					"kernel.map": "${workspaceFolder:lab6}/kernel.map"
+				},
+				"logging": {
+					"engineLogging": false
+				},
+				"MIMode": "gdb",
+				"externalConsole": false,
+				"miDebuggerPath": "riscv64-unknown-elf-gdb",
+				"internalConsoleOptions": "openOnSessionStart",
+				"presentation": {
+					"hidden": false,
+					"group": "",
+					"order": 1
+				},
+				"preLaunchTask": "lab6-qemu-debug",
+				// "postDebugTask": "lab6-make-clean",
+				"cwd": "${workspaceFolder:lab6}",
+				"setupCommands": [
+					{
+						"text": "-enable-pretty-printing",
+						"description": "Enable GDB pretty printing",
+						"ignoreFailures": true
+					}
+				]
+			}
+		]
+	}
+}

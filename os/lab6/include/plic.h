@@ -7,9 +7,9 @@
 #include <stddef.h>
 
 /// @{ @name PLIC 内存映射 IO 地址
-/** PLIC 的内存映射为 [0x0c000000, 0x1000_0000), 仅使用 hart 0 相关的 PLIC */
+/** PLIC 的内存映射为 [0x10000000, 0x1400_0000), 仅使用 hart 0 相关的 PLIC */
 #define PLIC_LENGTH 0x04000000            /**< PLIC MMIO 内存大小 */
-#define PLIC_START 0x0c000000             /**< PLIC 起始物理地址 */
+#define PLIC_START 0x10000000             /**< PLIC 起始物理地址 */
 #define PLIC_END PLIC_START + PLIC_LENGTH /**< PLIC 结束物理地址 */
 /// @}
 

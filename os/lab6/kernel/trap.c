@@ -34,9 +34,6 @@ void handle_virtio()
 void uart_handler()
 {
     int8_t c = uart_read();
-    if(c > -1)
-        uart_write(c);
-
 }
 
 static struct trapframe* external_handler(struct trapframe* tf)
@@ -47,7 +44,7 @@ static struct trapframe* external_handler(struct trapframe* tf)
             handle_virtio();
             break;
         /* UART */
-        case 0xA:
+        case 0x12:
             uart_handler();
             break;
         /* Unsupported interrupt */

@@ -1,18 +1,20 @@
 /**
- * 实现物理内存管理
+ * @file memory.c
+ * @brief 实现物理内存管理
  */
 #include <assert.h>
 #include <kdebug.h>
 #include <mm.h>
 #include <stddef.h>
 
+/** 内存页表，跟踪系统的全部内存 */
 unsigned char mem_map[PAGING_PAGES] = { 0 };
 
 /**
  * @brief 初始化内存管理模块
  *
- * 该函数初始化 mem_map[] 数组，将物理地址空间 [HIGH_MEM, LOW_MEM) 纳入到
- * 内核的管理中。
+ * 该函数初始化 mem_map[] 数组，将物理地址空间 [MEM_START, HIGH_MEM) 纳入到
+ * 内核的管理中。SBI 和内核部分被设置为`USED`，其余内存被设置为`UNUSED`
  */
 void mem_init()
 {
@@ -20,7 +22,7 @@ void mem_init()
     /** 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
     while (i > MAP_NR(LOW_MEM))
         mem_map[--i] = UNUSED;
-    /** 设SBI与内核内存空间[MEM_START,LOW_MEM)的内存空间为不可用 */
+    /** 设SBI与内核内存空间[MEM_START, LOW_MEM)的内存空间为不可用 */
     while (i > MAP_NR(MEM_START))
         mem_map[--i] = USED;
 }

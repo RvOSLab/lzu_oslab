@@ -77,25 +77,19 @@ void active_mapping()
  */
 void mem_init()
 {
-	size_t i;
-	for (i = 0; i < PAGING_PAGES; i++)
-		mem_map[i] = USED;
-	uint64_t mem_start = LOW_MEM;
-	uint64_t mem_end = HIGH_MEM;
-	i = MAP_NR(mem_start);
-	if (mem_end > HIGH_MEM)
-		mem_end = HIGH_MEM;
-	mem_end -= mem_start;
-	mem_end >>= 12;
-	while (mem_end-- > 0)
-		mem_map[i++] = UNUSED;
+    size_t i = MAP_NR(HIGH_MEM);
+    /** 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
+    while (i > MAP_NR(LOW_MEM))
+        mem_map[--i] = UNUSED;
+    /** 设SBI与内核内存空间[MEM_START, LOW_MEM)的内存空间为不可用 */
+    while (i > MAP_NR(MEM_START))
+        mem_map[--i] = USED;
 
 	/* 进入 main() 时开启了 RV39 大页模式，暂时创造一个虚拟地址到物理地址的映射让程序跑起来。
      * 现在，我们要新建一个页目录并开启页大小为 4K 的 RV39 分页。*/
 	uint64_t page = get_free_page();
 	assert(page, "mem_init(): fail to allocate page");
-	uint64_t *kernel_pg_dir = (uint64_t *)VIRTUAL(page);
-	pg_dir = kernel_pg_dir;
+	pg_dir = (uint64_t *)VIRTUAL(page);
 	map_kernel();
 	active_mapping();
 }

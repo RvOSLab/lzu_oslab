@@ -108,3 +108,7 @@ doc/html/
 *.css
 *.html
 !fw_jump.bin
+
+# VSCode
+vsc_diag_suppress.h
+workspace.code-workspace

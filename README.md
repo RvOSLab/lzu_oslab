@@ -11,4 +11,3 @@ git clone git@github.com:LZU-OSLab/lzu_oslab.git
 cd lzu_oslab
 ./setup.sh
 ```
-

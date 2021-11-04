@@ -98,9 +98,9 @@
 #define GET_PPN(addr)      (( addr) >> 12)
 #define GET_PAGE_ADDR(pte) (( (pte) & ~0xFFC00000000003FF) << 2)
 #define GET_FLAG(pte)      ( (pte) & 0x3FF )
-#define LINEAR_OFFSET   0x40000000
-#define PHYSICAL(addr)  (addr - LINEAR_OFFSET)
-#define VIRTUAL(addr)   (addr + LINEAR_OFFSET)
+#define LINEAR_OFFSET    0x40000000
+#define PHYSICAL(vaddr)  (vaddr - LINEAR_OFFSET)
+#define VIRTUAL(paddr)   (paddr + LINEAR_OFFSET)
 /* 必须保证 end > start */
 #define IS_KERNEL(start, end) (start >= KERNEL_ADDRESS && end <= KERNEL_ADDRESS + PAGING_MEMORY)
 #define IS_USER(start, end)   (end <= KERNEL_ADDRESS)

@@ -63,7 +63,7 @@ MODE 表示分页模式，有以下选项：
 
 PPN 表示页目录项的物理页号（物理地址右移 12 位）。
 
-WARL是 *Write Any values, Read Legal Values* 的简称，表示对应字段可以写入任意值，处理器仅在该字段的值合法时读取，否则忽略该字段。
+WARL 是 *Write Any values, Read Legal Values* 的简称，表示对应字段可以写入任意值，处理器仅在该字段的值合法时读取，否则忽略该字段。
 
 虚拟地址和物理地址结构如下：
 
@@ -84,9 +84,9 @@ WARL是 *Write Any values, Read Legal Values* 的简称，表示对应字段可�
 | A(Access) | 自上次清除 A 位以来页面是否被访问 |
 | G(Global) | 是否对所有虚拟地址均有效，通常用以标记内核的页表，本实验不使用 |
 | U(User) | 是否是用户所有的页。U = 1 则只有 U-mode 可访问，而 **S 模式不能**，否则只有 S-mode 可访问 |
-| X(eXecutable) | 结合U位判断当前状态是否可执行 |
-| W(Writable) | 结合U位判断当前状态是否可写 |
-| R(Readable) | 结合U位判断当前状态是否可读 |
+| X(eXecutable) | 结合 U 位判断当前状态是否可执行 |
+| W(Writable) | 结合 U 位判断当前状态是否可写 |
+| R(Readable) | 结合 U 位判断当前状态是否可读 |
 | V(valid) | 有效位。若 V = 0，表示该页不在物理内存中，任何遍历到此页表项的虚址转换操作都会导致页错误 |
 
 从上面的表可以看到，RISCV 的权限控制非常严格，U-mode 只能访问”用户态“（U 位置位）的页，S-mode 只能访问”内核态“的页。有时确实需要在内核态读取用户态进程所有的页，RISCV 虽然默认不允许，但仍然为操作系统开了后门。当置位 `status` 寄存器中的 SUM 位时，可以在 S-mode 访问”用户态“页。
@@ -103,7 +103,7 @@ WARL是 *Write Any values, Read Legal Values* 的简称，表示对应字段可�
 
 ```c
 // 文件名：global.c
-// 编译命令: gcc global.c
+// 编译命令：gcc global.c
 #include <stdio.h>
 int global = 1;
 int main()
@@ -131,7 +131,7 @@ SHELL>./a.out
 0x404024
 ```
 
-可见全局符号（非 static 全局变量，非 static 函数）的地址在编译时就已经确定，我们还可以用 objdump 反汇编看到每一条指令运行时地址。由于所有指令、全局数据的地址在编译时已经确定，我们必须在编译时就确定进程的虚拟地址空间布局。
+可见全局符号（非 static 全局变量，非 static 函数）的地址在编译时就已经确定，我们还可以用 objdump 反汇编看到每一条指令运行时地址。由于所有指令、全局数据的地址在编译链接时已经确定，我们必须在编译链接时就确定进程的虚拟地址空间布局。
 
 本操作系统中，使用 RV32 的进程虚拟地址空间布局，布局如下：
 
@@ -169,20 +169,22 @@ SHELL>./a.out
 ```
 
 内核占据虚拟地址空间的`0xC0000000`到`0xFFFFFFFF`，可用的物理内存空间是`0x80000000`到`0x88000000`，内核的起始物理地址和虚拟物理地址恰好相差`0x40000000`，得到虚拟地址和物理地址之间的转换关系：
-$$
-VirtualAddress = PhysicalAddress + LinearOffset
-$$
-内核虚拟地址空间就是可用物理内存地址空间的线性映射:
+
+$$VirtualAddress = PhysicalAddress + LinearOffset$$
+
+内核虚拟地址空间就是可用物理内存地址空间的线性映射：
+
 $$
 VirtualAddressSpace[0xC0000000,C8000000) \longrightarrow PhysicalAddressSpace[0x80000000, 88000000)
 $$
+
 程序中使用以下宏表示线性映射：
 
 ```c
 // include/mm.h
-#define LINEAR_OFFSET   0x40000000
-#define PHYSICAL(addr)  (addr - LINEAR_OFFSET)
-#define VIRTUAL(addr)   (addr + LINEAR_OFFSET)
+#define LINEAR_OFFSET    0x40000000
+#define PHYSICAL(vaddr)  (vaddr - LINEAR_OFFSET)
+#define VIRTUAL(paddr)   (paddr + LINEAR_OFFSET)
 ```
 
 最开始，内核程序入口点在 0x80200000，转换为虚拟地址后变成 0xC0200000。我们在链接脚本中写入这个地址：
@@ -214,18 +216,11 @@ BASE_ADDRESS = 0xc0200000;
 Rv39 的三级页表结构让我们很难直接硬编码，观察内核地址，会发现物理内存起始地址 0x80000000 和内核区起始地址 0xC0000000 都是 1 G 的整数倍。使用大页模式，页目录中的一项即可映射 1G 内存，硬编码页表只需要写两项 PTE 即可，其他项均设置为 0。
 
 ```assembly
-# init/entry.s
-.section .data
 boot_pg_dir:
     .zero 2 * 8
     .quad (0x80000000 >> 2) | 0x0F
     .quad (0x80000000 >> 2) | 0x0F
-    .quad 0x00 | 0x0F
-    .zero 503 * 8
-    .quad 0
-    .quad 0
-    .quad 0
-    .quad 0
+    .zero 508 * 8
 ```
 
 之后我们将页目录地址写入到寄存器 stap 中并刷新 TLB，跳转到 main 函数。
@@ -285,7 +280,7 @@ pg_dir = kernel_pg_dir;
  * @brief 建立物理地址和虚拟地址间的映射
  *
  * 本函数仅仅建立映射，不修改物理页引用计数
- * 当分配物理页失败（创建页表）时 panic,因此不需要检测返回值。
+ * 当分配物理页失败（创建页表）时 panic，因此不需要检测返回值。
  *
  * @param page   物理地址
  * @param addr   虚拟地址
@@ -365,4 +360,6 @@ void active_mapping()
 1. RISCV 提供的虚拟地址空间是连续的吗？如果不是，请指出合法的虚拟地址空间？
 2. RISCV 提供的虚拟地址空间和进程的虚拟地址空间是一个东西吗？
 3. 为什么临时页表要有$[0x80000000, 0xC0000000) \longrightarrow[0x80000000, 0xC0000000)$的映射？
-4. 为什么要再分配页目录和页表，而不直接修改原来的页表？
+4. 删去第 3 问所提到的映射（实际上是错误的做法），在 QEMU 中执行似乎没有问题，请说说你对可能的原因的猜测，有能力的同学可以尝试验证你的猜测。
+5. 为什么要再分配页目录和页表，而不直接修改原来的页表？
+6. 为什么链接后的内核中所有的地址都是 `0xc0200000` 之后的，但 sbi 启动到 `0x80200000` 还可以正确执行呢？

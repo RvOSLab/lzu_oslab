@@ -29,9 +29,4 @@ boot_pg_dir:
     .zero 2 * 8
     .quad (0x80000000 >> 2) | 0x0F
     .quad (0x80000000 >> 2) | 0x0F
-    .quad 0x00 | 0x0F
-    .zero 503 * 8
-    .quad 0
-    .quad 0
-    .quad 0
-    .quad 0
+    .zero 508 * 8

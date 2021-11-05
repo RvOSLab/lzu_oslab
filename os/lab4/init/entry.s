@@ -17,7 +17,7 @@ _start:
     add sp, sp, t1
     la t0, main
     add t0, t0, t1
-    jalr x0, 0(t0)
+    jr t0
 
     .section .bss
 boot_stack:

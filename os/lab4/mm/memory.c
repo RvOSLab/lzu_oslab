@@ -58,8 +58,8 @@ void map_kernel()
  */
 void active_mapping()
 {
-	__asm__ __volatile__("csrrs x0, sstatus, %0\n\t"
-			     "csrrw x0, satp, %1\n\t"
+	__asm__ __volatile__("csrs sstatus, %0\n\t"
+			     "csrw satp, %1\n\t"
 			     "sfence.vma\n\t"
 			     : /* empty output list */
 			     : "r"(1 << 18),

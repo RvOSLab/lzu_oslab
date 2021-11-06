@@ -226,7 +226,7 @@ boot_pg_dir:
 之后我们将页目录地址写入到寄存器 stap 中并刷新 TLB，跳转到 main 函数。
 
 ```assembly
- # init/entry.s
+# init/entry.s
     .globl boot_stack, boot_stack_top, _start, boot_pg_dir
     .section .text.entry
 _start:
@@ -242,7 +242,7 @@ _start:
     add sp, sp, t1
     la t0, main
     add t0, t0, t1
-    jalr x0, 0(t0)
+    jr t0
 
     .section .bss
 boot_stack:
@@ -341,8 +341,8 @@ void map_kernel()
  */
 void active_mapping()
 {
-	__asm__ __volatile__("csrrs x0, sstatus, %0\n\t"
-			     "csrrw x0, satp, %1\n\t"
+	__asm__ __volatile__("csrs sstatus, %0\n\t"
+			     "csrw satp, %1\n\t"
 			     "sfence.vma\n\t"
 			     : /* empty output list */
 			     : "r"(1 << 18),

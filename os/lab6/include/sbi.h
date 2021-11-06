@@ -14,10 +14,12 @@
 /** extenstion id */
 #define BASE_EXTENSTION 0x10
 #define TIMER_EXTENTION 0x54494D45
-#define SHUT_DOWN_EXTENTION 0x08
 #define HART_STATE_EXTENTION 0x48534D
+#define RESET_EXTENTION 0x53525354
 
 /** sbi implementation id */
+
+/** we only use OpenSBI */
 #define BERKELY_BOOT_LOADER 0
 #define OPENSBI 1
 #define XVISOR 2
@@ -31,14 +33,14 @@ struct sbiret {
     long value;
 };
 
-struct sbiret sbi_get_spec_version(); /** get sbi specification version */
-struct sbiret sbi_get_impl_id(); /** get sbi implementation id */
-struct sbiret sbi_get_impl_version(); /** get sbi implementation version */
-struct sbiret
-sbi_probe_extension(long extension_id); /** probe sbi extenstion */
-void sbi_set_timer(uint64_t stime_value); /** set timer */
-int sbi_console_getchar(); /** read a byte from debug console */
-void sbi_console_putchar(int ch); /** print character to debug console */
-void sbi_shutdown(); /** shutdown */
+struct sbiret sbi_get_spec_version();                 /** get sbi specification version */
+struct sbiret sbi_get_impl_id();                      /** get sbi implementation id */
+struct sbiret sbi_get_impl_version();                 /** get sbi implementation version */
+struct sbiret sbi_probe_extension(long extension_id); /** probe sbi extenstion */
+void sbi_set_timer(uint64_t stime_value);             /** set timer */
+int sbi_console_getchar();                            /** read a byte from debug console */
+void sbi_console_putchar(int ch);                     /** print character to debug console */
+void sbi_shutdown();                                  /** shutdown */
 void print_system_infomation();
+
 #endif

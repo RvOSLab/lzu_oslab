@@ -130,6 +130,7 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         kputs("User software interrupt\n");
         break;
     case IRQ_S_SOFT:
+        kputs("Supervisor software interrupt\n");
         break;
     case IRQ_H_SOFT:
         kputs("Hypervisor software interrupt\n");
@@ -171,6 +172,8 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         break;
     case IRQ_M_EXT:
         kputs("Machine external interrupt\n");
+        print_trapframe(tf);
+        break;
     default:
         print_trapframe(tf);
         break;

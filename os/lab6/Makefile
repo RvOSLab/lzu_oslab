@@ -12,12 +12,12 @@ KERN_ASM := kernel.asm
 
 # -mcmodel=medany 适用于64位RISC-V的CPU（RV64I指令集），使一些C语言代码中的寻址操作可以被编译为auipc指令，用于相对寻址，可使程序的运行与程序被加载的位置无关
 # -Wall 将所有的警告信息全开
-# -g 添加适用于gdb的调试信息
+# -g3 添加适用于gdb的调试信息
 # -fno-builtin 不使用 GCC 内建函数
 # -fno-stack-protector 不使用栈保护
 # -fno-strict-aliasing 允许未定义的类型间强制转换
 # -nostdinc 不使用系统标准库
-# -I . 优先在当前目录搜索头文件
+# -I include 优先在include目录搜索头文件
 CFLAGS := -mcmodel=medany -fno-pie -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include
 
 # .PHONY表示后面这些都是伪造的target，无论同名文件是否存在都会运行
@@ -34,7 +34,7 @@ build :
 	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o mm/libmm.a kernel/libkernel.a lib/libstd.a
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
-# bios 使用 QEMU 默认的 BIOS，即使用 QEMU 自带的 OpenSBI v0.7。
+# bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
 run : build
 	@$(QEMU) \
     		-machine virt \
@@ -42,7 +42,7 @@ run : build
     		-bios tools/fw_jump.bin \
     		-device virtio-keyboard-device -device loader,file=$(KERN_IMG),addr=0x80200000
 
-# run-gui，启动图形形式的 QEMU 运行操作系统，需要 vncviewer 连接，先决条件是 build （见上）
+# run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build
 	@$(QEMU) \
     		-machine virt \
@@ -59,6 +59,7 @@ debug : build
 				-bios tools/fw_jump.bin \
 				-device virtio-keyboard-device -device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
 	$(TMUX) attach-session -t debug
+
 # 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)
 # -v：按照地址由低到高排序。
 symbol : $(KERN_BIN)

@@ -177,9 +177,9 @@ size_t schedule()
  */
 static void map_segment(uint64_t start, uint64_t end, uint8_t flag)
 {
-    uint64_t physical = start - LINEAR_OFFSET;
-    start -= SBI_END + LINEAR_OFFSET - START_CODE;
-    end -= SBI_END + LINEAR_OFFSET - START_CODE;
+    uint64_t physical = PHYSICAL(start);
+    start -= VIRTUAL(SBI_END) - START_CODE;
+    end -= VIRTUAL(SBI_END) - START_CODE;
     while (start != end) {
         put_page(physical, start, flag);
         start += PAGE_SIZE;

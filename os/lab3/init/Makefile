@@ -1,12 +1,12 @@
 include ../tools/toolchain.mk
-CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I../include
+CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I ../include
 
 vpath %.h ../include
 vpath $.a ../lib
 
 .PHONY : clean build
 
-build : main.o entry.o 
+build : entry.o main.o
 
 entry.o : entry.s 
 main.o : main.c

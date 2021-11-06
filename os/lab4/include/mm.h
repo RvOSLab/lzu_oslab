@@ -1,3 +1,42 @@
+/**
+ * @file mm.h
+ * @brief 声明内存管理模块的宏、函数、全局变量
+ *
+ * 在阅读代码时要分清物理地址和虚拟地址，否则会导致混乱。
+ * 本模块注释中专门写了函数参数是物理地址还是虚拟地址，如果没有写，默认是虚拟地址。
+ *
+ * 进程地址空间：
+ *     0xFFFFFFFF----->+--------------+
+ *                     |              |
+ *                     |              |
+ *                     |    Kernel    |
+ *                     |              |
+ *                     |              |
+ *     0xC0000000----->---------------+
+ *                     |    Hole      |
+ *     0xBFFFFFF0----->---------------+
+ *                     |    Stack     |
+ *                     |      +       |
+ *                     |      |       |
+ *                     |      v       |
+ *                     |              |
+ *                     |              |
+ *                     |      ^       |
+ *                     |      |       |
+ *                     |      +       |
+ *                     | Dynamic data |
+ *            brk----->+--------------+
+ *                     |              |
+ *                     | Static data  |
+ *                     |              |
+ *                     +--------------+
+ *                     |              |
+ *                     |     Text     |
+ *                     |              |
+ *     0x00010000----->---------------+
+ *                     |   Reserved   |
+ *     0x00000000----->+--------------+
+ */
 #ifndef __MM_H__
 #define __MM_H__
 #include <stddef.h>
@@ -14,7 +53,7 @@
 #define SBI_END         0x80200000                  /**< 用户程序（包括内核）可用的物理内存地址空间开始 */
 #define HIGH_MEM        0x88000000                  /**< 空闲内存区结束 */
 #define LOW_MEM         0x82000000                  /**< 空闲内存区开始（可用于用户进程和数据放置） */
-#define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 */
+#define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 (bytes) */
 #define PAGING_PAGES    (PAGING_MEMORY >> 12)       /**< 系统物理内存页数 */
 #define MAP_NR(addr)    (((addr)-MEM_START) >> 12)  /**< 物理地址 addr 在 mem_map[] 中的下标 */
 /// @}
@@ -42,6 +81,7 @@
 
 #define KERN_RWX       (PAGE_READABLE   | PAGE_WRITABLE | PAGE_EXECUTABLE)
 #define KERN_RW        (PAGE_READABLE   | PAGE_WRITABLE)
+#define KERN_RX        (PAGE_READABLE   | PAGE_EXECUTABLE)
 #define USER_RWX       (PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE | PAGE_EXECUTABLE)
 #define USER_RX        (PAGE_USER       | PAGE_READABLE | PAGE_EXECUTABLE)
 #define USER_RW        (PAGE_USER       | PAGE_READABLE | PAGE_WRITABLE)
@@ -91,11 +131,5 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();
 void map_kernel();
 void active_mapping();
-// void wp_page_handler(struct trapframe *frame) /* 在完成进程后实现 */
 
-/**
- * @file mm.h
- * 在阅读代码时要分清物理地址和虚拟地址，否则会导致混乱。
- * 本模块注释中专门写了函数参数是物理地址还是虚拟地址，如果没有写，默认是虚拟地址。
- */
 #endif

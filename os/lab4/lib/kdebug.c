@@ -25,17 +25,16 @@ void do_panic(const char* file, int line, const char* fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     kprintf("--------------------------------------------------------------------------\n");
-    kprintf("Panic at %s: %d\n", file, line);
+    kprintf("Panic at %s: %u\n", file, line);
     if (strlen(fmt)) {
         kprintf("Assert message: ");
         kprintf(fmt, ap);
-        kputs(fmt);
     }
     kputchar('\n');
     va_end(ap);
-    sbi_shutdown();
     kprintf("Shutdown machine\n");
     kprintf("--------------------------------------------------------------------------\n");
+    sbi_shutdown();
 }
 
 int kprintf(const char* fmt, ...)
@@ -43,8 +42,8 @@ int kprintf(const char* fmt, ...)
     va_list ap;
     uint64_t val;
     uint64_t temp;
-    int len;
-    int rev = 0;
+    uint64_t len;
+    uint64_t rev = 0;
     int ch;
     const char* str = NULL;
 

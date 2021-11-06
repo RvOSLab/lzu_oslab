@@ -5,10 +5,10 @@
 #include <sched.h>
 #include <clock.h>
 #include <syscall.h>
-#include <assert.h>
 
 int main()
 {
+    kputs("\nLZU OS STARTING....................");
     print_system_infomation();
     mem_init();
     mem_test();

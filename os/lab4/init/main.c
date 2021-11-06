@@ -1,5 +1,3 @@
-#include <stddef.h>
-#include <assert.h>
 #include <sbi.h>
 #include <kdebug.h>
 #include <mm.h>

@@ -1,6 +1,6 @@
 /**
  * @file mm.h
- * @brief 声明内存模块
+ * @brief 声明内存管理模块的宏、函数、全局变量
  *
  * 在阅读代码时要分清物理地址和虚拟地址，否则会导致混乱。
  * 本模块注释中专门写了函数参数是物理地址还是虚拟地址，如果没有写，默认是虚拟地址。
@@ -48,8 +48,10 @@
 #define FLOOR(addr) ((addr) / PAGE_SIZE * PAGE_SIZE)/**< 向下取整到 4K 边界 */
 #define CEIL(addr)               \
     (((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE) /**< 向上取整到 4K 边界 */
-#define MEM_START       0x80000000                  /**< 物理内存起始地址 */
-#define MEM_END         0x88000000                  /**< 物理内存结束地址 */
+#define DEVICE_START    0x10000000                  /**< 设备树地址空间，暂时不使用 */
+#define DEVICE_END      0x10010000
+#define MEM_START       0x80000000                  /**< 物理内存地址空间 */
+#define MEM_END         0x88000000
 #define SBI_START       0x80000000                  /**< SBI 物理内存起始地址 */
 #define SBI_END         0x80200000                  /**< 用户程序（包括内核）可用的物理内存地址空间开始 */
 #define HIGH_MEM        0x88000000                  /**< 空闲内存区结束 */

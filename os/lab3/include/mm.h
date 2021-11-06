@@ -1,3 +1,7 @@
+/**
+ * @file mm.h
+ * @brief 声明内存管理模块的宏、函数、全局变量
+ */
 #ifndef __MM_H__
 #define __MM_H__
 #include <stddef.h>
@@ -30,8 +34,4 @@ void mem_init();
 void free_page(uint64_t addr);
 uint64_t get_free_page(void);
 
-/**
- * @file mm.h
- * 声明内存管理模块的宏、函数、全局变量
- */
 #endif

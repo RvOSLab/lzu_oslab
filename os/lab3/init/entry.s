@@ -1,4 +1,4 @@
-    .globl boot_stack, boot_stack_top, _start, pg_dir
+    .globl boot_stack, boot_stack_top, _start
     .section .text.entry
 _start:
     la sp, boot_stack_top

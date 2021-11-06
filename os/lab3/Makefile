@@ -12,7 +12,7 @@ KERN_ASM := kernel.asm
 
 # -mcmodel=medany 适用于64位RISC-V的CPU（RV64I指令集），使一些C语言代码中的寻址操作可以被编译为auipc指令，用于相对寻址，可使程序的运行与程序被加载的位置无关
 # -Wall 将所有的警告信息全开
-# -g 添加适用于gdb的调试信息
+# -g3 添加适用于gdb的调试信息
 # -fno-builtin 不使用 GCC 内建函数
 # -fno-stack-protector 不使用栈保护
 # -fno-strict-aliasing 允许未定义的类型间强制转换

@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <sbi.h>
 void kputchar(int ch);
 int kputs(const char *msg);

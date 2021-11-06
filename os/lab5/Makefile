@@ -12,7 +12,7 @@ KERN_ASM := kernel.asm
 
 # -mcmodel=medany 适用于64位RISC-V的CPU（RV64I指令集），使一些C语言代码中的寻址操作可以被编译为auipc指令，用于相对寻址，可使程序的运行与程序被加载的位置无关
 # -Wall 将所有的警告信息全开
-# -g 添加适用于gdb的调试信息
+# -g3 添加适用于gdb的调试信息
 # -fno-builtin 不使用 GCC 内建函数
 # -fno-stack-protector 不使用栈保护
 # -fno-strict-aliasing 允许未定义的类型间强制转换
@@ -51,14 +51,6 @@ run-gui : build
     		-monitor stdio \
 
 # debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
-    #
-	# $(QEMU) \
-	#             -machine virt \
-	#             -s -S \
-	#             -nographic \
-	#             -bios tools/fw_jump.bin \
-	#             -device loader,file=$(KERN_IMG),addr=0x80200000
-
 debug : build
 	$(TMUX) new -s debug -d "$(QEMU) \
 				-machine virt \
@@ -67,6 +59,7 @@ debug : build
 				-bios tools/fw_jump.bin \
 				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
 	$(TMUX) attach-session -t debug
+
 # 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)
 # -v：按照地址由低到高排序。
 symbol : $(KERN_BIN)

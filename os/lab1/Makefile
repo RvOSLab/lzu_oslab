@@ -1,10 +1,17 @@
-CC := riscv64-linux-gnu-gcc
-LD := riscv64-linux-gnu-ld
-OBJCOPY := riscv64-linux-gnu-objcopy
-OBJDUMP := riscv64-linux-gnu-objdump
-NM := riscv64-linux-gnu-nm
-AS := riscv64-linux-gnu-as
-GDB := riscv64-unknown-elf-gdb
+ifneq ($(wildcard $(PATH)/riscv64-linux-gnu-*),)
+	PREFIX := riscv64-linux-gnu
+else
+	PREFIX := riscv64-unknown-elf
+endif
+
+CC := $(PREFIX)-gcc
+LD := $(PREFIX)-ld
+AR := $(PREFIX)-ar
+OBJCOPY := $(PREFIX)-objcopy
+OBJDUMP := $(PREFIX)-objdump
+READELF := $(PREFIX)-readelf
+NM := $(PREFIX)-nm
+AS := $(PREFIX)-as
 TMUX := tmux
 QEMU := qemu-system-riscv64
 
@@ -14,7 +21,7 @@ KERN_MAP := kernel.map
 KERN_SYM := kernel.sym
 KERN_ASM := kernel.asm
 
-CFLAGS := -mcmodel=medany -Wall -g -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I . 
+CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I . 
 
 objects := $(patsubst %.c, %.o, $(wildcard *.c)) entry.o
 
@@ -25,7 +32,7 @@ all: build
 build : $(KERN_BIN)
 
 $(KERN_BIN) : $(objects)
-	$(LD) -T linker.ld -M=$(KERN_MAP) -o $(KERN_BIN) $^
+	$(LD) -T linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) $^
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 
 run : build

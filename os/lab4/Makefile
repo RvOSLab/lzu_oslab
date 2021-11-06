@@ -12,7 +12,7 @@ KERN_ASM := kernel.asm
 
 # -mcmodel=medany 适用于64位RISC-V的CPU（RV64I指令集），使一些C语言代码中的寻址操作可以被编译为auipc指令，用于相对寻址，可使程序的运行与程序被加载的位置无关
 # -Wall 将所有的警告信息全开
-# -g 添加适用于gdb的调试信息
+# -g3 添加适用于gdb的调试信息
 # -fno-builtin 不使用 GCC 内建函数
 # -fno-stack-protector 不使用栈保护
 # -fno-strict-aliasing 允许未定义的类型间强制转换
@@ -33,7 +33,7 @@ build :
 	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o lib/libstd.a mm/libmm.a
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
-# bios 使用 QEMU 默认的 BIOS，即使用 QEMU 自带的 OpenSBI v0.7。
+# bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
 run : build
 	@$(QEMU) \
     		-machine virt \
@@ -41,7 +41,7 @@ run : build
     		-bios tools/fw_jump.bin \
     		-device loader,file=$(KERN_IMG),addr=0x80200000
 
-# run-gui，启动图形形式的 QEMU 运行操作系统，需要 vncviewer 连接，先决条件是 build （见上）
+# run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build
 	@$(QEMU) \
     		-machine virt \

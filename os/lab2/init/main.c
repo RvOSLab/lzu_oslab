@@ -1,6 +1,4 @@
-#include <stddef.h>
 #include <sbi.h>
-#include <riscv.h>
 #include <trap.h>
 #include <clock.h>
 #include <kdebug.h>

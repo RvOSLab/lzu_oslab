@@ -16,5 +16,3 @@ $(objects) : %.o : %.c
 clean:
 	-find . -name '*.o' -exec rm {} \;
 	-find . -name '*.a' -exec rm {} \;
-
-

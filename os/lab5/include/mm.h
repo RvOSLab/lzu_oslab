@@ -1,6 +1,6 @@
 /**
  * @file mm.h
- * @brief 声明内存模块
+ * @brief 声明内存管理模块的宏、函数、全局变量
  *
  * 在阅读代码时要分清物理地址和虚拟地址，否则会导致混乱。
  * 本模块注释中专门写了函数参数是物理地址还是虚拟地址，如果没有写，默认是虚拟地址。
@@ -53,7 +53,7 @@
 #define SBI_END         0x80200000                  /**< 用户程序（包括内核）可用的物理内存地址空间开始 */
 #define HIGH_MEM        0x88000000                  /**< 空闲内存区结束 */
 #define LOW_MEM         0x82000000                  /**< 空闲内存区开始（可用于用户进程和数据放置） */
-#define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 */
+#define PAGING_MEMORY   (1024 * 1024 * 128)         /**< 系统物理内存大小 (bytes) */
 #define PAGING_PAGES    (PAGING_MEMORY >> 12)       /**< 系统物理内存页数 */
 #define MAP_NR(addr)    (((addr)-MEM_START) >> 12)  /**< 物理地址 addr 在 mem_map[] 中的下标 */
 /// @}

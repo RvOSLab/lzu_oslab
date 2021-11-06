@@ -20,6 +20,26 @@ uint64_t *pg_dir = boot_pg_dir;
 unsigned char mem_map[PAGING_PAGES] = { 0 };
 
 /**
+ * @brief 将物理地址区域映射到虚拟地址区域
+ *
+ * @param paddr_start 起始物理地址
+ * @param paddr_end 结束物理地址
+ * @param vaddr 起始虚拟地址
+ * @param flag PTE 标志位
+ * @note
+ *      - 地址必须按页对齐
+ *      - 仅建立映射，不修改物理页引用计数
+ */
+static inline void map_pages(uint64_t paddr_start, uint64_t paddr_end, uint64_t vaddr, uint8_t flag)
+{
+    while (paddr_start < paddr_end) {
+        put_page(paddr_start, vaddr, flag);
+        paddr_start += PAGE_SIZE;
+        vaddr += PAGE_SIZE;
+    }
+}
+
+/**
  * @brief 建立所有进程共有的内核映射
  *
  * 所有进程发生系统调用、中断、异常后都会进入到内核态，因此所有进程的虚拟地址空间
@@ -29,27 +49,8 @@ unsigned char mem_map[PAGING_PAGES] = { 0 };
  */
 void map_kernel()
 {
-    uint64_t phy_mem_start;
-    uint64_t phy_mem_end;
-    uint64_t vir_mem_start;
-
-    phy_mem_start = DEVICE_START;
-    phy_mem_end = DEVICE_END;
-    vir_mem_start = DEVICE_ADDRESS;
-    while (phy_mem_start < phy_mem_end) {
-        put_page(phy_mem_start, vir_mem_start, KERN_RW | PAGE_PRESENT);
-        phy_mem_start += PAGE_SIZE;
-        vir_mem_start += PAGE_SIZE;
-    }
-
-    phy_mem_start = MEM_START;
-    phy_mem_end = MEM_END;
-    vir_mem_start = KERNEL_ADDRESS;
-    while (phy_mem_start < phy_mem_end) {
-        put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
-        phy_mem_start += PAGE_SIZE;
-        vir_mem_start += PAGE_SIZE;
-    }
+    map_pages(DEVICE_START, DEVICE_END, DEVICE_ADDRESS, KERN_RW | PAGE_PRESENT);
+    map_pages(MEM_START, MEM_END, KERNEL_ADDRESS, KERN_RWX | PAGE_PRESENT);
 }
 
 /**
@@ -155,6 +156,7 @@ uint64_t get_free_page(void)
  * @param flag   标志位
  * @return 物理地址 page
  * @see panic(), map_kernel_page()
+ * @note 地址需要按页对齐
  */
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 {

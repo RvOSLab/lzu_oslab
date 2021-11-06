@@ -52,19 +52,20 @@ void free_page(uint64_t addr)
     if (addr < LOW_MEM)
         return;
     if (addr >= HIGH_MEM)
-        panic("trying to free nonexistent page");
-    assert(mem_map[MAP_NR(addr)] != 0, "trying to free free page");
+        panic("free_page(): trying to free nonexistent page");
+    assert(mem_map[MAP_NR(addr)] != 0,
+           "free_page(): trying to free free page");
     --mem_map[MAP_NR(addr)];
 }
 
 /**
  * @brief 获取空物理页
  *
- * @return 成功时物理页的物理地址,失败时返回 0
+ * @return 成功则物理页的物理地址,失败返回 0
  */
 uint64_t get_free_page(void)
 {
-    int i = MAP_NR(HIGH_MEM) - 1;
+    size_t i = MAP_NR(HIGH_MEM) - 1;
     for (; i >= MAP_NR(LOW_MEM); --i) {
         if (mem_map[i] == 0) {
             mem_map[i] = 1;

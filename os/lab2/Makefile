@@ -34,7 +34,7 @@ build : $(KERN_BIN)
 # 第二条命令，使用 objcopy 将生成的文件里的裸二进制内容拷贝出来到 $(KERN_IMG) 文件中。
 # 拷贝二进制的原因：ld 生成的文件默认为 ELF 可执行文件格式，需要借助 Linux 的 ELF 加载器来执行，我们的目的是写一个全新的操作系统，在裸机上不会有 ELF 加载器帮助我们加载，因此需要去掉所有 ELF 文件相关信息，转换为一种平铺模式的二进制文件，使 cpu 直接转到一个指令后，就能顺序执行，不受 ELF 文件信息的干扰
 $(KERN_BIN) : init/main.o init/entry.o lib/libstd.a trap/libtrap.a
-	$(LD) -T tools/linker.ld -M=$(KERN_MAP) -o $(KERN_BIN) $^
+	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) $^
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 
 lib/libstd.a :

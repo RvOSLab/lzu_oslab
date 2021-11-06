@@ -127,34 +127,34 @@ PP: Physical Page
 
 ```c
 int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
-		     uint64_t size)
+             uint64_t size)
 {
-	assert(!(from & 0x1FFFFF) && !(to & 0x1FFFFF),
-	       "copy_page_tables() called with wrong alignment");
-	size = (size + 0x1FFFFF) & ~0x1FFFFF;
-	int is_user_space = IS_USER(from, from + size);
-	/* 两虚拟地址空间要么都是用户空间，要么都是内核空间 */
-	assert(!(IS_KERNEL(from, from + size) ^ IS_KERNEL(to, to + size)),
-	       "copy_page_tables(): called with wrong argument");
-	size >>= 21;
-	uint64_t src_vpns[3] = { GET_VPN1(from), GET_VPN2(from),
-				 GET_VPN3(from) };
-	uint64_t src_dir_idx = src_vpns[0];
-	uint64_t src_dir_idx_end = src_dir_idx +
-				   ((size * 0x200000) / 0x40000000 - 1) +
-				   ((size * 0x200000) % 0x40000000 != 0);
-	uint64_t dest_vpns[3] = { GET_VPN1(to), GET_VPN2(to), GET_VPN3(to) };
-	uint64_t dest_dir_idx = dest_vpns[0];
-	uint64_t dest_dir_idx_end = dest_dir_idx +
-				    ((size * 0x200000) / 0x40000000 - 1) +
-				    ((size * 0x200000) % 0x40000000 != 0);
-	assert(src_dir_idx_end < 512,
-	       "copy_page_tables(): called with wrong argument");
-	assert(dest_dir_idx_end < 512,
-	       "copy_page_tables(): called with wrong argument");
+    assert(!(from & 0x1FFFFF) && !(to & 0x1FFFFF),
+           "copy_page_tables() called with wrong alignment");
+    size = (size + 0x1FFFFF) & ~0x1FFFFF;
+    int is_user_space = IS_USER(from, from + size);
+    /* 两虚拟地址空间要么都是用户空间，要么都是内核空间 */
+    assert(!(IS_KERNEL(from, from + size) ^ IS_KERNEL(to, to + size)),
+           "copy_page_tables(): called with wrong argument");
+    size >>= 21;
+    uint64_t src_vpns[3] = { GET_VPN1(from), GET_VPN2(from),
+                 GET_VPN3(from) };
+    uint64_t src_dir_idx = src_vpns[0];
+    uint64_t src_dir_idx_end = src_dir_idx +
+                   ((size * 0x200000) / 0x40000000 - 1) +
+                   ((size * 0x200000) % 0x40000000 != 0);
+    uint64_t dest_vpns[3] = { GET_VPN1(to), GET_VPN2(to), GET_VPN3(to) };
+    uint64_t dest_dir_idx = dest_vpns[0];
+    uint64_t dest_dir_idx_end = dest_dir_idx +
+                    ((size * 0x200000) / 0x40000000 - 1) +
+                    ((size * 0x200000) % 0x40000000 != 0);
+    assert(src_dir_idx_end < 512,
+           "copy_page_tables(): called with wrong argument");
+    assert(dest_dir_idx_end < 512,
+           "copy_page_tables(): called with wrong argument");
 
-	for (; src_dir_idx <= src_dir_idx_end; ++src_dir_idx, ++src_vpns[0]) {
-		if (!pg_dir[src_dir_idx]) {
+    for (; src_dir_idx <= src_dir_idx_end; ++src_dir_idx, ++src_vpns[0]) {
+        if (!pg_dir[src_dir_idx]) {
             dest_vpns[1] += 512 - src_vpns[1];
             if (dest_vpns[1] >= 512) {
                 dest_vpns[1] %= 512;
@@ -162,31 +162,31 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
             }
             dest_dir_idx = dest_vpns[0];
             assert(dest_dir_idx < 512, "exceed boundary of to_pg_dir[]");
-			continue;
-		}
-		if (!to_pg_dir[dest_dir_idx]) {
-			uint64_t tmp = get_free_page();
-			assert(tmp, "copy_page_tables(): memory exhausts");
-			to_pg_dir[dest_dir_idx] = (tmp >> 2) | 0x01;
-		}
+            continue;
+        }
+        if (!to_pg_dir[dest_dir_idx]) {
+            uint64_t tmp = get_free_page();
+            assert(tmp, "copy_page_tables(): memory exhausts");
+            to_pg_dir[dest_dir_idx] = (tmp >> 2) | 0x01;
+        }
 
-		uint64_t cnt;
-		if (size > 512 - src_vpns[1]) {
-			cnt = 512 - src_vpns[1];
-			size -= cnt;
-		} else {
-			cnt = size;
-			size = 0;
-		}
-		uint64_t *src_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
-					       pg_dir[src_dir_idx])) +
-				       src_vpns[1];
-		uint64_t *dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
-						to_pg_dir[dest_dir_idx])) +
-					dest_vpns[1];
+        uint64_t cnt;
+        if (size > 512 - src_vpns[1]) {
+            cnt = 512 - src_vpns[1];
+            size -= cnt;
+        } else {
+            cnt = size;
+            size = 0;
+        }
+        uint64_t *src_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
+                           pg_dir[src_dir_idx])) +
+                       src_vpns[1];
+        uint64_t *dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
+                        to_pg_dir[dest_dir_idx])) +
+                    dest_vpns[1];
 
-		for (; cnt-- > 0; ++src_pg_tb1, ++src_vpns[1]) {
-			if (!*src_pg_tb1) {
+        for (; cnt-- > 0; ++src_pg_tb1, ++src_vpns[1]) {
+            if (!*src_pg_tb1) {
                 ++dest_vpns[1];
                 ++dest_pg_tb1;
                 if (dest_vpns[1] >= 512) {
@@ -197,46 +197,46 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
                           "exceed boundary of to_pg_dir[]");
                     assert(dest_dir_idx == dest_vpns[0],
                            "dest_dir_idx don't sync with dest_vpns[]");
-		            dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
-						    to_pg_dir[dest_dir_idx])) +
-					    dest_vpns[1];
+                    dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
+                            to_pg_dir[dest_dir_idx])) +
+                        dest_vpns[1];
                 }
-				continue;
-			}
-			if (!*dest_pg_tb1) {
-				uint64_t tmp = get_free_page();
-				assert(tmp,
-				       "copy_page_tables(): Memory exhausts");
-				*dest_pg_tb1 = (tmp >> 2) | 0x01;
-			} else {
-				panic("copy_page_tables(): page table %p already exist",
-				      GET_PAGE_ADDR(*dest_pg_tb1));
-			}
+                continue;
+            }
+            if (!*dest_pg_tb1) {
+                uint64_t tmp = get_free_page();
+                assert(tmp,
+                       "copy_page_tables(): Memory exhausts");
+                *dest_pg_tb1 = (tmp >> 2) | 0x01;
+            } else {
+                panic("copy_page_tables(): page table %p already exist",
+                      GET_PAGE_ADDR(*dest_pg_tb1));
+            }
 
-			uint64_t *src_pg_tb2 =
-				(uint64_t *)VIRTUAL(GET_PAGE_ADDR(*src_pg_tb1));
-			uint64_t *dest_pg_tb2 = (uint64_t *)VIRTUAL(
-				GET_PAGE_ADDR(*dest_pg_tb1));
-			for (size_t nr = 512; nr-- > 0;
-			     ++src_pg_tb2, ++dest_pg_tb2) {
-				if (!*src_pg_tb2) {
-					continue;
-				}
-				if (*dest_pg_tb2) {
-					panic("copy_page_tables(): PTE is mapped to %p",
-					      GET_PAGE_ADDR(*dest_pg_tb2));
-				}
-				/* 写保护 */
-				*dest_pg_tb2 = *src_pg_tb2;
-				uint64_t page_addr = GET_PAGE_ADDR(*src_pg_tb2);
-				if (is_user_space) {
-					++mem_map[MAP_NR(page_addr)];
-					*dest_pg_tb2 &= ~PAGE_WRITABLE;
-					*src_pg_tb2 &= ~PAGE_WRITABLE;
-				}
-			}
-			++dest_pg_tb1;
-			++dest_vpns[1];
+            uint64_t *src_pg_tb2 =
+                (uint64_t *)VIRTUAL(GET_PAGE_ADDR(*src_pg_tb1));
+            uint64_t *dest_pg_tb2 = (uint64_t *)VIRTUAL(
+                GET_PAGE_ADDR(*dest_pg_tb1));
+            for (size_t nr = 512; nr-- > 0;
+                 ++src_pg_tb2, ++dest_pg_tb2) {
+                if (!*src_pg_tb2) {
+                    continue;
+                }
+                if (*dest_pg_tb2) {
+                    panic("copy_page_tables(): PTE is mapped to %p",
+                          GET_PAGE_ADDR(*dest_pg_tb2));
+                }
+                /* 写保护 */
+                *dest_pg_tb2 = *src_pg_tb2;
+                uint64_t page_addr = GET_PAGE_ADDR(*src_pg_tb2);
+                if (is_user_space) {
+                    ++mem_map[MAP_NR(page_addr)];
+                    *dest_pg_tb2 &= ~PAGE_WRITABLE;
+                    *src_pg_tb2 &= ~PAGE_WRITABLE;
+                }
+            }
+            ++dest_pg_tb1;
+            ++dest_vpns[1];
             assert(dest_vpns[0] == dest_dir_idx,
                     "dest_dir_idx don't sync with dest_vpns[0]");
             if (dest_vpns[1] >= 512) {
@@ -245,14 +245,14 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
                 ++dest_dir_idx;
                 assert(dest_dir_idx < 512, "exceed boundary of to_pg_dir[]");
                 dest_pg_tb1 = (uint64_t *)VIRTUAL(GET_PAGE_ADDR(
-						to_pg_dir[dest_dir_idx])) +
-					dest_vpns[1];
+                        to_pg_dir[dest_dir_idx])) +
+                    dest_vpns[1];
             }
-		}
-		src_vpns[1] = 0;
-	}
-	invalidate();
-	return 0;
+        }
+        src_vpns[1] = 0;
+    }
+    invalidate();
+    return 0;
 }
 ```
 
@@ -271,20 +271,20 @@ RISC-V 的支持的异常如下：
 ```c
 void un_wp_page(uint64_t *table_entry)
 {
-	uint64_t old_page, new_page;
-	old_page = GET_PAGE_ADDR(*table_entry);
-	if (old_page >= LOW_MEM && mem_map[MAP_NR(old_page)] == 1) {
-		*table_entry |= PAGE_WRITABLE;
-		invalidate();
-		return;
-	}
-	assert(new_page = get_free_page(),
-	       "un_wp_page(): failed to get free page");
-	if (old_page >= LOW_MEM)
-		free_page(old_page);
-	copy_page(VIRTUAL(old_page), VIRTUAL(new_page));
-	*table_entry = (new_page >> 2) | GET_FLAG(*table_entry) | PAGE_WRITABLE;
-	invalidate();
+    uint64_t old_page, new_page;
+    old_page = GET_PAGE_ADDR(*table_entry);
+    if (old_page >= LOW_MEM && mem_map[MAP_NR(old_page)] == 1) {
+        *table_entry |= PAGE_WRITABLE;
+        invalidate();
+        return;
+    }
+    assert(new_page = get_free_page(),
+           "un_wp_page(): failed to get free page");
+    if (old_page >= LOW_MEM)
+        free_page(old_page);
+    copy_page(VIRTUAL(old_page), VIRTUAL(new_page));
+    *table_entry = (new_page >> 2) | GET_FLAG(*table_entry) | PAGE_WRITABLE;
+    invalidate();
 }
 ```
 
@@ -293,16 +293,16 @@ void un_wp_page(uint64_t *table_entry)
 ```c
 void write_verify(uint64_t addr)
 {
-	uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
-	uint64_t *page_table = pg_dir;
-	for (size_t level = 0; level < 2; ++level) {
-		uint64_t idx = vpns[level];
-		assert (page_table[idx],
+    uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
+    uint64_t *page_table = pg_dir;
+    for (size_t level = 0; level < 2; ++level) {
+        uint64_t idx = vpns[level];
+        assert (page_table[idx],
                 "write_verify(): addr %p is not available", addr);
-		page_table =
-			(uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
-	}
-	un_wp_page(&page_table[vpns[2]]);
+        page_table =
+            (uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
+    }
+    un_wp_page(&page_table[vpns[2]]);
 }
 ```
 

@@ -108,7 +108,7 @@ WARL 是 *Write Any values, Read Legal Values* 的简称，表示对应字段可
 int global = 1;
 int main()
 {
-	printf("%p\n", &global);
+    printf("%p\n", &global);
     return 0;
 }
 ```
@@ -290,23 +290,23 @@ pg_dir = kernel_pg_dir;
  */
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 {
-	assert((page & (PAGE_SIZE - 1)) == 0,
-	       "put_page(): Try to put unaligned page %p to %p", page, addr);
-	uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
-	uint64_t *page_table = pg_dir;
-	for (size_t level = 0; level < 2; ++level) {
-		uint64_t idx = vpns[level];
-		if (!page_table[idx]) {
-			uint64_t tmp;
-			assert(tmp = get_free_page(),
-			       "put_page(): Memory exhausts");
-			page_table[idx] = (tmp >> 2) | 0x01;
-		}
-		page_table =
-			(uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
-	}
-	page_table[vpns[2]] = (page >> 2) | flag;
-	return page;
+    assert((page & (PAGE_SIZE - 1)) == 0,
+           "put_page(): Try to put unaligned page %p to %p", page, addr);
+    uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
+    uint64_t *page_table = pg_dir;
+    for (size_t level = 0; level < 2; ++level) {
+        uint64_t idx = vpns[level];
+        if (!page_table[idx]) {
+            uint64_t tmp;
+            assert(tmp = get_free_page(),
+                   "put_page(): Memory exhausts");
+            page_table[idx] = (tmp >> 2) | 0x01;
+        }
+        page_table =
+            (uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
+    }
+    page_table[vpns[2]] = (page >> 2) | flag;
+    return page;
 }
 ```
 
@@ -315,18 +315,18 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 ```c
 void map_kernel()
 {
-	uint64_t phy_mem_start;
-	uint64_t phy_mem_end;
-	uint64_t vir_mem_start;
+    uint64_t phy_mem_start;
+    uint64_t phy_mem_end;
+    uint64_t vir_mem_start;
 
-	phy_mem_start = MEM_START;
-	phy_mem_end = MEM_END;
-	vir_mem_start = KERNEL_ADDRESS;
-	while (phy_mem_start < phy_mem_end) {
-		put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
-		phy_mem_start += PAGE_SIZE;
-		vir_mem_start += PAGE_SIZE;
-	}
+    phy_mem_start = MEM_START;
+    phy_mem_end = MEM_END;
+    vir_mem_start = KERNEL_ADDRESS;
+    while (phy_mem_start < phy_mem_end) {
+        put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
+        phy_mem_start += PAGE_SIZE;
+        vir_mem_start += PAGE_SIZE;
+    }
 }
 ```
 
@@ -341,13 +341,13 @@ void map_kernel()
  */
 void active_mapping()
 {
-	__asm__ __volatile__("csrs sstatus, %0\n\t"
-			     "csrw satp, %1\n\t"
-			     "sfence.vma\n\t"
-			     : /* empty output list */
-			     : "r"(1 << 18),
-			       "r"((PHYSICAL((uint64_t)pg_dir) >> 12) |
-				   ((uint64_t)8 << 60)));
+    __asm__ __volatile__("csrs sstatus, %0\n\t"
+                 "csrw satp, %1\n\t"
+                 "sfence.vma\n\t"
+                 : /* empty output list */
+                 : "r"(1 << 18),
+                   "r"((PHYSICAL((uint64_t)pg_dir) >> 12) |
+                   ((uint64_t)8 << 60)));
 }
 ```
 

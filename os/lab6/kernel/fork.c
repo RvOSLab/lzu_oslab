@@ -31,13 +31,13 @@ int copy_mem(struct task_struct * p)
  */
 void verify_area(uint64_t addr,int size)
 {
-	size += addr & 0xFFF;
-	addr &= ~0x00000FFF;
-	while (size>0) {
-		size -= 4096;
-		write_verify(addr);
-		addr += 4096;
-	}
+    size += addr & 0xFFF;
+    addr &= ~0x00000FFF;
+    while (size>0) {
+        size -= 4096;
+        write_verify(addr);
+        addr += 4096;
+    }
 }
 /**
  * @brief 获取可用的 PID
@@ -97,8 +97,8 @@ long sys_fork(struct trapframe *tf)
 
     p->state = TASK_UNINTERRUPTIBLE;
     p->pid = nr;
-	p->counter = p->priority = 15;
-	p->start_time = ticks;
+    p->counter = p->priority = 15;
+    p->start_time = ticks;
     p->p_pptr = current;
     p->p_osptr = current->p_ysptr;
     if (p->p_osptr) {

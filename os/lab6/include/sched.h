@@ -69,21 +69,21 @@ struct task_struct {
     uint32_t exit_code;           /**< 返回码 */
     uint32_t pid;                 /**< 进程 ID */
     uint32_t pgid;                /**< 进程组 */
-	uint64_t start_code;          /**< 代码段起始地址 */
+    uint64_t start_code;          /**< 代码段起始地址 */
     uint64_t start_rodata;        /**< 只读数据段起始地址 */
     uint64_t start_data;          /**< 数据段起始地址 */
     uint64_t end_data;            /**< 数据段结束地址 */
     uint64_t brk;                 /**< 堆结束地址 */
     uint64_t start_stack;         /**< 堆起始地址 */
     uint64_t start_kernel;        /**< 内核区起始地址 */
-	uint32_t state;               /**< 进程调度状态 */
-	uint32_t counter;             /**< 时间片大小 */
-	uint32_t priority;            /**< 进程优先级 */
-	struct task_struct *p_pptr;   /**< 父进程 */
+    uint32_t state;               /**< 进程调度状态 */
+    uint32_t counter;             /**< 时间片大小 */
+    uint32_t priority;            /**< 进程优先级 */
+    struct task_struct *p_pptr;   /**< 父进程 */
     struct task_struct *p_cptr;   /**< 子进程 */
     struct task_struct *p_ysptr;  /**< 创建时间最晚的兄弟进程 */
     struct task_struct *p_osptr;  /**< 创建时间最早的兄弟进程 */
-	uint32_t utime,stime;         /**< 用户态、内核态耗时 */
+    uint32_t utime,stime;         /**< 用户态、内核态耗时 */
     uint32_t cutime,cstime;       /**< 进程及其子进程内核、用户态总耗时 */
     size_t start_time;            /**< 进程创建的时间 */
     uint64_t *pg_dir;             /**< 页目录地址 */

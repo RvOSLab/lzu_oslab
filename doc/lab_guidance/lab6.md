@@ -11,21 +11,21 @@ struct task_struct {
     uint32_t exit_code;           /**< 返回码 */
     uint32_t pid;                 /**< 进程 ID */
     uint32_t pgid;                /**< 进程组 */
-	uint64_t start_code;          /**< 代码段起始地址 */
+    uint64_t start_code;          /**< 代码段起始地址 */
     uint64_t start_rodata;        /**< 只读数据段起始地址 */
     uint64_t start_data;          /**< 数据段起始地址 */
     uint64_t end_data;            /**< 数据段结束地址 */
     uint64_t brk;                 /**< 堆结束地址 */
     uint64_t start_stack;         /**< 堆起始地址 */
     uint64_t start_kernel;        /**< 内核区起始地址 */
-	uint32_t state;               /**< 进程调度状态 */
-	uint32_t counter;             /**< 时间片大小 */
-	uint32_t priority;            /**< 进程优先级 */
-	struct task_struct *p_pptr;   /**< 父进程 */
+    uint32_t state;               /**< 进程调度状态 */
+    uint32_t counter;             /**< 时间片大小 */
+    uint32_t priority;            /**< 进程优先级 */
+    struct task_struct *p_pptr;   /**< 父进程 */
     struct task_struct *p_cptr;   /**< 子进程 */
     struct task_struct *p_ysptr;  /**< 创建时间最晚的兄弟进程 */
     struct task_struct *p_osptr;  /**< 创建时间最早的兄弟进程 */
-	uint32_t utime,stime;         /**< 用户态、内核态耗时 */
+    uint32_t utime,stime;         /**< 用户态、内核态耗时 */
     uint32_t cutime,cstime;       /**< 进程及其子进程内核、用户态总耗时 */
     size_t start_time;            /**< 进程创建的时间 */
     uint64_t *pg_dir;             /**< 页目录地址 */
@@ -46,49 +46,49 @@ typedef struct trapframe context;                             /**< 处理器上�
  * @brief 保存通用寄存器的结构体抽象，用于trapframe结构体
  */
 struct pushregs {
-	uint64_t zero; // Hard-wired zero
-	uint64_t ra;   // Return address
-	uint64_t sp;   // Stack pointer
-	uint64_t gp;   // Global pointer
-	uint64_t tp;   // Thread pointer
-	uint64_t t0;   // Temporary
-	uint64_t t1;   // Temporary
-	uint64_t t2;   // Temporary
-	uint64_t s0;   // Saved register/frame pointer
-	uint64_t s1;   // Saved register
-	uint64_t a0;   // Function argument/return value
-	uint64_t a1;   // Function argument/return value
-	uint64_t a2;   // Function argument
-	uint64_t a3;   // Function argument
-	uint64_t a4;   // Function argument
-	uint64_t a5;   // Function argument
-	uint64_t a6;   // Function argument
-	uint64_t a7;   // Function argument
-	uint64_t s2;   // Saved register
-	uint64_t s3;   // Saved register
-	uint64_t s4;   // Saved register
-	uint64_t s5;   // Saved register
-	uint64_t s6;   // Saved register
-	uint64_t s7;   // Saved register
-	uint64_t s8;   // Saved register
-	uint64_t s9;   // Saved register
-	uint64_t s10;  // Saved register
-	uint64_t s11;  // Saved register
-	uint64_t t3;   // Temporary
-	uint64_t t4;   // Temporary
-	uint64_t t5;   // Temporary
-	uint64_t t6;   // Temporary
+    uint64_t zero; // Hard-wired zero
+    uint64_t ra;   // Return address
+    uint64_t sp;   // Stack pointer
+    uint64_t gp;   // Global pointer
+    uint64_t tp;   // Thread pointer
+    uint64_t t0;   // Temporary
+    uint64_t t1;   // Temporary
+    uint64_t t2;   // Temporary
+    uint64_t s0;   // Saved register/frame pointer
+    uint64_t s1;   // Saved register
+    uint64_t a0;   // Function argument/return value
+    uint64_t a1;   // Function argument/return value
+    uint64_t a2;   // Function argument
+    uint64_t a3;   // Function argument
+    uint64_t a4;   // Function argument
+    uint64_t a5;   // Function argument
+    uint64_t a6;   // Function argument
+    uint64_t a7;   // Function argument
+    uint64_t s2;   // Saved register
+    uint64_t s3;   // Saved register
+    uint64_t s4;   // Saved register
+    uint64_t s5;   // Saved register
+    uint64_t s6;   // Saved register
+    uint64_t s7;   // Saved register
+    uint64_t s8;   // Saved register
+    uint64_t s9;   // Saved register
+    uint64_t s10;  // Saved register
+    uint64_t s11;  // Saved register
+    uint64_t t3;   // Temporary
+    uint64_t t4;   // Temporary
+    uint64_t t5;   // Temporary
+    uint64_t t6;   // Temporary
 };
 
 /**
  * @brief 保存上下文的栈的结构体抽象，和trap.S中分配的36*XLENB相对应
  */
 struct trapframe {
-	struct pushregs gpr; // x0-x31 (general purpose register)
-	uint64_t status;     // sstatus
-	uint64_t epc;        // sepc
-	uint64_t badvaddr;   // stval
-	uint64_t cause;      // scause
+    struct pushregs gpr; // x0-x31 (general purpose register)
+    uint64_t status;     // sstatus
+    uint64_t epc;        // sepc
+    uint64_t badvaddr;   // stval
+    uint64_t cause;      // scause
 };
 ```
 

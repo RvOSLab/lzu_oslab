@@ -238,7 +238,7 @@ long sys_init(struct trapframe* tf)
  *     tmp = *p;
  *     *p = current;
  *     current->state = state;
- * repeat:	schedule();
+ * repeat:    schedule();
  *     if (*p && *p != current) {
  *         (**p).state = 0;
  *         current->state = TASK_UNINTERRUPTIBLE;

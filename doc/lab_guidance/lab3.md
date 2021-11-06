@@ -37,7 +37,7 @@ static const struct MemmapEntry {
 #define PAGE_SIZE 4096
 #define FLOOR(addr) ((addr) / PAGE_SIZE * PAGE_SIZE)
 #define CEIL(addr)                                                             \
-	(((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE)
+    (((addr) / PAGE_SIZE + ((addr) % PAGE_SIZE != 0)) * PAGE_SIZE)
 #define DEVICE_START    0x10000000                  /**< 设备树地址空间，暂时不使用 */
 #define DEVICE_END      0x10010000
 #define MEM_START       0x80000000                  /**< 物理内存地址空间 */
@@ -83,13 +83,13 @@ extern unsigned char mem_map[PAGING_PAGES];
 // mm/memory.c
 void mem_init()
 {
-	size_t i = MAP_NR(HIGH_MEM);
-	/* 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
-	while (i > MAP_NR(LOW_MEM))
-		mem_map[--i] = UNUSED;
-	/* 设SBI与内核内存空间[MEM_START,LOW_MEM)的内存空间为不可用 */
-	while (i > MAP_NR(MEM_START))
-		mem_map[--i] = USED;
+    size_t i = MAP_NR(HIGH_MEM);
+    /* 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
+    while (i > MAP_NR(LOW_MEM))
+        mem_map[--i] = UNUSED;
+    /* 设SBI与内核内存空间[MEM_START,LOW_MEM)的内存空间为不可用 */
+    while (i > MAP_NR(MEM_START))
+        mem_map[--i] = USED;
 }
 ```
 
@@ -101,16 +101,16 @@ void mem_init()
 // mm/memory.c
 uint64_t get_free_page(void)
 {
-	int i = MAP_NR(HIGH_MEM) - 1;
-	for (; i >= MAP_NR(LOW_MEM); --i) {
-		if (mem_map[i] == 0) {
-			mem_map[i] = 1;
-			uint64_t ret = MEM_START + i * PAGE_SIZE;
-			memset((void *)ret, 0, PAGE_SIZE);
-			return ret;
-		}
-	}
-	return 0;
+    int i = MAP_NR(HIGH_MEM) - 1;
+    for (; i >= MAP_NR(LOW_MEM); --i) {
+        if (mem_map[i] == 0) {
+            mem_map[i] = 1;
+            uint64_t ret = MEM_START + i * PAGE_SIZE;
+            memset((void *)ret, 0, PAGE_SIZE);
+            return ret;
+        }
+    }
+    return 0;
 }
 ```
 
@@ -124,12 +124,13 @@ uint64_t get_free_page(void)
 // mm/memory.c
 void free_page(uint64_t addr)
 {
-	if (addr < LOW_MEM)
-		return;
-	if (addr >= HIGH_MEM)
-		panic("trying to free nonexistent page");
-	assert(mem_map[MAP_NR(addr)] != 0, "trying to free free page");
-	--mem_map[MAP_NR(addr)];
+    if (addr < LOW_MEM)
+        return;
+    if (addr >= HIGH_MEM)
+        panic("free_page(): trying to free nonexistent page");
+    assert(mem_map[MAP_NR(addr)] != 0,
+           "free_page(): trying to free free page");
+    --mem_map[MAP_NR(addr)];
 }
 ```
 

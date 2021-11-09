@@ -49,9 +49,9 @@ static inline void map_pages(uint64_t paddr_start, uint64_t paddr_end, uint64_t 
  */
 void map_kernel()
 {
-    map_pages(MEM_START, MEM_END, KERNEL_ADDRESS, KERN_RWX | PAGE_PRESENT);
-    map_pages(PLIC_START, PLIC_END, PLIC_START_ADDRESS, KERN_RW | PAGE_PRESENT);
-    map_pages(UART_START, CEIL(UART_END), UART_START_ADDRESS, KERN_RW | PAGE_PRESENT);
+    map_pages(MEM_START, MEM_END, KERNEL_ADDRESS, KERN_RWX | PAGE_VALID);
+    map_pages(PLIC_START, PLIC_END, PLIC_START_ADDRESS, KERN_RW | PAGE_VALID);
+    map_pages(UART_START, CEIL(UART_END), UART_START_ADDRESS, KERN_RW | PAGE_VALID);
     kprintf("PLIC_START_ADDRESS: %x\n", PLIC_START_ADDRESS);
     kprintf("UART_START_ADDRESS: %x\n", UART_START_ADDRESS);
 }
@@ -194,7 +194,7 @@ void get_empty_page(uint64_t addr, uint8_t flag)
 {
     uint64_t tmp;
     assert(tmp = get_free_page(), "get_empty_page(): Memory exhausts");
-    put_page(tmp, addr, flag | PAGE_PRESENT);
+    put_page(tmp, addr, flag | PAGE_VALID);
 }
 
 /**
@@ -524,7 +524,7 @@ void mem_test()
     for (size_t i = 0; i < 1000; ++i) {
         page_tracker[i] = get_free_page();
         assert(page_tracker[i]);
-        put_page(page_tracker[i], p, USER_RWX | PAGE_PRESENT);
+        put_page(page_tracker[i], p, USER_RWX | PAGE_VALID);
         p += PAGE_SIZE;
     }
 
@@ -588,7 +588,7 @@ void mem_test()
                "page reference is wrong");
         /* 共享同一物理地址后进行写保护 */
         assert(GET_FLAG(page_table[vpns[2]]) ==
-                   (USER_RX | PAGE_PRESENT),
+                   (USER_RX | PAGE_VALID),
                "permission is wrong");
     }
 
@@ -618,7 +618,7 @@ void mem_test()
         assert(mem_map[MAP_NR(GET_PAGE_ADDR(page_table[vpns[2]]))] == 2,
                "page reference is wrong");
         assert(GET_FLAG(page_table[vpns[2]]) ==
-                   (USER_RX | PAGE_PRESENT),
+                   (USER_RX | PAGE_VALID),
                "permission is wrong");
     }
 
@@ -653,7 +653,7 @@ void mem_test()
                "page reference is wrong");
         /* 整个过程不涉及旧“进程”虚拟地址空间的写，因此页表项权限不变 */
         assert(GET_FLAG(page_table[vpns[2]]) ==
-                   (USER_RX | PAGE_PRESENT),
+                   (USER_RX | PAGE_VALID),
                "permission is wrong");
     }
 

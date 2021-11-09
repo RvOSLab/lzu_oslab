@@ -323,7 +323,7 @@ void map_kernel()
     phy_mem_end = MEM_END;
     vir_mem_start = KERNEL_ADDRESS;
     while (phy_mem_start < phy_mem_end) {
-        put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_PRESENT);
+        put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_VALID);
         phy_mem_start += PAGE_SIZE;
         vir_mem_start += PAGE_SIZE;
     }

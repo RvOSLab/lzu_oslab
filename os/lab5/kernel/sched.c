@@ -201,9 +201,9 @@ static void map_segment(uint64_t start, uint64_t end, uint8_t flag)
 long sys_init(struct trapframe* tf)
 {
     /* 创建指向内核代码/数据的用户态映射 */
-    map_segment((uint64_t)text_start, (uint64_t)rodata_start, USER_RX | PAGE_PRESENT);
-    map_segment((uint64_t)rodata_start, (uint64_t)data_start, USER_R | PAGE_PRESENT);
-    map_segment((uint64_t)data_start, (uint64_t)kernel_end, USER_RW | PAGE_PRESENT);
+    map_segment((uint64_t)text_start, (uint64_t)rodata_start, USER_RX | PAGE_VALID);
+    map_segment((uint64_t)rodata_start, (uint64_t)data_start, USER_R | PAGE_VALID);
+    map_segment((uint64_t)data_start, (uint64_t)kernel_end, USER_RW | PAGE_VALID);
 
     /*
      * 创建进程 0 堆栈（从 0xBFFFFFF0 开始）

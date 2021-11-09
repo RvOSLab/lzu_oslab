@@ -1,4 +1,4 @@
-ifneq ($(wildcard $(PATH)/riscv64-linux-gnu-*),)
+ifneq ($(wildcard $(foreach p,$(subst :, ,$(PATH)),$(p)/riscv64-linux-gnu-*)),)
 	PREFIX := riscv64-linux-gnu
 else
 	PREFIX := riscv64-unknown-elf

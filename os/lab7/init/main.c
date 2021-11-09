@@ -21,7 +21,7 @@ int main()
     syscall(NR_fork);    /* task 0 creates task 2, task 1 creates task 3 */
     long local = syscall(NR_getpid) + 100;
     syscall(NR_test_fork, local);
-    while (1)
+    while (0)
         ; /* infinite loop */
     return 0;
 }

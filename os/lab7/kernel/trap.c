@@ -18,6 +18,7 @@
 #include <sched.h>
 #include <syscall.h>
 #include <trap.h>
+#include <virtio.h>
 #include <plic.h>
 #include <uart.h>
 
@@ -96,6 +97,7 @@ void trap_init()
     set_csr(sie, 1 << IRQ_S_EXT);
     unsigned long sie = read_csr(sie);
     kprintf("sie: %x\n", sie);
+    virtio_probe();
 }
 
 /**

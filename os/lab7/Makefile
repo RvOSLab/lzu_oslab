@@ -40,7 +40,12 @@ run : build
     		-machine virt \
     		-nographic \
     		-bios tools/fw_jump.bin \
-    		-device virtio-keyboard-device -device loader,file=$(KERN_IMG),addr=0x80200000
+			-global virtio-mmio.force-legacy=off \
+    		-device virtio-keyboard-device \
+			-device loader,file=$(KERN_IMG),addr=0x80200000 \
+			-drive if=none,format=raw,file=1.img,id=hd0 \
+			-device virtio-blk-device,drive=hd0,bus=virtio-mmio-bus.0 \
+			-d guest_errors,strace,unimp,trace:"virtio_*",trace:"qemu_iovec_*"
 
 # run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build

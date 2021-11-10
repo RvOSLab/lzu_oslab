@@ -156,7 +156,7 @@ uint64_t get_free_page(void)
  * @param addr   虚拟地址
  * @param flag   标志位
  * @return 物理地址 page
- * @see panic(), map_kernel_page()
+ * @see panic(), map_kernel()
  * @note 地址需要按页对齐
  */
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
@@ -171,7 +171,7 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
             uint64_t tmp;
             assert(tmp = get_free_page(),
                    "put_page(): Memory exhausts");
-            page_table[idx] = (tmp >> 2) | 0x01;
+            page_table[idx] = (tmp >> 2) | PAGE_VALID;
         }
         page_table =
             (uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));

@@ -124,7 +124,7 @@
 #define GET_VPN2(addr)     (( (addr) >> 21) & 0x1FF)
 #define GET_VPN3(addr)     (( (addr) >> 12) & 0x1FF)
 #define GET_PPN(addr)      (( addr) >> 12)
-#define GET_PAGE_ADDR(pte) (( (pte) & ~0xFFC00000000003FF) << 2)
+#define GET_PAGE_ADDR(pte) (( (pte) & 0x3FFFFFFFFFFC00) << 2)
 #define GET_FLAG(pte)      ( (pte) & 0x3FF )
 #define LINEAR_OFFSET    0x40000000
 #define PHYSICAL(vaddr)  (vaddr - LINEAR_OFFSET)

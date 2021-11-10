@@ -269,8 +269,7 @@ boot_stack_top:
 ```c
 uint64_t page = get_free_page();
 assert(page, "mem_init(): fail to allocate page");
-uint64_t *kernel_pg_dir = (uint64_t *)VIRTUAL(page);
-pg_dir = kernel_pg_dir;
+pg_dir = (uint64_t *)VIRTUAL(page);
 ```
 
 创建映射的过程就是遍历页表，若页表不存在就创建，直到最后一级页表，将物理页号和标志位写进 PTE。代码如下：
@@ -286,7 +285,7 @@ pg_dir = kernel_pg_dir;
  * @param addr   虚拟地址
  * @param flag   标志位
  * @return 物理地址 page
- * @see panic(), map_kernel_page()
+ * @see panic(), map_kernel()
  */
 uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 {
@@ -300,7 +299,7 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
             uint64_t tmp;
             assert(tmp = get_free_page(),
                    "put_page(): Memory exhausts");
-            page_table[idx] = (tmp >> 2) | 0x01;
+            page_table[idx] = (tmp >> 2) | PAGE_VALID;
         }
         page_table =
             (uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
@@ -315,18 +314,8 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
 ```c
 void map_kernel()
 {
-    uint64_t phy_mem_start;
-    uint64_t phy_mem_end;
-    uint64_t vir_mem_start;
-
-    phy_mem_start = MEM_START;
-    phy_mem_end = MEM_END;
-    vir_mem_start = KERNEL_ADDRESS;
-    while (phy_mem_start < phy_mem_end) {
-        put_page(phy_mem_start, vir_mem_start, KERN_RWX | PAGE_VALID);
-        phy_mem_start += PAGE_SIZE;
-        vir_mem_start += PAGE_SIZE;
-    }
+    map_pages(DEVICE_START, DEVICE_END, DEVICE_ADDRESS, KERN_RW | PAGE_VALID);
+    map_pages(MEM_START, MEM_END, KERNEL_ADDRESS, KERN_RWX | PAGE_VALID);
 }
 ```
 

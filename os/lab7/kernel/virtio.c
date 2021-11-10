@@ -80,9 +80,9 @@ void virtio_queue_init(volatile struct virtio_device *device, uint64_t is_legacy
     assert(device->queue_num_max >= VIRTIO_QUEUE_NUM);
     // 4. allocate and zero the queue memory
     page_ptr = VIRTIO_QUEUE_START_ADDRESS;
-    virtq_phy_addr = get_empty_page(page_ptr , KERN_RW) - PAGE_SIZE;
+    virtq_phy_addr = get_empty_page(page_ptr , KERN_RW);
     kprintf("virtq_phy_addr @ 0x%x - 0x%x\n", virtq_phy_addr, page_ptr);
-    for(page_ptr + PAGE_SIZE; page_ptr < VIRTIO_QUEUE_END_ADDRESS; page_ptr += PAGE_SIZE) {
+    for(page_ptr += PAGE_SIZE; page_ptr < VIRTIO_QUEUE_END_ADDRESS; page_ptr += PAGE_SIZE) {
         get_empty_page(page_ptr, KERN_RW);
     }
     memset((uint8_t *)VIRTIO_QUEUE_START_ADDRESS, 0, VIRTIO_QUEUE_LENGTH);

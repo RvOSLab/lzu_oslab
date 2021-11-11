@@ -94,9 +94,10 @@ struct virtq {
 };
 
 extern uint16_t virtq_get_desc(struct virtq *vq);
-extern uint16_t virtq_free_desc(struct virtq *vq, uint16_t idx);
+extern void virtq_free_desc(struct virtq *vq, uint16_t idx);
+extern void virtq_free_desc_chain(struct virtq *vq, uint16_t idx);
 extern void virtq_put_avail(struct virtq *vq, uint16_t idx);
-extern struct virtq_used_elem* virtq_get_used(struct virtq *vq);
+extern struct virtq_used_elem* virtq_get_used_elem(struct virtq *vq);
 
 extern void virtio_queue_init(struct virtq* virtio_queue);
 

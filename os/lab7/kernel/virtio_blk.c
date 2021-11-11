@@ -4,7 +4,8 @@
 #include <kdebug.h>
 #include <assert.h>
 
-struct virtq virtio_queue;
+volatile struct virtio_device *blk_device;
+struct virtq virtio_blk_queue;
 
 void virtio_blk_init(volatile struct virtio_device *device, uint64_t is_legacy) {
     volatile struct virtio_blk_config *blk_config;
@@ -34,62 +35,71 @@ void virtio_blk_init(volatile struct virtio_device *device, uint64_t is_legacy) 
         }
     }
     // 7. perform device-specific setup
-    virtio_queue_init(&virtio_queue);
-    virtio_set_queue(device, is_legacy, virtio_queue.physical_addr);
+    virtio_queue_init(&virtio_blk_queue);
+    virtio_set_queue(device, is_legacy, virtio_blk_queue.physical_addr);
     blk_config = (volatile struct virtio_blk_config *)((uint64_t)device + VIRTIO_BLK_CONFIG_OFFSET);
     kprintf("virtio blk capacity: 0x%x\n", blk_config->capacity);
     kprintf("virtio blk size: 0x%x\n", blk_config->blk_size);
     // 8. set driver ok
     device->status |= VIRTIO_STATUS_DRIVER_OK;
+
+    blk_device = device;
+}
+
+uint8_t virtio_blk_rw(uint8_t* buffer, uint64_t sector, uint64_t is_write) {
+    struct virtio_blk_req req = {
+        .type = (is_write ? VIRTIO_BLK_T_OUT : VIRTIO_BLK_T_IN),
+        .reserved = 0,
+        .sector = sector,
+        .status = 0xff
+    };
+    kprintf("virtio_blk_queue.desc @ 0x%x\n", virtio_blk_queue.desc);
+    uint16_t idx, head;
+    head = idx = virtq_get_desc(&virtio_blk_queue);
+    assert(idx != 0xff);
+    virtio_blk_queue.desc[idx].addr = PHYSICAL(((uint64_t)&req));
+    virtio_blk_queue.desc[idx].len = 16;
+    virtio_blk_queue.desc[idx].flags = VIRTQ_DESC_F_NEXT;
+    idx = virtq_get_desc(&virtio_blk_queue);
+    assert(idx != 0xff);
+    virtio_blk_queue.desc[idx].addr = PHYSICAL(((uint64_t)buffer));
+    virtio_blk_queue.desc[idx].len = 512;
+    virtio_blk_queue.desc[idx].flags = VIRTQ_DESC_F_NEXT | (is_write ? 0 : VIRTQ_DESC_F_WRITE);
+    idx = virtq_get_desc(&virtio_blk_queue);
+    assert(idx != 0xff);
+    virtio_blk_queue.desc[idx].addr = PHYSICAL(((uint64_t)&(req.status)));
+    virtio_blk_queue.desc[idx].len = sizeof(req.status);
+    virtio_blk_queue.desc[idx].flags = VIRTQ_DESC_F_WRITE;
+    virtio_blk_queue.desc[idx].next = 0;
+    
+    virtq_put_avail(&virtio_blk_queue, head);
+    blk_device->queue_notify = 0;
+    while(req.status == 0xff);
+
+    struct virtq_used_elem *used_elem;
+    while (used_elem = virtq_get_used_elem(&virtio_blk_queue)) {
+        virtq_free_desc_chain(&virtio_blk_queue, used_elem->id);
+    }
+
+    return req.status;
 }
 
 void virtio_blk_test(volatile struct virtio_device *device) {
-    struct virtio_blk_req req = {
-        .type = VIRTIO_BLK_T_OUT,
-        .reserved = 0,
-        .sector = 0,
-        .status = 111
-    };
-    kprintf("req @ 0x%x - %x\n", PHYSICAL(((uint64_t)&req)), &req);
     uint8_t buffer[512];
     memset(buffer, 0, sizeof(buffer));
     for (int i = 0; i < 16; i++) {
         buffer[i] = i;
     }
-    uint16_t idx, head;
-    head = idx = virtq_get_desc(&virtio_queue);
-    assert(idx != 0xff);
-    kprintf("idx = %x\n", idx);
-    virtio_queue.desc[idx].addr = PHYSICAL(((uint64_t)&req));
-    virtio_queue.desc[idx].len = 16;
-    virtio_queue.desc[idx].flags = VIRTQ_DESC_F_NEXT;
-    idx = virtq_get_desc(&virtio_queue);
-    assert(idx != 0xff);
-    kprintf("idx = %x\n", idx);
-    virtio_queue.desc[idx].addr = PHYSICAL(((uint64_t)buffer));
-    virtio_queue.desc[idx].len = 512;
-    virtio_queue.desc[idx].flags = VIRTQ_DESC_F_NEXT;
-    idx = virtq_get_desc(&virtio_queue);
-    assert(idx != 0xff);
-    kprintf("idx = %x\n", idx);
-    virtio_queue.desc[idx].addr = PHYSICAL(((uint64_t)&(req.status)));
-    virtio_queue.desc[idx].len = sizeof(req.status);
-    virtio_queue.desc[idx].flags = VIRTQ_DESC_F_WRITE;
-    virtio_queue.desc[idx].next = 0;
     
-    virtq_put_avail(&virtio_queue, head);
-    device->queue_notify = head;
-    while(req.status == 111);
-    if(req.status != 0) {
-        kprintf("virtio_test failed $ 0x%x\n", req.status);
+    if(virtio_blk_rw(buffer, 0, 1) != 0) {
+        kprintf("virtio_blk_test write failed\n");
     } else {
-        kprintf("virtio_test ok $ 0x%x\n", req.status);
+        kprintf("virtio_blk_test write ok\n");
     }
-    struct virtq_used_elem *used_elem;
-    while (used_elem = virtq_get_used(&virtio_queue)) {
-        kprintf("used_elem @ 0x%x - %x\n", PHYSICAL((uint64_t)used_elem), used_elem);
-        kprintf("used_elem->id = 0x%x\n", used_elem->id);
-        kprintf("used_elem->len = 0x%x\n", used_elem->len);
+    if(virtio_blk_rw(buffer, 0, 0) != 0) {
+        kprintf("virtio_blk_test read failed\n");
+    } else {
+        kprintf("virtio_blk_test read ok\n");
     }
     
     for (int i = 0; i < 16; i++) {

@@ -11,9 +11,19 @@ uint16_t virtq_get_desc(struct virtq *vq) {
     return next_idx;
 }
 
-uint16_t virtq_free_desc(struct virtq *vq, uint16_t idx) {
+void virtq_free_desc(struct virtq *vq, uint16_t idx) {
     vq->desc[idx].next = vq->next_empty_desc;
-    return vq->next_empty_desc = idx;
+}
+
+void virtq_free_desc_chain(struct virtq *vq, uint16_t idx) {
+    uint16_t tmp_idx;
+    while (vq->desc[idx].flags & VIRTQ_DESC_F_NEXT)
+    {
+        tmp_idx = vq->desc[idx].next;
+        virtq_free_desc(vq, idx);
+        idx = tmp_idx;
+    }
+    virtq_free_desc(vq, idx);
 }
 
 void virtq_put_avail(struct virtq *vq, uint16_t idx) {
@@ -23,7 +33,7 @@ void virtq_put_avail(struct virtq *vq, uint16_t idx) {
     synchronize();
 }
 
-struct virtq_used_elem* virtq_get_used(struct virtq *vq) {
+struct virtq_used_elem* virtq_get_used_elem(struct virtq *vq) {
     // TODO: virtq_free_used
     if(vq->used->idx == vq->last_used_idx) {
         return NULL;

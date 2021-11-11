@@ -1,4 +1,5 @@
 #include <virtio_blk.h>
+#include <virtio_queue.h>
 
 #include <kdebug.h>
 #include <assert.h>

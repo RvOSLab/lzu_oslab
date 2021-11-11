@@ -93,34 +93,11 @@ struct virtq {
     uint64_t physical_addr;
 };
 
-static inline uint16_t virtq_get_desc(struct virtq *vq) {
-    uint16_t next_idx = vq->next_empty_desc;
-    if(next_idx != 0xff) {
-        vq->next_empty_desc = vq->desc[next_idx].next;
-    }
-    return next_idx;
-}
+extern uint16_t virtq_get_desc(struct virtq *vq);
+extern uint16_t virtq_free_desc(struct virtq *vq, uint16_t idx);
+extern void virtq_put_avail(struct virtq *vq, uint16_t idx);
+extern struct virtq_used_elem* virtq_get_used(struct virtq *vq);
 
-static inline uint16_t virtq_free_desc(struct virtq *vq, uint16_t idx) {
-    vq->desc[idx].next = vq->next_empty_desc;
-    return vq->next_empty_desc = idx;
-}
+extern void virtio_queue_init(struct virtq* virtio_queue);
 
-static inline void virtq_put_avail(struct virtq *vq, uint16_t idx) {
-    vq->avail->ring[vq->avail->idx] = idx;
-    synchronize();
-    vq->avail->idx = (vq->avail->idx + 1) % VIRTQ_RING_NUM;
-    synchronize();
-}
-
-static inline struct virtq_used_elem* virtq_get_used(struct virtq *vq) {
-    // TODO: virtq_free_used
-    if(vq->used->idx == vq->last_used_idx) {
-        return NULL;
-    } else {
-        struct virtq_used_elem* used_elem = vq->used->ring + vq->last_used_idx;
-        vq->last_used_idx = (vq->last_used_idx + 1) % VIRTQ_RING_NUM;
-        return used_elem;
-    }
-}
 #endif /* VIRTQUEUE_H */

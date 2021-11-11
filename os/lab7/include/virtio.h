@@ -1,5 +1,5 @@
-#ifndef __VIRTIO_H__
-#define __VIRTIO_H__
+#ifndef VIRTIO_H
+#define VIRTIO_H
 
 
 #include <stddef.h>
@@ -138,4 +138,4 @@ void virtio_queue_init(struct virtq* virtio_queue);
 void virtio_set_queue(volatile struct virtio_device *device, uint64_t is_legacy, uint64_t virtq_phy_addr);
 void virtio_test(volatile struct virtio_device *device);
 
-#endif
+#endif /* VIRTIO */

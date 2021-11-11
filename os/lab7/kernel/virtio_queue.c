@@ -34,7 +34,6 @@ void virtq_put_avail(struct virtq *vq, uint16_t idx) {
 }
 
 struct virtq_used_elem* virtq_get_used_elem(struct virtq *vq) {
-    // TODO: virtq_free_used
     if(vq->used->idx == vq->last_used_idx) {
         return NULL;
     } else {

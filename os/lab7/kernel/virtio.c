@@ -11,7 +11,7 @@ void virtio_probe() {
     uint64_t is_legacy;
     volatile struct virtio_device *device;
 
-    for(ptr = VIRTIO_START_ADDRESS; ptr < VIRTIO_END_ADDRESS; ptr += VIRTIO_STRIDE) {
+    for(ptr = VIRTIO_START_ADDRESS; ptr < VIRTIO_END_ADDRESS; ptr += VIRTIO_MMIO_STRIDE) {
         device = (volatile struct virtio_device *)ptr;
         if(device->magic_value == VIRTIO_MAGIC) {
             if(device->version == VIRTIO_VERSION || device->version == VIRTIO_VERSION_LEGACY) {
@@ -77,29 +77,29 @@ void virtio_queue_init(volatile struct virtio_device *device, uint64_t is_legacy
         assert(device->queue_ready == 0);
     }
     // 3. check the queue num max
-    assert(device->queue_num_max >= VIRTIO_QUEUE_NUM);
+    assert(device->queue_num_max >= VIRTIO_QUEUE_RING_NUM);
     // 4. allocate and zero the queue memory
-    page_ptr = VIRTIO_QUEUE_START_ADDRESS;
-    virtq_phy_addr = get_empty_page(page_ptr , KERN_RW);
+    virtq_phy_addr = get_free_page();
+    page_ptr = VIRTUAL(virtq_phy_addr);
     kprintf("virtq_phy_addr @ 0x%x - 0x%x\n", virtq_phy_addr, page_ptr);
-    for(page_ptr += PAGE_SIZE; page_ptr < VIRTIO_QUEUE_END_ADDRESS; page_ptr += PAGE_SIZE) {
-        get_empty_page(page_ptr, KERN_RW);
-    }
-    memset((uint8_t *)VIRTIO_QUEUE_START_ADDRESS, 0, VIRTIO_QUEUE_LENGTH);
+    // for(page_ptr += PAGE_SIZE; page_ptr < VIRTIO_QUEUE_END_ADDRESS; page_ptr += PAGE_SIZE) {
+    //     get_empty_page(page_ptr, KERN_RW);
+    // }
+    // memset((uint8_t *)VIRTIO_QUEUE_START_ADDRESS, 0, VIRTIO_QUEUE_LENGTH);
     // 5. set queue num
-    virtio_queue.num = VIRTIO_QUEUE_NUM;
-    device->queue_num = VIRTIO_QUEUE_NUM;
+    virtio_queue.num = VIRTIO_QUEUE_RING_NUM;
+    device->queue_num = VIRTIO_QUEUE_RING_NUM;
     // 6. set the queue address
-    virtio_queue.desc  = (struct virtq_desc *)  VIRTIO_QUEUE_START_ADDRESS;
-    virtio_queue.avail = (struct virtq_avail *) (virtio_queue.desc  + VIRTIO_QUEUE_NUM);
-    virtio_queue.used  = (struct virtq_used *) (VIRTIO_QUEUE_START_ADDRESS + 16 * VIRTIO_QUEUE_NUM + 6 + 2 * VIRTIO_QUEUE_NUM);
+    virtio_queue.desc  = (struct virtq_desc *)  page_ptr;
+    virtio_queue.avail = (struct virtq_avail *) (virtio_queue.desc  + VIRTIO_QUEUE_RING_NUM);
+    virtio_queue.used  = (struct virtq_used *) (page_ptr + 16 * VIRTIO_QUEUE_RING_NUM + 6 + 2 * VIRTIO_QUEUE_RING_NUM);
     if(is_legacy) {
         device->guest_page_size = PAGE_SIZE;
         device->queue_pfn = virtq_phy_addr / PAGE_SIZE;
     } else {
         device->queue_desc = virtq_phy_addr;
-        device->queue_driver = virtq_phy_addr + 16 * VIRTIO_QUEUE_NUM;
-        device->queue_device = virtq_phy_addr + 16 * VIRTIO_QUEUE_NUM + 6 + 2 * VIRTIO_QUEUE_NUM;
+        device->queue_driver = virtq_phy_addr + 16 * VIRTIO_QUEUE_RING_NUM;
+        device->queue_device = virtq_phy_addr + 16 * VIRTIO_QUEUE_RING_NUM + 6 + 2 * VIRTIO_QUEUE_RING_NUM;
         // 7. set queue ready
         device->queue_ready = 1;
     }
@@ -134,7 +134,7 @@ void virtio_test(volatile struct virtio_device *device) {
     virtio_queue.desc[2].flags = VIRTQ_DESC_F_WRITE;
     virtio_queue.desc[2].next = 0;
     
-    virtio_queue.avail->ring[virtio_queue.avail->idx % VIRTIO_QUEUE_NUM] = 0;
+    virtio_queue.avail->ring[virtio_queue.avail->idx % VIRTIO_QUEUE_RING_NUM] = 0;
     __sync_synchronize();
     virtio_queue.avail->idx += 1;
     __sync_synchronize();

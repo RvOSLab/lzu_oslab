@@ -35,11 +35,14 @@
 #include <stddef.h>
 #include <mm.h>
 
-#define VIRTIO_QUEUE_NUM 16
+#define VIRTIO_QUEUE_RING_NUM 16
+#define VIRTIO_QUEUE_DESC_TABLE_LENGTH (16 * VIRTIO_QUEUE_RING_NUM)
+#define VIRTIO_QUEUE_AVAIL_RING_LENGTH (6 + 2 * VIRTIO_QUEUE_RING_NUM)
+#define VIRTIO_QUEUE_USED_RING_LENGTH  (6 + 8 * VIRTIO_QUEUE_RING_NUM)
 #define VIRTIO_QUEUE_LENGTH (CEIL( \
-    16 * VIRTIO_QUEUE_NUM + \
-    6 + 2 * VIRTIO_QUEUE_NUM + \
-    6 + 8 * VIRTIO_QUEUE_NUM \
+    VIRTIO_QUEUE_DESC_TABLE_LENGTH + \
+    VIRTIO_QUEUE_AVAIL_RING_LENGTH + \
+    VIRTIO_QUEUE_USED_RING_LENGTH \
 ))
 
 /* This marks a buffer as continuing via the next field. */
@@ -83,7 +86,7 @@ struct virtq_desc {
 struct virtq_avail {
         uint16_t flags;
         uint16_t idx;
-        uint16_t ring[VIRTIO_QUEUE_NUM];
+        uint16_t ring[];
         /* Only if VIRTIO_F_EVENT_IDX: uint16_t used_event; */
 };
 
@@ -98,7 +101,7 @@ struct virtq_used_elem {
 struct virtq_used {
         uint16_t flags;
         uint16_t idx;
-        struct virtq_used_elem ring[VIRTIO_QUEUE_NUM];
+        struct virtq_used_elem ring[];
         /* Only if VIRTIO_F_EVENT_IDX: uint16_t avail_event; */
 };
 

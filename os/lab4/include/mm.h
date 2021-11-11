@@ -131,5 +131,7 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();
 void map_kernel();
 void active_mapping();
+void * malloc(unsigned int size);       /* 通用内核内存分配函数 */
+void free_s(void * obj, int size);      /* 释放指定对象占用的内存 */
 
 #endif

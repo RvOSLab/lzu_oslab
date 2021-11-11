@@ -81,18 +81,18 @@
 #include <kdebug.h>
 
 /* 存储桶描述符结构 */
-struct bucket_desc {					/* 16 bytes */
-	void				*page;          /* 该桶描述符对应的内存页面指针 */
-	struct bucket_desc	*next;          /* 下一个描述符指针 */
-	void				*freeptr;       /* 指向本桶中空闲内存位置的指针 */
-	unsigned short		refcnt;         /* 引用计数 */
-	unsigned short		bucket_size;    /* 本描述符对应存储桶的大小 */
+struct bucket_desc { /* 16 bytes */
+	void *page; /* 该桶描述符对应的内存页面指针 */
+	struct bucket_desc *next; /* 下一个描述符指针 */
+	void *freeptr; /* 指向本桶中空闲内存位置的指针 */
+	unsigned short refcnt; /* 引用计数 */
+	unsigned short bucket_size; /* 本描述符对应存储桶的大小 */
 };
 
 /* 存储桶描述符目录结构 */
-struct _bucket_dir {					/* 8 bytes */
-	int			size;           		/* 该存储桶的大小（字节数） */
-	struct bucket_desc	*chain;         /* 该存储桶目录项的桶描述符链表指针 */
+struct _bucket_dir { /* 8 bytes */
+	int size; /* 该存储桶的大小（字节数） */
+	struct bucket_desc *chain; /* 该存储桶目录项的桶描述符链表指针 */
 };
 
 /*
@@ -116,22 +116,23 @@ struct _bucket_dir {					/* 8 bytes */
  */
 /* 存储桶目录列表（数组）*/
 struct _bucket_dir bucket_dir[] = {
-	{ 16,	(struct bucket_desc *) 0},      /* 16B长度的内存块 */
-	{ 32,	(struct bucket_desc *) 0},      /* 32B长度的内存块 */
-	{ 64,	(struct bucket_desc *) 0},      /* 64B长度的内存块 */
-	{ 128,	(struct bucket_desc *) 0},      /* 128B长度的内存块 */
-	{ 256,	(struct bucket_desc *) 0},      /* 256B长度的内存块 */
-	{ 512,	(struct bucket_desc *) 0},      /* 512B长度的内存块 */
-	{ 1024,	(struct bucket_desc *) 0},      /* 1024B长度的内存块 */
-	{ 2048, (struct bucket_desc *) 0},      /* 2048B长度的内存块 */
-	{ 4096, (struct bucket_desc *) 0},      /* 4096B（1页）的内存块 */
-	{ 0,    (struct bucket_desc *) 0}};   	/* End of list marker */
+	{ 16, (struct bucket_desc *)NULL }, /* 16B长度的内存块 */
+	{ 32, (struct bucket_desc *)NULL }, /* 32B长度的内存块 */
+	{ 64, (struct bucket_desc *)NULL }, /* 64B长度的内存块 */
+	{ 128, (struct bucket_desc *)NULL }, /* 128B长度的内存块 */
+	{ 256, (struct bucket_desc *)NULL }, /* 256B长度的内存块 */
+	{ 512, (struct bucket_desc *)NULL }, /* 512B长度的内存块 */
+	{ 1024, (struct bucket_desc *)NULL }, /* 1024B长度的内存块 */
+	{ 2048, (struct bucket_desc *)NULL }, /* 2048B长度的内存块 */
+	{ 4096, (struct bucket_desc *)NULL }, /* 4096B（1页）的内存块 */
+	{ 0, (struct bucket_desc *)NULL }
+}; /* End of list marker */
 
 /*
  * This contains a linked list of free bucket descriptor blocks
  */
 /* 下面是含有空闲桶描述符内存块的链表 */
-struct bucket_desc *free_bucket_desc = (struct bucket_desc *) 0;
+struct bucket_desc *free_bucket_desc = (struct bucket_desc *)0;
 
 /*
  * This routine initializes a bucket description page.
@@ -140,9 +141,9 @@ struct bucket_desc *free_bucket_desc = (struct bucket_desc *) 0;
 static inline void init_bucket_desc()
 {
 	struct bucket_desc *bdesc, *first;
-	int	i;
+	int i;
 	/* 申请一页内存，用于存放桶描述符 */
-	first = bdesc = (struct bucket_desc *) VIRTUAL(get_free_page());
+	first = bdesc = (struct bucket_desc *)VIRTUAL(get_free_page());
 	kprintf("init_bucket_desc: first = %x\n", first);
 	if (!bdesc) {
 		panic("Out of memory in init_bucket_desc()");
@@ -150,52 +151,54 @@ static inline void init_bucket_desc()
 	/* 首先计算一页内存中可存放的桶描述符数量，然后对其建立单向链接指针 */
 	for (i = PAGE_SIZE / sizeof(struct bucket_desc); i > 1; i--) {
 		bdesc->next = bdesc + 1;
-		bdesc++;
+		bdesc++; // 说是链表，其实都是连续放在一个页里的，其实就是数组
 	}
 	/*
-	 * This is done last, to avoid race conditions in case
-	 * get_free_page() sleeps and this routine gets called again....
-	 */
-    /*
+     * This is done last, to avoid race conditions in case
+     * get_free_page() sleeps and this routine gets called again....
+     */
+	/*
      * 这是在最后处理的，目的是为了避免在get_free_page()睡眠时该子程序又被调用而引
-	 * 起的竞争条件。
+     * 起的竞争条件。
      */
 	/* 将空闲桶描述符指针free_bucket_desc加入链表中 */
 	bdesc->next = free_bucket_desc;
-	free_bucket_desc = first;
+	free_bucket_desc =
+		first; // 就是把新建的一串空闲描述符插在 free_bucket_desc 链表的头部
 }
 
 /**
  * 分配动态内存函数
- * @note	为了不与用户程序使用的malloc()进行区分，0.98版以后就改名为kmalloc()
+ * @note	
  * @param[in]	len		请求的内存块长度
- * @retval		成功返回指向被分配内在的指针，失败返回NULL
+ * @retval		成功返回指向被分配内存的指针，失败返回NULL
 */
-void *malloc(unsigned int len)
+void *kmalloc(unsigned int len)
 {
-	struct _bucket_dir	*bdir;
-	struct bucket_desc	*bdesc;
-	void				*retval;
+	struct _bucket_dir *bdir = bucket_dir;
+	struct bucket_desc *bdesc;
+	void *retval;
 
 	/*
-	 * First we search the bucket_dir to find the right bucket change
-	 * for this request.
-	 */
-    /* 首先我们搜索存储桶目录bucket_dir来寻找适合请求的桶大小。*/
-	for (bdir = bucket_dir; bdir->size; bdir++) {
+     * First we search the bucket_dir to find the right bucket change
+     * for this request.
+     */
+	/* 首先我们搜索存储桶目录bucket_dir来寻找适合请求的桶大小。*/
+	for (; bdir->size; bdir++) {
 		if (bdir->size >= len) {
-			kprintf("malloc size:%u\n",bdir->size);
+			kprintf("malloc size:%u\n", bdir->size);
 			break;
 		}
 	}
 	/* 搜索完整个目录都没有找到合适大小的目录项，则表明所请求的内存块太大，超出了该程序的分配限制（1个页面）*/
 	if (!bdir->size) {
-		kprintf("malloc called with impossibly large argument (%u)\n", len);
+		kprintf("malloc called with impossibly large argument (%u)\n",
+			len);
 		panic("malloc: bad arg");
 	}
 	/*
-	 * Now we search for a bucket descriptor which has free space
-	 */
+     * Now we search for a bucket descriptor which has free space
+     */
 	//cli();		/* Avoid race conditions */ /* 为了避免出现竞争条件，首先关中断 */
 	/* 在桶目录项对应的描述符链表查找具有空闲空间的桶描述符 */
 	for (bdesc = bdir->chain; bdesc; bdesc = bdesc->next) {
@@ -204,13 +207,13 @@ void *malloc(unsigned int len)
 		}
 	}
 	/*
-	 * If we didn't find a bucket with free space, then we'll
-	 * allocate a new one.
-	 */
-    /* 如果没有找到具有空闲空间的桶描述符，那么我们就要新建立一个该目录项的描述符 */
+     * If we didn't find a bucket with free space, then we'll
+     * allocate a new one.
+     */
+	/* 如果没有找到具有空闲空间的桶描述符，那么我们就要新建立一个该目录项的描述符 */
 	if (!bdesc) {
-		char	*cp;
-		int		i;
+		uint8_t *cp;
+		int i;
 
 		if (!free_bucket_desc) {
 			init_bucket_desc();
@@ -221,29 +224,31 @@ void *malloc(unsigned int len)
 		/* 初始化该新的桶描述符 */
 		bdesc->refcnt = 0;
 		bdesc->bucket_size = bdir->size;
-		bdesc->page = bdesc->freeptr = (void *) (cp = (char *)VIRTUAL(get_free_page()));
+		cp = (uint8_t *)VIRTUAL(get_free_page());
+		bdesc->page = bdesc->freeptr = (void *)cp;
 		if (!cp)
 			panic("Out of memory in kernel malloc()");
 		/* Set up the chain of free objects */
-        /* 在该页空闲内存中建立空闲对象链表 */
+		/* 在该页空闲内存中建立空闲对象链表 */
 		/* 以该桶目录项指定的桶大小对该页内存进行划分，并使每个对象的开始4字节设置成指向下一对象的指针 */
 		for (i = PAGE_SIZE / bdir->size; i > 1; i--) {
-			*((char **) cp) = cp + bdir->size;
+			*((uint8_t **)cp) = cp + bdir->size;
 			cp += bdir->size;
 		}
-		*((char **) cp) = 0;
+		*((uint8_t **)cp) = 0;
 		/* 将该描述符插入到描述符链表头处 */
-		bdesc->next = bdir->chain; 		/* OK, link it in! */
+		bdesc->next = bdir->chain; /* OK, link it in! */
 		bdir->chain = bdesc;
-    }
+	}
 	/* 返回该描述符对应页面的当前空闲指针，然后调整该空闲指针指向下一个空闲对象 */
-	retval = (void *) bdesc->freeptr;
-	bdesc->freeptr = *((void **) retval);	/* 前4个字节为下一个空闲对象的指针 */
+	retval = (void *)bdesc->freeptr;
+	//bdesc->freeptr = *((void **) retval);	/* 前4个字节为下一个空闲对象的指针 */
+	bdesc->freeptr += bdesc->bucket_size; // void * 大小为 1 Byte
 	bdesc->refcnt++;
 
 	//sti();		/* OK, we're safe again */
-				/* OK，现在我们又安全了 */
-	return(retval);
+	/* OK，现在我们又安全了 */
+	return retval;
 }
 
 /*
@@ -265,17 +270,17 @@ void *malloc(unsigned int len)
  * @param[in]	obj		对应对象指针
  * @param[in]	size	大小
  */
-void free_s(void *obj, int size)
+void kfree_s(void *obj, int size)
 {
-	void				*page;
-	struct _bucket_dir	*bdir;
-	struct bucket_desc	*bdesc, *prev;
+	void *page;
+	struct _bucket_dir *bdir;
+	struct bucket_desc *bdesc, *prev;
 
 	/* Calculate what page this object lives in */
-    /* 计算该对象所在页面 */
-	page = (void *)  ((unsigned long) obj & 0xfffff000);
+	/* 计算该对象所在页面 */
+	page = (void *)((uint64_t)obj & 0xfffffffffffff000);
 	/* Now search the buckets looking for that page */
-    /* 现在搜索存储桶目录项所链接的桶描述符，寻找该页面 */
+	/* 现在搜索存储桶目录项所链接的桶描述符，寻找该页面 */
 	for (bdir = bucket_dir; bdir->size; bdir++) {
 		prev = 0;
 		/* If size is zero then this conditional is always false */
@@ -283,8 +288,10 @@ void free_s(void *obj, int size)
 			continue;
 		/* 搜索对应目录项中链接的所有描述符，查找对应页面 */
 		for (bdesc = bdir->chain; bdesc; bdesc = bdesc->next) {
-			if (bdesc->page == page)
+			if (bdesc->page == page) {
+				kprintf("free page: %p\n", bdesc->page);
 				goto found;
+			}
 			prev = bdesc;
 		}
 	}
@@ -297,28 +304,28 @@ found:
 	bdesc->refcnt--;
 	if (bdesc->refcnt == 0) { /* 引用计数等于0，则需要释放对应的内存页面和该桶描述符 */
 		/*
-		 * We need to make sure that prev is still accurate.  It
-		 * may not be, if someone rudely interrupted us....
-		 */
+         * We need to make sure that prev is still accurate.  It
+         * may not be, if someone rudely interrupted us....
+         */
 		/* prev已经不是搜索到的描述符的前一个描述符，则重新搜索当前描述符的前一个描述符 */
-		if ((prev && (prev->next != bdesc)) || (!prev && (bdir->chain != bdesc))) {
+		if ((prev && (prev->next != bdesc)) ||
+		    (!prev && (bdir->chain != bdesc))) {
 			for (prev = bdir->chain; prev; prev = prev->next)
 				if (prev->next == bdesc)
 					break;
 		}
 		if (prev)
 			prev->next = bdesc->next;
-		else {	/* 如果prev==NULL，则说明当前描述符是该目录项第1个描述符 */
+		else { /* 如果prev==NULL，则说明当前描述符是该目录项第1个描述符 */
 			if (bdir->chain != bdesc)
 				panic("malloc bucket chains corrupted");
 			bdir->chain = bdesc->next;
 		}
 		/* 释放当前描述符所操作的内存页面，并将该描述符插入空闲描述符表开始处 */
-		free_page((unsigned long) bdesc->page);
+		free_page(PHYSICAL((unsigned long)bdesc->page));
 		bdesc->next = free_bucket_desc;
 		free_bucket_desc = bdesc;
 	}
 	//sti();
 	return;
 }
-

@@ -76,9 +76,10 @@ uint8_t virtio_blk_rw(uint8_t* buffer, uint64_t sector, uint64_t is_write) {
     blk_device->queue_notify = 0;
     while(req.status == 0xff);
 
-    struct virtq_used_elem *used_elem;
-    while (used_elem = virtq_get_used_elem(&virtio_blk_queue)) {
+    struct virtq_used_elem *used_elem = virtq_get_used_elem(&virtio_blk_queue);
+    while (used_elem) {
         virtq_free_desc_chain(&virtio_blk_queue, used_elem->id);
+        used_elem = virtq_get_used_elem(&virtio_blk_queue);
     }
 
     return req.status;

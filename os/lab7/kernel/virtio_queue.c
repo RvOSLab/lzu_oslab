@@ -13,6 +13,7 @@ uint16_t virtq_get_desc(struct virtq *vq) {
 
 void virtq_free_desc(struct virtq *vq, uint16_t idx) {
     vq->desc[idx].next = vq->next_empty_desc;
+    vq->next_empty_desc = idx;
 }
 
 void virtq_free_desc_chain(struct virtq *vq, uint16_t idx) {

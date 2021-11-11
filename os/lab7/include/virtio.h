@@ -20,6 +20,9 @@
 #define VIRTIO_DEVICE_ID_CONSOLE 3
 #define VIRTIO_DEVICE_ID_INPUT   18
 
+#define VIRTIO_ADDR_LOW32(addr)  ((uint32_t)((uint64_t)(addr) & 0xFFFFFFFF))
+#define VIRTIO_ADDR_HIGH32(addr) ((uint32_t)((uint64_t)(addr) >> 32))
+
 struct virtio_device {
     uint32_t magic_value;          // 0x00
     uint32_t version;              // 0x04
@@ -46,14 +49,14 @@ struct virtio_device {
     uint32_t padding_4[2];
     uint32_t status;               // 0x70
     uint32_t padding_5[3];
-    uint64_t queue_desc;       // 0x80
-    // uint32_t queue_desc_high;      // 0x84
+    uint32_t queue_desc_low;       // 0x80
+    uint32_t queue_desc_high;      // 0x84
     uint32_t padding_6[2];
-    uint64_t queue_driver;     // 0x90
-    // uint32_t queue_driver_high;    // 0x94
+    uint32_t queue_driver_low;     // 0x90
+    uint32_t queue_driver_high;    // 0x94
     uint32_t padding_7[2];
-    uint64_t queue_device;     // 0xa0
-    // uint32_t queue_device_high;    // 0xa4
+    uint32_t queue_device_low;     // 0xa0
+    uint32_t queue_device_high;    // 0xa4
 };
 
 #define VIRTIO_STATUS_RESET       0
@@ -131,7 +134,8 @@ extern void virtio_probe();
 extern uint8_t virtio_buffer[1024];
 
 void virtio_blk_init(volatile struct virtio_device *device, uint64_t is_legacy);
-void virtio_queue_init(volatile struct virtio_device *device, uint64_t is_legacy);
+void virtio_queue_init(struct virtq* virtio_queue);
+void virtio_set_queue(volatile struct virtio_device *device, uint64_t is_legacy, uint64_t virtq_phy_addr);
 void virtio_test(volatile struct virtio_device *device);
 
 #endif

@@ -163,8 +163,7 @@ static inline void init_bucket_desc()
      */
 	/* 将空闲桶描述符指针free_bucket_desc加入链表中 */
 	bdesc->next = free_bucket_desc;
-	free_bucket_desc =
-		first; // 就是把新建的一串空闲描述符插在 free_bucket_desc 链表的头部
+	free_bucket_desc = first; // 头插
 }
 
 /**
@@ -288,44 +287,46 @@ void kfree_s(void *obj, int size)
 			continue;
 		/* 搜索对应目录项中链接的所有描述符，查找对应页面 */
 		for (bdesc = bdir->chain; bdesc; bdesc = bdesc->next) {
-			if (bdesc->page == page) {
-				kprintf("free page: %p\n", bdesc->page);
-				goto found;
-			}
 			prev = bdesc;
+			if (bdesc->page == page) {
+				kprintf("free %p in page %p\n", obj,
+					bdesc->page);
+				//cli();		/* To avoid race conditions */
+				/* 然后将该对象内存块链入空闲块对象链表中，并使该描述符的对象引用计数减1。*/
+				*((void **)obj) = bdesc->freeptr;
+				bdesc->freeptr = obj;
+				bdesc->refcnt--;
+				if (bdesc->refcnt ==
+				    0) { /* 引用计数等于0，则需要释放对应的内存页面和该桶描述符 */
+					/*
+                    * We need to make sure that prev is still accurate.  It
+                    * may not be, if someone rudely interrupted us....
+                    */
+					/* prev已经不是搜索到的描述符的前一个描述符，则重新搜索当前描述符的前一个描述符 */
+					if ((prev && (prev->next != bdesc)) ||
+					    (!prev && (bdir->chain != bdesc))) {
+						for (prev = bdir->chain; prev;
+						     prev = prev->next)
+							if (prev->next == bdesc)
+								break;
+					}
+					if (prev)
+						prev->next = bdesc->next;
+					else { /* 如果prev==NULL，则说明当前描述符是该目录项第1个描述符 */
+						if (bdir->chain != bdesc)
+							panic("malloc bucket chains corrupted");
+						bdir->chain = bdesc->next;
+					}
+					/* 释放当前描述符所操作的内存页面，并将该描述符插入空闲描述符表开始处 */
+					free_page(PHYSICAL(
+						(unsigned long)bdesc->page));
+					bdesc->next = free_bucket_desc;
+					free_bucket_desc = bdesc;
+				}
+				//sti();
+				return;
+			}
 		}
 	}
-	panic("Bad address passed to kernel free_s()");
-found:
-	//cli();		/* To avoid race conditions */
-	/* 然后将该对象内存块链入空闲块对象链表中，并使该描述符的对象引用计数减1。*/
-	*((void **)obj) = bdesc->freeptr;
-	bdesc->freeptr = obj;
-	bdesc->refcnt--;
-	if (bdesc->refcnt == 0) { /* 引用计数等于0，则需要释放对应的内存页面和该桶描述符 */
-		/*
-         * We need to make sure that prev is still accurate.  It
-         * may not be, if someone rudely interrupted us....
-         */
-		/* prev已经不是搜索到的描述符的前一个描述符，则重新搜索当前描述符的前一个描述符 */
-		if ((prev && (prev->next != bdesc)) ||
-		    (!prev && (bdir->chain != bdesc))) {
-			for (prev = bdir->chain; prev; prev = prev->next)
-				if (prev->next == bdesc)
-					break;
-		}
-		if (prev)
-			prev->next = bdesc->next;
-		else { /* 如果prev==NULL，则说明当前描述符是该目录项第1个描述符 */
-			if (bdir->chain != bdesc)
-				panic("malloc bucket chains corrupted");
-			bdir->chain = bdesc->next;
-		}
-		/* 释放当前描述符所操作的内存页面，并将该描述符插入空闲描述符表开始处 */
-		free_page(PHYSICAL((unsigned long)bdesc->page));
-		bdesc->next = free_bucket_desc;
-		free_bucket_desc = bdesc;
-	}
-	//sti();
-	return;
+	panic("Bad address passed to kernel free_s(): %p", obj);
 }

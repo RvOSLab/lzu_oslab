@@ -7,6 +7,7 @@ int main()
     print_system_infomation();
     mem_init();
     mem_test();
+    malloc_test();
     kputs("Hello LZU OS");
 
     while (1)

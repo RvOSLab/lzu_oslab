@@ -8,6 +8,10 @@
 #include <mm.h>
 #include <stddef.h>
 
+/* for malloc_test() */
+#include <assert.h>
+#include <kdebug.h>
+
 /* DeBruijn序列 */
 static const uint8_t debruijn[64] = {
     63,  0, 58,  1, 59, 47, 53,  2,
@@ -206,4 +210,38 @@ uint64_t kfree_s(void* ptr, uint64_t size) {
         free_page(PHYSICAL(page_addr));
     }
     return 1 << guess_alloc_size;
+}
+
+/**
+ * @brief malloc.c测试用例
+ * 
+ * test case for malloc.c
+ * 
+ */
+void malloc_test() {
+    kputs("malloc_test(): running");
+    int test_size[] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
+    for (int i = 0; i < 9; i += 1) {
+        void* temp_ptr;
+        for (int j = 0; j < PAGE_SIZE / test_size[i]; j++) {
+            kfree_s(kmalloc(test_size[i]), test_size[i]);
+        }
+        temp_ptr = kmalloc(test_size[i] - 1);
+        assert(kfree(temp_ptr) == test_size[i]);
+        /* random malloc && free test */
+        void* ptr_list[83 + 1031];
+        for (int j = 0; j < 1031; j++) {
+            ptr_list[j] = kmalloc(test_size[i]);
+        }
+        for (int j = 0; j < 83; j++) {
+            kfree(ptr_list[(j * 0x10001 + 73) % 83]);
+        }
+        for (int j = 0; j < 83; j++) {
+            ptr_list[j + 1031] = kmalloc(test_size[i]);
+        }
+        for (int j = 0; j < 1031; j++) {
+            kfree(ptr_list[((j * 0x10001 + 73) % 1031) + 83]);
+        }
+    }
+    kputs("malloc_test(): Passed");
 }

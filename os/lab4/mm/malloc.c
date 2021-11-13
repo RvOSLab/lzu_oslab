@@ -205,5 +205,5 @@ uint64_t kfree_s(void* ptr, uint64_t size) {
         bucket->page = 0;
         free_page(PHYSICAL(page_addr));
     }
-    return size;
+    return 1 << guess_alloc_size;
 }

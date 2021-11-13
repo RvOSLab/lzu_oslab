@@ -27,7 +27,7 @@ static const uint8_t debruijn[64] = {
  *
  * @param n   64位无符号整数
  * @return ceil(log2(n))
- * @note n = 0 时返回 64
+ * @note n = 0 时返回 63
  */
 static inline uint8_t q_log2_ceil(uint64_t n) {
     n -= 1;

@@ -15,6 +15,10 @@ typedef unsigned char uint8_t;
 typedef signed char int8_t;
 typedef unsigned long long size_t;
 typedef signed long long ssize_t;
-typedef int64_t intptr_t;
-typedef uint64_t uintptr_t;
+/** 
+ * 不要使用 intptr_t, uintptr_t，请用 int64_t, uint64_t 代替
+ * typedef int64_t intptr_t;
+ * typedef uint64_t uintptr_t;
+ */
+
 #endif

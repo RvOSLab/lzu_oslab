@@ -132,7 +132,7 @@ void show_page_tables();
 void map_kernel();
 void active_mapping();
 void * kmalloc(uint64_t size);       /* 通用内核内存分配函数 */
-void kfree_s(void * obj, uint64_t size);      /* 释放指定对象占用的内存 */
+uint64_t kfree_s(void * obj, uint64_t size);      /* 释放指定对象占用的内存 */
 #define kfree(ptr) kfree_s((ptr), 0)
 
 #endif

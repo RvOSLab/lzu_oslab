@@ -101,7 +101,7 @@ void* kmalloc(uint64_t size) {
     return (void *) free_block;
 }
 
-void kfree_s(void* ptr, uint64_t size) {
+uint64_t kfree_s(void* ptr, uint64_t size) {
     uint64_t addr = (uint64_t) ptr;
     /* 推算分配的块大小范围 */
     uint8_t alloc_size_start = MIN_ALLOC_SIZE_LOG2;
@@ -115,11 +115,11 @@ void kfree_s(void* ptr, uint64_t size) {
                 alloc_size_start = alloc_size_end = alloc_size;
                 break;
             default: /* 大于4KB */
-                return;
+                return 0;
         }
     } else {
         uint8_t aligned_size = q_pow2_factor(addr);
-        if (aligned_size < MIN_ALLOC_SIZE_LOG2) return;
+        if (aligned_size < MIN_ALLOC_SIZE_LOG2) return 0;
         if (aligned_size < MAX_ALLOC_SIZE_LOG2) alloc_size_end = aligned_size;
     }
     /* 找到该块所在的桶 */
@@ -135,7 +135,7 @@ void kfree_s(void* ptr, uint64_t size) {
         if (bucket) break;
         guess_alloc_size += 1;
     }
-    if(!bucket) return;
+    if(!bucket) return 0;
     /* 将该块放回桶中 */
     bucket->refcnt -= 1;
     if(bucket->refcnt) {
@@ -145,4 +145,5 @@ void kfree_s(void* ptr, uint64_t size) {
         bucket->page = 0;
         free_page(PHYSICAL(page_addr));
     }
+    return size;
 }

@@ -1,6 +1,14 @@
+/**
+ * @file malloc.c
+ * @brief 实现内核内存管理
+ *
+ * 本模块实现了kmalloc与kfree_s函数，从而允许内核程序动态的申请和释放内存。
+ */
+
 #include <mm.h>
 #include <stddef.h>
 
+/* DeBruijn序列 */
 static const uint8_t debruijn[64] = {
     63,  0, 58,  1, 59, 47, 53,  2,
     60, 39, 48, 27, 54, 33, 42,  3,
@@ -12,6 +20,15 @@ static const uint8_t debruijn[64] = {
     44, 24, 15,  8, 23,  7,  6,  5
 };
 
+/**
+ * @brief 快速log2(向上取整)
+ *
+ * 计算下一个大于n的2的幂次(向上取整)，如n = 9 <= 2 ** 4，返回4。
+ *
+ * @param n   64位无符号整数
+ * @return ceil(log2(n))
+ * @note n = 0 时返回 64
+ */
 static inline uint8_t q_log2_ceil(uint64_t n) {
     n -= 1;
     n |= n >> 1;
@@ -23,6 +40,14 @@ static inline uint8_t q_log2_ceil(uint64_t n) {
     return debruijn[((uint64_t)((n + 1) * 0x07EDD5E59A4E28C2)) >> 58];
 }
 
+/**
+ * @brief 快速计算素因子中所含2的个数
+ *
+ * 设n = (2*k+1) * 2 ** p，返回p。
+ *
+ * @param n   64位无符号整数
+ * @return 素因子中所含2的个数
+ */
 static inline uint8_t q_pow2_factor(uint64_t n) {
     return debruijn[((uint64_t)((n & -n) * 0x07EDD5E59A4E28C2)) >> 58];
 }
@@ -32,7 +57,7 @@ static inline uint8_t q_pow2_factor(uint64_t n) {
 #define MIN_ALLOC_SIZE_LOG2 4
 #define MAX_ALLOC_SIZE_LOG2 PAGE_SIZE_LOG2
 
-/* [16, 32, 64, 128, 256, 512, 1024, 2048, 4096] */
+/* 桶描述符目录 [16, 32, 64, 128, 256, 512, 1024, 2048, 4096] */
 struct bucket_desc* bucket_dir[MAX_ALLOC_SIZE_LOG2 - MIN_ALLOC_SIZE_LOG2 + 1] = { NULL };
 
 /* 存储桶描述符结构，32 Bytes */
@@ -44,6 +69,14 @@ struct bucket_desc {
     uint64_t refcnt;  /* 已分配块计数 */
 };
 
+/**
+ * @brief 向bucket_dir[idx]中插入桶描述符
+ *
+ * 插入空的桶描述符，每次申请一页内存。
+ *
+ * @param idx bucket_dir的索引
+ * @return bucket_dir[idx]
+ */
 struct bucket_desc* add_some_bucket_desc(uint8_t idx) {
     uint64_t new_page = VIRTUAL(get_free_page());
     uint64_t bucket_addr = new_page;
@@ -59,6 +92,14 @@ struct bucket_desc* add_some_bucket_desc(uint8_t idx) {
     return bucket_dir[idx];
 }
 
+/**
+ * @brief 初始化指定的桶
+ *
+ * 将指定的桶按给定的块大小初始化。
+ *
+ * @param bucket 桶描述符指针
+ * @param alloc_size 分配的块大小(指数形式)
+ */
 void init_bucket_desc(struct bucket_desc * bucket, uint64_t alloc_size) {
     uint64_t new_page = VIRTUAL(get_free_page());
     uint8_t *idx_ptr;
@@ -72,6 +113,15 @@ void init_bucket_desc(struct bucket_desc * bucket, uint64_t alloc_size) {
     bucket->freeidx = 0;
 }
 
+/**
+ * @brief 申请一块内核内存
+ *
+ * 向内核申请size大小的一块内存，并返回该内存的起始地址；申请失败时返回NULL。
+ * 所申请的内存至少为1B, 且不能超过一页大小。实际分配的内存大小为2的幂次。
+ *
+ * @param size 申请的内存大小(最大为PAGE_SIZE)
+ * @return 所申请内存的起始地址
+ */
 void* kmalloc(uint64_t size) {
     /* 计算实际分配的块大小 */
     uint8_t alloc_size = q_log2_ceil(size); /* 指数形式 */
@@ -101,6 +151,16 @@ void* kmalloc(uint64_t size) {
     return (void *) free_block;
 }
 
+/**
+ * @brief 释放一块已申请内核内存
+ *
+ * 释放之前申请的size大小的一块内存，并返回该内存的起始地址；释放失败时返回0，
+ * 释放成功时返回参数size的值。
+ *
+ * @param ptr 待释放的内存地址
+ * @param size 申请的内存大小(为0时自动推算)
+ * @return 释放的内存大小，若为0则表示释放失败
+ */
 uint64_t kfree_s(void* ptr, uint64_t size) {
     uint64_t addr = (uint64_t) ptr;
     /* 推算分配的块大小范围 */

@@ -112,3 +112,4 @@ doc/html/
 # VSCode
 vsc_diag_suppress.h
 workspace.code-workspace
+*.vscode

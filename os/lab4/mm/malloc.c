@@ -63,6 +63,8 @@ static inline uint8_t q_pow2_factor(uint64_t n) {
 
 /* 桶描述符目录 [16, 32, 64, 128, 256, 512, 1024, 2048, 4096] */
 struct bucket_desc* bucket_dir[MAX_ALLOC_SIZE_LOG2 - MIN_ALLOC_SIZE_LOG2 + 1] = { NULL };
+/* 空桶链 */
+struct bucket_desc* empty_buckets = NULL;
 
 /* 存储桶描述符结构，32 Bytes */
 struct bucket_desc {
@@ -74,14 +76,13 @@ struct bucket_desc {
 };
 
 /**
- * @brief 向bucket_dir[idx]中插入桶描述符
+ * @brief 向empty_buckets中插入空桶描述符
  *
  * 插入空的桶描述符，每次申请一页内存。
  *
- * @param idx bucket_dir的索引
- * @return bucket_dir[idx]
+ * @return empty_buckets
  */
-struct bucket_desc* add_some_bucket_desc(uint8_t idx) {
+struct bucket_desc* add_some_bucket_desc() {
     uint64_t new_page = VIRTUAL(get_free_page());
     uint64_t bucket_addr = new_page;
     struct bucket_desc *bucket;
@@ -91,9 +92,25 @@ struct bucket_desc* add_some_bucket_desc(uint8_t idx) {
         bucket->next = bucket + 1;
         bucket_addr = (uint64_t) bucket->next;
     }
+    bucket->next = empty_buckets;
+    empty_buckets = (struct bucket_desc *) new_page;
+    return empty_buckets;
+}
+
+/**
+ * @brief 取一个空桶
+ *
+ * 从empty_buckets中取得一个空桶放入bucket_dir[idx]中，如果耗尽则add_some_bucket_desc()。
+ *
+ * @return 一个空桶
+ */
+struct bucket_desc* take_empty_bucket(uint8_t idx) {
+    struct bucket_desc *bucket = empty_buckets;
+    if (!bucket) bucket = add_some_bucket_desc();
+    empty_buckets = bucket->next;
     bucket->next = bucket_dir[idx];
-    bucket_dir[idx] = (struct bucket_desc *) new_page;
-    return bucket_dir[idx];
+    bucket_dir[idx] = bucket;
+    return bucket;
 }
 
 /**
@@ -146,7 +163,7 @@ void* kmalloc(uint64_t size) {
         }
         break;
     }
-    if (!bucket) bucket = add_some_bucket_desc(alloc_size - MIN_ALLOC_SIZE_LOG2);
+    if (!bucket) bucket = take_empty_bucket(alloc_size - MIN_ALLOC_SIZE_LOG2);
     if (!bucket->page) init_bucket_desc(bucket, alloc_size);
     /* 从桶中获取一个空闲块 */
     bucket->refcnt += 1;

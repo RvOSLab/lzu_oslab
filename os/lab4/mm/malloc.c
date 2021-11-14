@@ -76,41 +76,31 @@ struct bucket_desc {
 };
 
 /**
- * @brief 向empty_buckets中插入空桶描述符
+ * @brief 取得空桶
  *
- * 插入空的桶描述符，每次申请一页内存。
+ * 取得空桶，空桶不足时申请一页内存作为桶描述符。
  *
- * @return empty_buckets
- */
-struct bucket_desc* add_some_bucket_desc() {
-    uint64_t new_page = VIRTUAL(get_free_page());
-    uint64_t bucket_addr = new_page;
-    struct bucket_desc *bucket;
-    while (bucket_addr < new_page + PAGE_SIZE) {
-        bucket = (struct bucket_desc *) bucket_addr;
-        bucket->page = 0;
-        bucket->next = bucket + 1;
-        bucket_addr = (uint64_t) bucket->next;
-    }
-    bucket->next = empty_buckets;
-    empty_buckets = (struct bucket_desc *) new_page;
-    return empty_buckets;
-}
-
-/**
- * @brief 取一个空桶
- *
- * 从empty_buckets中取得一个空桶放入bucket_dir[idx]中，如果耗尽则add_some_bucket_desc()。
- *
- * @return 一个空桶
+ * @return empty_bucket
  */
 struct bucket_desc* take_empty_bucket(uint8_t idx) {
-    struct bucket_desc *bucket = empty_buckets;
-    if (!bucket) bucket = add_some_bucket_desc();
-    empty_buckets = bucket->next;
-    bucket->next = bucket_dir[idx];
-    bucket_dir[idx] = bucket;
-    return bucket;
+    struct bucket_desc *empty_bucket = empty_buckets;
+    if (!empty_bucket) {
+        uint64_t new_page = VIRTUAL(get_free_page());
+        uint64_t bucket_addr = new_page;
+        struct bucket_desc *bucket;
+        while (bucket_addr < new_page + PAGE_SIZE) {
+            bucket = (struct bucket_desc *) bucket_addr;
+            bucket->page = 0;
+            bucket->next = bucket + 1;
+            bucket_addr = (uint64_t) bucket->next;
+        }
+        bucket->next = empty_buckets;
+        empty_bucket = empty_buckets = (struct bucket_desc *) new_page;
+    }
+    empty_buckets = empty_bucket->next;
+    empty_bucket->next = bucket_dir[idx];
+    bucket_dir[idx] = empty_bucket;
+    return empty_bucket;
 }
 
 /**

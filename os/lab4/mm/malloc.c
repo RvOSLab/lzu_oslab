@@ -60,11 +60,11 @@ static inline uint8_t q_pow2_factor(uint64_t n) {
 #define PAGE_SIZE_LOG2 12
 #define MIN_ALLOC_SIZE_LOG2 4
 #define MAX_ALLOC_SIZE_LOG2 PAGE_SIZE_LOG2
+/* 特殊桶大小 */
+#define SPECIAL_BUCKET_SIZE_LOG2 5
 
 /* 桶描述符目录 [16, 32, 64, 128, 256, 512, 1024, 2048, 4096] */
 struct bucket_desc* bucket_dir[MAX_ALLOC_SIZE_LOG2 - MIN_ALLOC_SIZE_LOG2 + 1] = { NULL };
-/* 空桶链 */
-struct bucket_desc* empty_buckets = NULL;
 
 /* 存储桶描述符结构，32 Bytes */
 struct bucket_desc {
@@ -76,52 +76,48 @@ struct bucket_desc {
 };
 
 /**
- * @brief 取得空桶
+ * @brief 初始化指定的桶页面
  *
- * 取得空桶，空桶不足时申请一页内存作为桶描述符。
+ * 将指定的桶页面按给定的块大小初始化。
  *
- * @return empty_bucket
- */
-struct bucket_desc* take_empty_bucket(uint8_t idx) {
-    struct bucket_desc *empty_bucket = empty_buckets;
-    if (!empty_bucket) {
-        uint64_t new_page = VIRTUAL(get_free_page());
-        uint64_t bucket_addr = new_page;
-        struct bucket_desc *bucket;
-        while (bucket_addr < new_page + PAGE_SIZE) {
-            bucket = (struct bucket_desc *) bucket_addr;
-            bucket->page = 0;
-            bucket->next = bucket + 1;
-            bucket_addr = (uint64_t) bucket->next;
-        }
-        bucket->next = empty_buckets;
-        empty_bucket = empty_buckets = (struct bucket_desc *) new_page;
-    }
-    empty_buckets = empty_bucket->next;
-    empty_bucket->next = bucket_dir[idx];
-    bucket_dir[idx] = empty_bucket;
-    return empty_bucket;
-}
-
-/**
- * @brief 初始化指定的桶
- *
- * 将指定的桶按给定的块大小初始化。
- *
- * @param bucket 桶描述符指针
+ * @param page_addr 桶页面地址
  * @param alloc_size 分配的块大小(指数形式)
  */
-void init_bucket_desc(struct bucket_desc * bucket, uint64_t alloc_size) {
-    uint64_t new_page = VIRTUAL(get_free_page());
+void init_bucket_page(uint64_t page_addr, uint8_t alloc_size) {
     uint8_t *idx_ptr;
     uint64_t block_count = 1 << (PAGE_SIZE_LOG2 - alloc_size);
     for (uint64_t i = 0; i < block_count; i += 1) {
-        idx_ptr = (uint8_t *)(new_page + (i << alloc_size));
+        idx_ptr = (uint8_t *)(page_addr + (i << alloc_size));
         *idx_ptr = i + 1;
     }
-    bucket->page = new_page;
-    bucket->refcnt = 0;
-    bucket->freeidx = 0;
+}
+
+/**
+ * @brief 取得空桶
+ *
+ * 取得空桶，使用了一些奇怪的技巧。
+ *
+ * @param alloc_size 分配的块大小(指数形式)
+ * @return empty_bucket
+ */
+struct bucket_desc* take_empty_bucket(uint8_t alloc_size) {
+    struct bucket_desc *bucket;
+    if (alloc_size == SPECIAL_BUCKET_SIZE_LOG2) {
+        uint64_t bucket_page_addr = VIRTUAL(get_free_page());
+        init_bucket_page(bucket_page_addr, alloc_size);
+        bucket = (struct bucket_desc *) bucket_page_addr;
+        bucket->refcnt = 1;
+        bucket->freeidx = 1;
+        bucket->page = bucket_page_addr;
+    } else {
+        bucket = (struct bucket_desc *) kmalloc(sizeof(struct bucket_desc));
+        bucket->refcnt = 0;
+        bucket->freeidx = 0;
+        bucket->page = 0;
+    }
+    bucket->next = bucket_dir[alloc_size - MIN_ALLOC_SIZE_LOG2];
+    bucket_dir[alloc_size - MIN_ALLOC_SIZE_LOG2] = bucket;
+    return bucket;
 }
 
 /**
@@ -153,8 +149,12 @@ void* kmalloc(uint64_t size) {
         }
         break;
     }
-    if (!bucket) bucket = take_empty_bucket(alloc_size - MIN_ALLOC_SIZE_LOG2);
-    if (!bucket->page) init_bucket_desc(bucket, alloc_size);
+    if (!bucket) bucket = take_empty_bucket(alloc_size);
+    if (!bucket->page) {
+        bucket->page = VIRTUAL(get_free_page());
+        bucket->freeidx = 0;
+        init_bucket_page(bucket->page, alloc_size);
+    }
     /* 从桶中获取一个空闲块 */
     bucket->refcnt += 1;
     uint64_t free_block = bucket->page + (bucket->freeidx << alloc_size);

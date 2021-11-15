@@ -51,7 +51,7 @@ uint8_t virtio_blk_rw(uint8_t* buffer, uint64_t sector, uint64_t is_write) {
         .type = (is_write ? VIRTIO_BLK_T_OUT : VIRTIO_BLK_T_IN),
         .reserved = 0,
         .sector = sector,
-        .status = 0xff
+        .status = 0
     };
     kprintf("virtio_blk_queue.desc @ 0x%x\n", virtio_blk_queue.desc);
     uint16_t idx, head;
@@ -74,9 +74,10 @@ uint8_t virtio_blk_rw(uint8_t* buffer, uint64_t sector, uint64_t is_write) {
     
     virtq_put_avail(&virtio_blk_queue, head);
     blk_device->queue_notify = 0;
-    while(req.status == 0xff);
-
-    struct virtq_used_elem *used_elem = virtq_get_used_elem(&virtio_blk_queue);
+    struct virtq_used_elem *used_elem = NULL;
+    while (!used_elem) {
+        used_elem = virtq_get_used_elem(&virtio_blk_queue);
+    }
     while (used_elem) {
         virtq_free_desc_chain(&virtio_blk_queue, used_elem->id);
         used_elem = virtq_get_used_elem(&virtio_blk_queue);

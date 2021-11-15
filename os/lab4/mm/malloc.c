@@ -102,19 +102,18 @@ void init_bucket_page(uint64_t page_addr, uint8_t alloc_size) {
  */
 struct bucket_desc* take_empty_bucket(uint8_t alloc_size) {
     struct bucket_desc *bucket;
+    uint64_t bucket_page_addr = VIRTUAL(get_free_page());
+    init_bucket_page(bucket_page_addr, alloc_size);
     if (alloc_size == SPECIAL_BUCKET_SIZE_LOG2) {
-        uint64_t bucket_page_addr = VIRTUAL(get_free_page());
-        init_bucket_page(bucket_page_addr, alloc_size);
         bucket = (struct bucket_desc *) bucket_page_addr;
         bucket->refcnt = 1;
         bucket->freeidx = 1;
-        bucket->page = bucket_page_addr;
     } else {
         bucket = (struct bucket_desc *) kmalloc(sizeof(struct bucket_desc));
         bucket->refcnt = 0;
         bucket->freeidx = 0;
-        bucket->page = 0;
     }
+    bucket->page = bucket_page_addr;
     bucket->next = bucket_dir[alloc_size - MIN_ALLOC_SIZE_LOG2];
     bucket_dir[alloc_size - MIN_ALLOC_SIZE_LOG2] = bucket;
     return bucket;
@@ -150,11 +149,6 @@ void* kmalloc(uint64_t size) {
         break;
     }
     if (!bucket) bucket = take_empty_bucket(alloc_size);
-    if (!bucket->page) {
-        bucket->page = VIRTUAL(get_free_page());
-        bucket->freeidx = 0;
-        init_bucket_page(bucket->page, alloc_size);
-    }
     /* 从桶中获取一个空闲块 */
     bucket->refcnt += 1;
     uint64_t free_block = bucket->page + (bucket->freeidx << alloc_size);

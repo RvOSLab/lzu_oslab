@@ -194,13 +194,15 @@ uint64_t kfree_s(void* ptr, uint64_t size) {
         if (aligned_size < MAX_ALLOC_SIZE_LOG2) alloc_size_end = aligned_size;
     }
     /* 找到该块所在的桶 */
-    struct bucket_desc* bucket;
+    struct bucket_desc* bucket, *prev_bucket;
     uint64_t page_addr = (addr >> PAGE_SIZE_LOG2) << PAGE_SIZE_LOG2;
     uint8_t guess_alloc_size = alloc_size_start;
     while (guess_alloc_size <= alloc_size_end) {
         bucket = bucket_dir[guess_alloc_size - MIN_ALLOC_SIZE_LOG2];
+        prev_bucket = NULL;
         while (bucket) {
             if (bucket->page == page_addr) break;
+            prev_bucket = bucket;
             bucket = bucket->next;
         }
         if (bucket) break;
@@ -209,12 +211,17 @@ uint64_t kfree_s(void* ptr, uint64_t size) {
     if(!bucket) return 0;
     /* 将该块放回桶中 */
     bucket->refcnt -= 1;
-    if(bucket->refcnt) {
+    if(bucket->refcnt > 1 || (bucket->refcnt == 1 && (uint64_t) bucket != page_addr)) {
         *((uint8_t *) ptr) = bucket->freeidx;
         bucket->freeidx = (addr - page_addr) >> guess_alloc_size;
-    } else {
-        bucket->page = 0;
+    } else { /* 空桶 */
+        if (prev_bucket) {
+            prev_bucket->next = bucket->next;
+        } else {
+            bucket_dir[guess_alloc_size - MIN_ALLOC_SIZE_LOG2] = bucket->next;
+        }
         free_page(PHYSICAL(page_addr));
+        if ((uint64_t) bucket != page_addr) kfree_s(bucket, sizeof(struct bucket_desc));
     }
     return 1 << guess_alloc_size;
 }

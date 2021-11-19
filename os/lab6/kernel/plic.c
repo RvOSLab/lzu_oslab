@@ -8,11 +8,11 @@
 void plic_init()
 {
     plic_set_threshold(0);
-    plic_enable_interuupt(0xa);
+    plic_enable_interrupt(0xa);
     plic_set_priority(0xa, 1);
 }
 
-void plic_enable_interuupt(uint32_t id)
+void plic_enable_interrupt(uint32_t id)
 {
     volatile uint32_t *plic_enable_address = (volatile uint32_t *)PLIC_ENABLE_ADDRESS;
     *plic_enable_address |= (1 << id);

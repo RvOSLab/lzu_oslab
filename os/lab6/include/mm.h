@@ -41,7 +41,6 @@
 #define __MM_H__
 #include <stddef.h>
 #include <plic.h>
-#include <virtio.h>
 #include <uart.h>
 /// @{ @name 物理内存布局和物理地址操作
 #define PAGE_SIZE 4096

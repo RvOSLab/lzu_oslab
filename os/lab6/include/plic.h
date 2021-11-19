@@ -22,7 +22,7 @@
 #define PLIC_COMPLETE 0x00200004          /**< 告知 PLIC 已完成中断处理 */
 /// @}
 
-void plic_enable_interuupt(uint32_t id);
+void plic_enable_interrupt(uint32_t id);
 void plic_set_priority(uint32_t id, uint8_t priority);
 void plic_set_threshold(uint8_t threshold);
 uint32_t plic_claim();

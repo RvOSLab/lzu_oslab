@@ -51,7 +51,7 @@ void trap_init()
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
     /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
-    set_csr(sstatus, SSTATUS_SIE);
+    enable_interrupt();
 }
 
 /**
@@ -154,7 +154,7 @@ struct trapframe* exception_handler(struct trapframe* tf)
         sbi_shutdown();
         break;
     case CAUSE_ILLEGAL_INSTRUCTION:
-        panic("illegal instruction: %p", tf->badvaddr);
+        panic("illegal instruction: %p", tf->epc);
         break;
     case CAUSE_BREAKPOINT:
         kputs("breakpoint");

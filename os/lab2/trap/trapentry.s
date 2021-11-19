@@ -13,6 +13,9 @@
 
 # 定义宏：保存上下文（所有通用寄存器及额外的CSR寄存器）
 .macro SAVE_ALL
+    # 借用无用的寄存器 sscratch 保存原 sp
+    csrw sscratch,sp
+
     # 将栈指针下移为TrapFrame预留足够的空间用于将所有通用寄存器值存入栈中（36个寄存器的空间）
     addi sp, sp, -36*XLENB
     # 保存所有通用寄存器，除了 x2 (x2就是sp，sp 本应保存的是发生中断前的值，这个值目前被交换到了 sscratch 中，因此留到后面处理。)
@@ -48,6 +51,8 @@
     STORE x31, 31
 
     # 保存完x0-x31之后这些寄存器就可以随意使用了，下面马上用到：
+    # 读取sscratch到s0，借s0中转后将原sp存入内存
+    csrr s0, sscratch
 
     # 读取 sstatus, sepc, stval, scause寄存器的值到s0-s4（x1-x31中的特定几个）寄存器
     csrr s1, sstatus

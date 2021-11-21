@@ -5,11 +5,13 @@
  */
 #include <plic.h>
 #include <mm.h>
+#include <riscv.h>
 void plic_init()
 {
     plic_set_threshold(0);
     plic_enable_interrupt(0xa);
     plic_set_priority(0xa, 1);
+    set_csr(sie, 1 << IRQ_S_EXT);
 }
 
 void plic_enable_interrupt(uint32_t id)

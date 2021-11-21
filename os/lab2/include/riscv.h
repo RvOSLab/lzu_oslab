@@ -41,6 +41,7 @@
 #define CAUSE_FAULT_STORE            0x7
 #define CAUSE_USER_ECALL             0x8
 #define CAUSE_SUPERVISOR_ECALL       0x9
+#define CAUSE_HYPERVISOR_ECALL       0xa
 #define CAUSE_MACHINE_ECALL          0xb
 #define CAUSE_INSTRUCTION_PAGE_FAULT 0xc
 #define CAUSE_LOAD_PAGE_FAULT        0xd
@@ -71,8 +72,16 @@
 /** 读取 CSR */
 #define read_csr(reg)                                               \
     ({                                                              \
-        unsigned long __tmp;                                        \
+        uint64_t __tmp;                                        \
         asm volatile("csrr %0, " #reg : "=r"(__tmp));               \
+        __tmp;                                                      \
+    })
+
+/** 读取寄存器 */
+#define read_reg(reg)                                               \
+    ({                                                              \
+        uint64_t __tmp;                                        \
+        asm volatile("mv %0, " #reg : "=r"(__tmp));               \
         __tmp;                                                      \
     })
 
@@ -132,17 +141,6 @@
     })
 
 /// @}
-
-#define read_reg(reg)          \
-({                             \
-    uint64_t __tmp;            \
-    __asm__ __volatile__(      \
-            "mv %0, " #reg "\n\t" \
-            : "=r" (__tmp)     \
-            :                  \
-            );                 \
-    __tmp;                     \
- })
 
 #define disable_interrupt() clear_csr(sstatus, SSTATUS_SIE)
 #define enable_interrupt() set_csr(sstatus, SSTATUS_SIE)

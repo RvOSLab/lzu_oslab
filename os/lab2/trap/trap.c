@@ -53,30 +53,17 @@ static struct trapframe* external_handler(struct trapframe* tf)
 
 
 /**
- * @brief 初始化中断
+ * @brief 设置 STVEC
  * 设置 STVEC（中断向量表）的值为 __alltraps 的地址
  *
- * 在 SSTATUS 中启用 interrupt
  * 注：下面的CSR操作均为宏定义，寄存器名直接以字符串形式传递，并没有相应的变量
  */
-void trap_init()
+void set_stvec()
 {
     /* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
     extern void __alltraps(void);
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
-    /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
-    enable_interrupt();
-
-    kprintf("sstatus: 0x%x\n", read_csr(sstatus));
-    plic_init();
-    kprintf("complete plic\n");
-    uart_init();
-
-    /* 启用外中断 */
-    set_csr(sie, 1 << IRQ_S_EXT);
-    unsigned long sie = read_csr(sie);
-    kprintf("sie: %x\n", sie);
 }
 
 /**

@@ -29,8 +29,9 @@ all : build
 build :
 	make -C init build
 	make -C lib build
+	make -C trap build
 	make -C mm build
-	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o lib/libstd.a mm/libmm.a
+	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o lib/libstd.a mm/libmm.a trap/libtrap.a
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
 # bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
@@ -77,5 +78,6 @@ format:
 clean :
 	-make -C init/ clean
 	-make -C lib/ clean
+	-make -C trap/ clean
 	-make -C mm/ clean
 	-rm -f $(KERN_BIN) $(KERN_IMG) $(KERN_SYM) $(KERN_ASM) $(KERN_MAP)

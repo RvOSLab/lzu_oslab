@@ -95,7 +95,7 @@
 #define GET_VPN1(addr)     (( (addr) >> 30) & 0x1FF)
 #define GET_VPN2(addr)     (( (addr) >> 21) & 0x1FF)
 #define GET_VPN3(addr)     (( (addr) >> 12) & 0x1FF)
-#define GET_PPN(addr)      (( addr) >> 12)
+#define GET_PPN(addr)      ((addr) >> 12)
 #define GET_PAGE_ADDR(pte) (( (pte) & 0x3FFFFFFFFFFC00) << 2)
 #define GET_FLAG(pte)      ( (pte) & 0x3FF )
 #define LINEAR_OFFSET    0x40000000
@@ -131,5 +131,9 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();
 void map_kernel();
 void active_mapping();
+void * kmalloc(uint64_t size);       /* 通用内核内存分配函数 */
+uint64_t kfree_s(void * obj, uint64_t size);      /* 释放指定对象占用的内存 */
+#define kfree(ptr) kfree_s((ptr), 0)
+void malloc_test();
 
 #endif

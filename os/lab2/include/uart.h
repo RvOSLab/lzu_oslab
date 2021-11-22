@@ -6,9 +6,10 @@
 /**
  * qemu 模拟器包含一个 UART 实例，MMIO 地址分别为 [0x10000000, 0x10000100)
  */
-#define UART_START    0x10000000                 /**< UART MMIO 起始物理地址 */
-#define UART_LENGTH   0x00000100                 /**< UART MMIO 内存大小 */
-#define UART_END      (UART_START + UART_LENGTH) /**< UART MMIO 结束物理地址 */
+#define UART_START      0x10000000                 /**< UART MMIO 起始物理地址 */
+#define UART_LENGTH     0x00000100                 /**< UART MMIO 内存大小 */
+#define UART_END        (UART_START + UART_LENGTH) /**< UART MMIO 结束物理地址 */
+#define UART_START_ADDR UART_START                 /**< UART MMIO 起始地址(为虚拟分页预留) */
 /// @}
 
 /// @{ @name UART 寄存器偏移

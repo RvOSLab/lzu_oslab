@@ -29,7 +29,6 @@ void uart_handler()
     int8_t c = uart_read();
     if(c > -1)
         uart_write(c);
-
 }
 
 static struct trapframe* external_handler(struct trapframe* tf)
@@ -194,6 +193,11 @@ struct trapframe* exception_handler(struct trapframe* tf)
         break;
     case CAUSE_SUPERVISOR_ECALL:
         kputs("supervisor ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_HYPERVISOR_ECALL:
+        kputs("hypervisor ecall");
         print_trapframe(tf);
         sbi_shutdown();
         break;

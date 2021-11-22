@@ -4,7 +4,6 @@
  *       Item 40: Use std::atomic for concurrency, volatile for special memory
  */
 #include <plic.h>
-#include <mm.h>
 #include <riscv.h>
 void plic_init()
 {
@@ -16,18 +15,18 @@ void plic_init()
 
 void plic_enable_interrupt(uint32_t id)
 {
-    volatile uint32_t *plic_enable_address = (volatile uint32_t *)PLIC_ENABLE_ADDRESS;
+    volatile uint32_t *plic_enable_address = (volatile uint32_t *)(PLIC_START_ADDR + PLIC_ENABLE);
     *plic_enable_address |= (1 << id);
 }
 
 void plic_set_priority(uint32_t id, uint8_t priority)
 {
-    ((volatile uint32_t*)PLIC_PRIORITY_ADDRESS)[id] = priority & 7;
+    ((volatile uint32_t*)(PLIC_START_ADDR + PLIC_PRIORITY))[id] = priority & 7;
 }
 
 void plic_set_threshold(uint8_t threshold)
 {
-    *(volatile uint32_t*)PLIC_THRESHOLD_ADDRESS = threshold & 7;
+    *(volatile uint32_t*)(PLIC_START_ADDR + PLIC_PENDING + PLIC_THRESHOLD) = threshold & 7;
 }
 
 /**
@@ -37,12 +36,12 @@ void plic_set_threshold(uint8_t threshold)
  */
 uint32_t plic_claim()
 {
-    return *(volatile uint32_t*)PLIC_CLAIM_ADDRESS;
+    return *(volatile uint32_t*)(PLIC_START_ADDR + PLIC_PENDING + PLIC_CLAIM);
 }
 
 void plic_complete(uint32_t id)
 {
-    *(volatile uint32_t*)PLIC_COMPLETE_ADDRESS = id;
+    *(volatile uint32_t*)(PLIC_START_ADDR + PLIC_PENDING + PLIC_COMPLETE) = id;
 }
 
 /*
@@ -53,7 +52,7 @@ void plic_complete(uint32_t id)
  */
 uint64_t plic_pending()
 {
-    return *(volatile uint64_t*)PLIC_PENDING_ADDRESS;
+    return *(volatile uint64_t*)(PLIC_START_ADDR + PLIC_PENDING);
 }
 
 /**

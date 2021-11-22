@@ -1,10 +1,9 @@
 #include <uart.h>
-#include <mm.h>
 #include <stddef.h>
 
 void uart_init()
 {
-    volatile uint8_t *base = (uint8_t *)UART_START;
+    volatile uint8_t *base = (uint8_t *)UART_START_ADDR;
     *(base + UART_LCR) = 0b11; /* 8bits char */
     *(base + UART_FCR) = 1 << 0; /* FIFO Enable */
     *(base + UART_IER) = 1 << 0; /* Enable receiver data interrupt */
@@ -21,7 +20,7 @@ void uart_init()
 
 int8_t uart_read()
 {
-    volatile int8_t *base = (int8_t *)UART_START;
+    volatile int8_t *base = (int8_t *)UART_START_ADDR;
     if ((*(base + UART_LSR) & 1) == 0) {
         return -1;
     } else {
@@ -31,6 +30,6 @@ int8_t uart_read()
 
 void uart_write(int8_t c)
 {
-    volatile int8_t *base = (int8_t *)UART_START;
+    volatile int8_t *base = (int8_t *)UART_START_ADDR;
     *(base + UART_THR) = c;
 }

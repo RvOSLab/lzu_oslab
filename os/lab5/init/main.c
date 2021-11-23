@@ -12,10 +12,11 @@ int main()
     print_system_infomation();
     mem_init();
     mem_test();
-    trap_init();
+    set_stvec();
     sched_init();
     clock_init();
     kputs("Hello LZU OS");
+    enable_interrupt();
     init_task0();
     syscall(NR_fork);    /* task 0 creates task 1 */
     syscall(NR_fork);    /* task 0 creates task 2, task 1 creates task 3 */

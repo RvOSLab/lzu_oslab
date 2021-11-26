@@ -23,6 +23,15 @@
 #define PLIC_COMPLETE 0x00200004          /**< 告知 PLIC 已完成中断处理 */
 /// @}
 
+enum {
+    UART0_IRQ = 10,
+    RTC_IRQ = 11,
+    VIRTIO_IRQ = 1, /* 1 to 8 */
+    VIRTIO_COUNT = 8,
+    PCIE_IRQ = 0x20, /* 32 to 35 */
+    VIRTIO_NDEV = 0x35 /* Arbitrary maximum number of interrupts */
+};
+
 void plic_enable_interrupt(uint32_t id);
 void plic_set_priority(uint32_t id, uint8_t priority);
 void plic_set_threshold(uint8_t threshold);

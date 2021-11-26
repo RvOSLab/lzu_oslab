@@ -45,10 +45,11 @@ trap/libtrap.a:
 # bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
 run : build
 	@$(QEMU) \
-    		-machine virt \
+    		-machine virt\
     		-nographic \
     		-bios tools/fw_jump.bin \
-    		-device loader,file=$(KERN_IMG),addr=0x80200000
+    		-device loader,file=$(KERN_IMG),addr=0x80200000 \
+			-d guest_errors,strace,unimp,trace:"virtio_*",trace:"qemu_iovec_*"
 
 # run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build

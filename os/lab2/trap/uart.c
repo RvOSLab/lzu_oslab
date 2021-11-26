@@ -33,3 +33,10 @@ void uart_write(int8_t c)
     volatile int8_t *base = (int8_t *)UART_START_ADDR;
     *(base + UART_THR) = c;
 }
+
+void uart_handler()
+{
+	int8_t c = uart_read();
+	if (c > -1)
+		uart_write(c);
+}

@@ -30,4 +30,5 @@
 void uart_init();
 int8_t uart_read();
 void uart_write(int8_t c);
+void uart_handler();
 #endif /* end of include guard: __UART_H__ */

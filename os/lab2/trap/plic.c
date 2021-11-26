@@ -8,8 +8,10 @@
 void plic_init()
 {
     plic_set_threshold(0);
-    plic_enable_interrupt(0xa);
-    plic_set_priority(0xa, 1);
+    plic_enable_interrupt(UART0_IRQ);
+    plic_enable_interrupt(RTC_IRQ);
+    plic_set_priority(UART0_IRQ, 1);
+    plic_set_priority(RTC_IRQ, 2);
     set_csr(sie, 1 << IRQ_S_EXT);
 }
 
@@ -19,6 +21,8 @@ void plic_enable_interrupt(uint32_t id)
     *plic_enable_address |= (1 << id);
 }
 
+// QEMU Virt machine support 7 priority (1 - 7),
+// The "0" is reserved, and the lowest priority is "1".
 void plic_set_priority(uint32_t id, uint8_t priority)
 {
     ((volatile uint32_t*)(PLIC_START_ADDR + PLIC_PRIORITY))[id] = priority & 7;

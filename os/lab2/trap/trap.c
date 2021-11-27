@@ -36,7 +36,11 @@ static struct trapframe *external_handler(struct trapframe *tf)
 		uart_handler();
 		break;
 	case RTC_IRQ:
-		goldfish_rtc_interrupt_handler();
+		rtc_interrupt_handler();
+		kprintf("!!RTC ALARM!!\n");
+		set_alarm(read_time() + 1000000000);
+        kprintf("timestamp now: %u\n", read_time());
+		kprintf("next alarm time: %u\n", read_alarm());
 		break;
 	/* Unsupported interrupt */
 	default:

@@ -21,13 +21,12 @@ int main()
 	uart_init();
 	kprintf("complete uart init\n");
 
-	kprintf("timestamp now: %u\n", goldfish_rtc_read_time());
-    goldfish_rtc_set_time(0);
-	kprintf("timestamp now: %u\n", goldfish_rtc_read_time());
-    uint64_t alarm_time = goldfish_rtc_read_time() + 1000000000;
-    kprintf("alarm time: %u\n", alarm_time);
-    goldfish_rtc_set_alarm(alarm_time); // alarm为毫秒时间戳
-    kprintf("alarm time: %u\n", goldfish_rtc_read_alarm());
+    rtc_init();
+	kprintf("timestamp now: %u\n", read_time());
+    set_time(0);
+	kprintf("timestamp now: %u\n", read_time());
+    set_alarm(read_time() + 1000000000);
+    kprintf("alarm time: %u\n", read_alarm());
 
 	enable_interrupt(); // 启用 interrupt，sstatus的SSTATUS_SIE位置1
 

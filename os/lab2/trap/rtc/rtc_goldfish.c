@@ -12,7 +12,7 @@
 #define GOLDFISH_RTC_START_ADDR                                                \
 	GOLDFISH_RTC_START /**< RTC MMIO 起始地址(为虚拟分页预留) */
 
-struct rtc_regs {
+struct goldfish_rtc_regs {
 	// time 先读低32位 https://github.com/qemu/qemu/blob/v6.2.0-rc2/hw/rtc/goldfish_rtc.c#L106-L113
 	// alarm 先写高32位 https://github.com/qemu/qemu/blob/v6.2.0-rc2/hw/rtc/goldfish_rtc.c#L154-L160
 	uint32_t time_low; //0x00   R/W: 低32位时间
@@ -27,8 +27,8 @@ struct rtc_regs {
 
 uint64_t goldfish_rtc_read_time() // 取得纳秒时间戳
 {
-	volatile struct rtc_regs *rtc =
-		(volatile struct rtc_regs *)GOLDFISH_RTC_START_ADDR;
+	volatile struct goldfish_rtc_regs *rtc =
+		(volatile struct goldfish_rtc_regs *)GOLDFISH_RTC_START_ADDR;
 	uint32_t low = rtc->time_low;
 	uint32_t high = rtc->time_high;
 	uint64_t ns = ((uint64_t)high << 32) | (uint64_t)low;
@@ -37,16 +37,26 @@ uint64_t goldfish_rtc_read_time() // 取得纳秒时间戳
 
 void goldfish_rtc_set_time(uint64_t now) // now为纳秒时间戳
 {
-	volatile struct rtc_regs *rtc =
-		(volatile struct rtc_regs *)GOLDFISH_RTC_START_ADDR;
+	volatile struct goldfish_rtc_regs *rtc =
+		(volatile struct goldfish_rtc_regs *)GOLDFISH_RTC_START_ADDR;
 	rtc->time_high = (uint32_t)(now >> 32);
 	rtc->time_low = (uint32_t)now;
 }
 
+uint64_t goldfish_rtc_read_alarm()
+{
+	volatile struct goldfish_rtc_regs *rtc =
+		(volatile struct goldfish_rtc_regs *)GOLDFISH_RTC_START_ADDR;
+	uint32_t low = rtc->alarm_low;
+	uint32_t high = rtc->alarm_high;
+	uint64_t ns = ((uint64_t)high << 32) | (uint64_t)low;
+	return ns;
+}
+
 void goldfish_rtc_set_alarm(uint64_t alarm) // alarm为纳秒时间戳
 {
-	volatile struct rtc_regs *rtc =
-		(volatile struct rtc_regs *)GOLDFISH_RTC_START_ADDR;
+	volatile struct goldfish_rtc_regs *rtc =
+		(volatile struct goldfish_rtc_regs *)GOLDFISH_RTC_START_ADDR;
 	rtc->alarm_high = (uint32_t)(alarm >> 32);
 	rtc->alarm_low = (uint32_t)alarm;
 	rtc->irq_enabled = 1;
@@ -54,44 +64,18 @@ void goldfish_rtc_set_alarm(uint64_t alarm) // alarm为纳秒时间戳
 
 void goldfish_rtc_clear_alarm()
 {
-	volatile struct rtc_regs *rtc =
-		(volatile struct rtc_regs *)GOLDFISH_RTC_START_ADDR;
+	volatile struct goldfish_rtc_regs *rtc =
+		(volatile struct goldfish_rtc_regs *)GOLDFISH_RTC_START_ADDR;
 	uint64_t rtc_status_reg = rtc->alarm_status;
 	if (rtc_status_reg)
 		rtc->clear_alarm = 1;
 }
 
-uint64_t goldfish_rtc_read_alarm()
-{
-	volatile struct rtc_regs *rtc =
-		(volatile struct rtc_regs *)GOLDFISH_RTC_START_ADDR;
-	uint32_t low = rtc->alarm_low;
-	uint32_t high = rtc->alarm_high;
-	uint64_t ns = ((uint64_t)high << 32) | (uint64_t)low;
-	return ns;
-}
-
-/**
-void goldfish_rtc_enable_alarm_interrupt()      // 先set再enable
-{
-	volatile struct rtc_regs *rtc =
-		(volatile struct rtc_regs *)RTC_START_ADDR;
-	if (rtc->alarm_status)
-		rtc->irq_enabled = 1;
-	else
-		rtc->irq_enabled = 0;
-}
-*/
-
 void goldfish_rtc_interrupt_handler()
 {
-	volatile struct rtc_regs *rtc =
-		(volatile struct rtc_regs *)GOLDFISH_RTC_START_ADDR;
+	volatile struct goldfish_rtc_regs *rtc =
+		(volatile struct goldfish_rtc_regs *)GOLDFISH_RTC_START_ADDR;
 	rtc->clear_interrupt = 1;
-	kprintf("!!RTC ALARM!!\n");
-	goldfish_rtc_set_alarm(goldfish_rtc_read_time() + 1000000000);
-	kprintf("alarm time: %u\n", goldfish_rtc_read_alarm());
-	kprintf("timestamp now: %u\n", goldfish_rtc_read_time());
 }
 
 static const struct rtc_class_ops goldfish_rtc_ops = {
@@ -99,5 +83,13 @@ static const struct rtc_class_ops goldfish_rtc_ops = {
 	.set_time = goldfish_rtc_set_time,
 	.read_alarm = goldfish_rtc_read_alarm,
 	.set_alarm = goldfish_rtc_set_alarm,
+	.rtc_interrupt_handler = goldfish_rtc_interrupt_handler,
+	.clear_alarm = goldfish_rtc_clear_alarm,
 	//.alarm_irq_enable = goldfish_rtc_enable_alarm_interrupt
 };
+
+extern struct rtc_class_device rtc_device;
+void goldfish_rtc_init()
+{
+	rtc_device.ops = goldfish_rtc_ops;
+}

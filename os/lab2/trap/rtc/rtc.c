@@ -3,7 +3,8 @@ struct rtc_class_device rtc_device;
 
 static uint64_t rtc_probe()
 {
-	return GOLDFISH_RTC;
+	// return GOLDFISH_RTC;
+	return SUNXI_RTC;
 }
 
 void rtc_init()
@@ -12,6 +13,9 @@ void rtc_init()
 	switch (rtc_device.id) {
 	case GOLDFISH_RTC:
 		goldfish_rtc_init();
+		break;
+	case SUNXI_RTC:
+		sunxi_rtc_init();
 		break;
 	}
 }

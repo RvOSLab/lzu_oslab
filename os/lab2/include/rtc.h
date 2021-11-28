@@ -24,15 +24,17 @@ struct rtc_class_device {
 
 enum rtc_device_type {
 	GOLDFISH_RTC = 0,
+	SUNXI_RTC = 1,
 };
 
 uint64_t read_time();
 void set_time(uint64_t now);
 uint64_t read_alarm();
 void set_alarm(uint64_t alarm);
-void goldfish_rtc_init();
 void rtc_interrupt_handler();
 void clear_alarm();
 void rtc_init();
 
+void goldfish_rtc_init();
+void sunxi_rtc_init();
 #endif /* end of include guard: __RTC_H__ */

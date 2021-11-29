@@ -109,7 +109,7 @@ struct bucket_desc* take_empty_bucket(uint8_t alloc_size) {
         bucket->refcnt = 1;
         bucket->freeidx = 1;
     } else {
-        bucket = (struct bucket_desc *) kmalloc(sizeof(struct bucket_desc));
+        bucket = (struct bucket_desc *) kmalloc_i(sizeof(struct bucket_desc));
         bucket->refcnt = 0;
         bucket->freeidx = 0;
     }
@@ -128,7 +128,7 @@ struct bucket_desc* take_empty_bucket(uint8_t alloc_size) {
  * @param size 申请的内存大小(最大为PAGE_SIZE)
  * @return 所申请内存的起始地址
  */
-void* kmalloc(uint64_t size) {
+void* kmalloc_i(uint64_t size) {
     /* 计算实际分配的块大小 */
     uint8_t alloc_size = q_log2_ceil(size); /* 指数形式 */
     switch (alloc_size) {
@@ -166,7 +166,7 @@ void* kmalloc(uint64_t size) {
  * @param size 申请的内存大小(为0时自动推算)
  * @return 释放的内存大小，若为0则表示释放失败
  */
-uint64_t kfree_s(void* ptr, uint64_t size) {
+uint64_t kfree_s_i(void* ptr, uint64_t size) {
     uint64_t addr = (uint64_t) ptr;
     /* 推算分配的块大小范围 */
     uint8_t alloc_size_start = MIN_ALLOC_SIZE_LOG2;
@@ -215,7 +215,7 @@ uint64_t kfree_s(void* ptr, uint64_t size) {
             bucket_dir[guess_alloc_size - MIN_ALLOC_SIZE_LOG2] = bucket->next;
         }
         free_page(PHYSICAL(page_addr));
-        if ((uint64_t) bucket != page_addr) kfree_s(bucket, sizeof(struct bucket_desc));
+        if ((uint64_t) bucket != page_addr) kfree_s_i(bucket, sizeof(struct bucket_desc));
     }
     return 1 << guess_alloc_size;
 }

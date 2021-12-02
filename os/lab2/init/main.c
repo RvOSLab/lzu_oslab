@@ -6,35 +6,38 @@
 #include <plic.h>
 #include <uart.h>
 #include <rtc.h>
+#include <dtb.h>
 
-int main()
+int main(void *nothing, const void *dtb_start)
 {
-	kputs("\nLZU OS STARTING....................");
-	print_system_infomation();
-	kputs("Hello LZU OS");
+    kputs("\nLZU OS STARTING....................");
+    print_system_infomation();
+    kputs("Hello LZU OS");
 
-	set_stvec();
-	clock_init();
-	kprintf("complete timer init\n");
-	plic_init();
-	kprintf("complete plic init\n");
-	uart_init();
-	kprintf("complete uart init\n");
+    set_stvec();
+    clock_init();
+    kprintf("complete timer init\n");
+    plic_init();
+    kprintf("complete plic init\n");
+    uart_init();
+    kprintf("complete uart init\n");
+
+    unflatten_device_tree(dtb_start);
 
     rtc_init();
-	kprintf("timestamp now: %u\n", read_time());
+    kprintf("timestamp now: %u\n", read_time());
     set_time(0);
-	kprintf("timestamp now: %u\n", read_time());
+    kprintf("timestamp now: %u\n", read_time());
     set_alarm(read_time() + 1000000000);
     kprintf("alarm time: %u\n", read_alarm());
 
-	enable_interrupt(); // 启用 interrupt，sstatus的SSTATUS_SIE位置1
+    enable_interrupt(); // 启用 interrupt，sstatus的SSTATUS_SIE位置1
 
-	__asm__ __volatile__("ebreak \n\t");
+    __asm__ __volatile__("ebreak \n\t");
 
-	kputs("SYSTEM END");
+    kputs("SYSTEM END");
 
-	while (1)
-		; /* infinite loop */
-	return 0;
+    while (1)
+        ; /* infinite loop */
+    return 0;
 }

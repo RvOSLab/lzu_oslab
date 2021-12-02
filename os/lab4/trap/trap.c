@@ -16,6 +16,7 @@
 #include <trap.h>
 #include <plic.h>
 #include <uart.h>
+#include <assert.h>
 
 /** 时间片长度 */
 #define PLANED_TICK_NUM 100

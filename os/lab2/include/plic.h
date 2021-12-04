@@ -8,10 +8,10 @@
 
 /// @{ @name PLIC 内存映射 IO 地址
 /** PLIC 的内存映射为 [0x0c000000, 0x1000_0000), 仅使用 hart 0 相关的 PLIC */
-#define PLIC_START 0x0c000000               /**< PLIC 起始物理地址 */
-#define PLIC_LENGTH 0x04000000              /**< PLIC MMIO 内存大小 */
-#define PLIC_END PLIC_START + PLIC_LENGTH   /**< PLIC 结束物理地址 */
-#define PLIC_START_ADDR PLIC_START          /**< PLIC 起始地址（为虚拟分页预留） */
+//#define PLIC_START 0x10000000               /**< PLIC 起始物理地址 */
+//#define PLIC_LENGTH 0x04000000              /**< PLIC MMIO 内存大小 */
+//#define PLIC_END PLIC_START + PLIC_LENGTH   /**< PLIC 结束物理地址 */
+//#define PLIC_START_ADDR PLIC_START          /**< PLIC 起始地址（为虚拟分页预留） */
 /// @}
 
 /// @{ @name PLIC 偏移
@@ -23,13 +23,28 @@
 #define PLIC_COMPLETE 0x00200004          /**< 告知 PLIC 已完成中断处理 */
 /// @}
 
-enum {
+struct plic_class_device {
+	uint32_t id;
+    void * plic_start_addr;
+};
+
+enum plic_device_type {
+	QEMU_PLIC = 0,
+	SUNXI_PLIC = 1,
+};
+
+enum qemu_irq{
     UART0_IRQ = 10,
-    RTC_IRQ = 11,
+    GOLDFISH_RTC_IRQ = 11,
     VIRTIO_IRQ = 1, /* 1 to 8 */
     VIRTIO_COUNT = 8,
     PCIE_IRQ = 0x20, /* 32 to 35 */
-    VIRTIO_NDEV = 0x35 /* Arbitrary maximum number of interrupts */
+    VIRTIO_NDEV = 0x35, /* Arbitrary maximum number of interrupts */
+};
+
+enum nezha_irq{
+    SUNXI_RTC_IRQ = 160,
+    SUNXI_UART_IRQ = 0x12,
 };
 
 void plic_enable_interrupt(uint32_t id);
@@ -38,6 +53,7 @@ void plic_set_threshold(uint8_t threshold);
 uint32_t plic_claim();
 void plic_complete(uint32_t id);
 void plic_init();
-int plic_is_pending(uint32_t id);
+uint32_t plic_is_pending(uint32_t id);
 uint64_t plic_pending();
+
 #endif /* end of include guard: __PLIC_H__ */

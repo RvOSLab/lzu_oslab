@@ -27,27 +27,29 @@ static struct trapframe *exception_handler(struct trapframe *tf);
 
 static struct trapframe *external_handler(struct trapframe *tf)
 {
-	uint32_t int_id;
-	switch (int_id = plic_claim()) {
-	case 1 ... 8:
-		kprintf("virtio\n");
-		break;
-	case UART0_IRQ:
-		uart_handler();
-		break;
-	case RTC_IRQ:
-		rtc_interrupt_handler();
-		kprintf("!!RTC ALARM!!\n");
-		set_alarm(read_time() + 1000000000);
+    uint32_t int_id;
+    switch (int_id = plic_claim()) {
+    case 1 ... 8:
+        kprintf("virtio\n");
+        break;
+	case SUNXI_UART_IRQ:
+    case UART0_IRQ:
+        uart_handler();
+        break;
+    case GOLDFISH_RTC_IRQ:
+    case SUNXI_RTC_IRQ:
+        rtc_interrupt_handler();
+        kprintf("!!RTC ALARM!!\n");
+        set_alarm(read_time() + 1000000000);
         kprintf("timestamp now: %u\n", read_time());
-		kprintf("next alarm time: %u\n", read_alarm());
-		break;
-	/* Unsupported interrupt */
-	default:
-		kprintf("Unknown external interrupt");
-	}
-	plic_complete(int_id);
-	return tf;
+        kprintf("next alarm time: %u\n", read_alarm());
+        break;
+    /* Unsupported interrupt */
+    default:
+        kprintf("Unknown external interrupt: %d\n", int_id);
+    }
+    plic_complete(int_id);
+    return tf;
 }
 
 /**
@@ -58,10 +60,10 @@ static struct trapframe *external_handler(struct trapframe *tf)
  */
 void set_stvec()
 {
-	/* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
-	extern void __alltraps(void);
-	/* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
-	write_csr(stvec, &__alltraps);
+    /* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
+    extern void __alltraps(void);
+    /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
+    write_csr(stvec, &__alltraps);
 }
 
 /**
@@ -70,7 +72,7 @@ void set_stvec()
  */
 struct trapframe *trap(struct trapframe *tf)
 {
-	return trap_dispatch(tf);
+    return trap_dispatch(tf);
 }
 
 /**
@@ -80,8 +82,8 @@ struct trapframe *trap(struct trapframe *tf)
  */
 static inline struct trapframe *trap_dispatch(struct trapframe *tf)
 {
-	return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) :
-						exception_handler(tf);
+    return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) :
+                                      exception_handler(tf);
 }
 
 /**
@@ -90,57 +92,57 @@ static inline struct trapframe *trap_dispatch(struct trapframe *tf)
  */
 struct trapframe *interrupt_handler(struct trapframe *tf)
 {
-	/** 置cause的最高位为0 */
-	int64_t cause = (tf->cause << 1) >> 1;
-	switch (cause) {
-	case IRQ_U_SOFT:
-		kputs("User software interrupt\n");
-		break;
-	case IRQ_S_SOFT:
-		kputs("Supervisor software interrupt\n");
-		break;
-	case IRQ_H_SOFT:
-		kputs("Hypervisor software interrupt\n");
-		break;
-	case IRQ_M_SOFT:
-		kputs("Machine software interrupt\n");
-		break;
-	case IRQ_U_TIMER:
-		kputs("User timer interrupt\n");
-		break;
-	case IRQ_S_TIMER:
-		clock_set_next_event();
-		if (++ticks % PLANED_TICK_NUM == 0) {
-			kprintf("%u ticks\n", ticks);
-			if (++ticks / PLANED_TICK_NUM == 10) {
-				sbi_shutdown();
-			}
-		}
-		enable_interrupt(); /* 允许嵌套中断 */
-		break;
-	case IRQ_H_TIMER:
-		kputs("Hypervisor timer interrupt\n");
-		break;
-	case IRQ_M_TIMER:
-		kputs("Machine timer interrupt\n");
-		break;
-	case IRQ_U_EXT:
-		kputs("User external interrupt\n");
-		break;
-	case IRQ_S_EXT:
-		external_handler(tf);
-		break;
-	case IRQ_H_EXT:
-		kputs("Hypervisor external interrupt\n");
-		break;
-	case IRQ_M_EXT:
-		kputs("Machine external interrupt\n");
-		break;
-	default:
-		print_trapframe(tf);
-		break;
-	}
-	return tf;
+    /** 置cause的最高位为0 */
+    int64_t cause = (tf->cause << 1) >> 1;
+    switch (cause) {
+    case IRQ_U_SOFT:
+        kputs("User software interrupt\n");
+        break;
+    case IRQ_S_SOFT:
+        kputs("Supervisor software interrupt\n");
+        break;
+    case IRQ_H_SOFT:
+        kputs("Hypervisor software interrupt\n");
+        break;
+    case IRQ_M_SOFT:
+        kputs("Machine software interrupt\n");
+        break;
+    case IRQ_U_TIMER:
+        kputs("User timer interrupt\n");
+        break;
+    case IRQ_S_TIMER:
+        clock_set_next_event();
+        if (++ticks % PLANED_TICK_NUM == 0) {
+            kprintf("%u ticks\n", ticks);
+            if (++ticks / PLANED_TICK_NUM == 100) {
+                sbi_shutdown();
+            }
+        }
+        enable_interrupt(); /* 允许嵌套中断 */
+        break;
+    case IRQ_H_TIMER:
+        kputs("Hypervisor timer interrupt\n");
+        break;
+    case IRQ_M_TIMER:
+        kputs("Machine timer interrupt\n");
+        break;
+    case IRQ_U_EXT:
+        kputs("User external interrupt\n");
+        break;
+    case IRQ_S_EXT:
+        external_handler(tf);
+        break;
+    case IRQ_H_EXT:
+        kputs("Hypervisor external interrupt\n");
+        break;
+    case IRQ_M_EXT:
+        kputs("Machine external interrupt\n");
+        break;
+    default:
+        print_trapframe(tf);
+        break;
+    }
+    return tf;
 }
 
 /**
@@ -149,87 +151,87 @@ struct trapframe *interrupt_handler(struct trapframe *tf)
  */
 struct trapframe *exception_handler(struct trapframe *tf)
 {
-	switch (tf->cause) {
-	case CAUSE_MISALIGNED_FETCH:
-		kputs("misaligned fetch");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_FAULT_FETCH:
-		kputs("fault fetch");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_ILLEGAL_INSTRUCTION:
-		kprintf("illegal instruction: %p", tf->epc);
-		break;
-	case CAUSE_BREAKPOINT:
-		kputs("breakpoint");
-		print_trapframe(tf);
-		tf->epc += 2;
-		break;
-	case CAUSE_MISALIGNED_LOAD:
-		kputs("misaligned load");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_FAULT_LOAD:
-		kputs("fault load");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_MISALIGNED_STORE:
-		kputs("misaligned store");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_FAULT_STORE:
-		kputs("fault store");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_USER_ECALL:
-		kputs("user_ecall");
-		break;
-	case CAUSE_SUPERVISOR_ECALL:
-		kputs("supervisor ecall");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_HYPERVISOR_ECALL:
-		kputs("hypervisor ecall");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_MACHINE_ECALL:
-		kputs("machine ecall");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	case CAUSE_INSTRUCTION_PAGE_FAULT:
-		/*
+    switch (tf->cause) {
+    case CAUSE_MISALIGNED_FETCH:
+        kputs("misaligned fetch");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_FAULT_FETCH:
+        kputs("fault fetch");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_ILLEGAL_INSTRUCTION:
+        kprintf("illegal instruction: %p", tf->epc);
+        break;
+    case CAUSE_BREAKPOINT:
+        kputs("breakpoint");
+        print_trapframe(tf);
+        tf->epc += 2;
+        break;
+    case CAUSE_MISALIGNED_LOAD:
+        kputs("misaligned load");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_FAULT_LOAD:
+        kputs("fault load");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_MISALIGNED_STORE:
+        kputs("misaligned store");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_FAULT_STORE:
+        kputs("fault store");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_USER_ECALL:
+        kputs("user_ecall");
+        break;
+    case CAUSE_SUPERVISOR_ECALL:
+        kputs("supervisor ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_HYPERVISOR_ECALL:
+        kputs("hypervisor ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_MACHINE_ECALL:
+        kputs("machine ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_INSTRUCTION_PAGE_FAULT:
+        /*
          * kputs("instruction page fault");
          * print_trapframe(tf);
          * sbi_shutdown();
          * break;
          */
-	case CAUSE_LOAD_PAGE_FAULT:
-		/*
+    case CAUSE_LOAD_PAGE_FAULT:
+        /*
          * kputs("load page fault");
          * print_trapframe(tf);
          * sbi_shutdown();
          * break;
          */
-	case CAUSE_STORE_PAGE_FAULT:
-		//wp_page_handler(tf);
-		break;
-	default:
-		kputs("unknown exception");
-		print_trapframe(tf);
-		sbi_shutdown();
-		break;
-	}
-	return tf;
+    case CAUSE_STORE_PAGE_FAULT:
+        //wp_page_handler(tf);
+        break;
+    default:
+        kputs("unknown exception");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    }
+    return tf;
 }
 
 /**
@@ -238,13 +240,13 @@ struct trapframe *exception_handler(struct trapframe *tf)
  */
 void print_trapframe(struct trapframe *tf)
 {
-	kprintf("trapframe at %p\n\n", tf);
-	print_regs(&tf->gpr);
-	kprintf("  trap information:\n");
-	kprintf("  status   0x%x\n", tf->status);
-	kprintf("  epc      0x%x\n", tf->epc);
-	kprintf("  badvaddr 0x%x\n", tf->badvaddr);
-	kprintf("  cause    0x%x\n", tf->cause);
+    kprintf("trapframe at %p\n\n", tf);
+    print_regs(&tf->gpr);
+    kprintf("  trap information:\n");
+    kprintf("  status   0x%x\n", tf->status);
+    kprintf("  epc      0x%x\n", tf->epc);
+    kprintf("  badvaddr 0x%x\n", tf->badvaddr);
+    kprintf("  cause    0x%x\n", tf->cause);
 }
 
 /**
@@ -253,37 +255,37 @@ void print_trapframe(struct trapframe *tf)
  */
 void print_regs(struct pushregs *gpr)
 {
-	kprintf("  registers:\n");
-	kprintf("  zero     0x%x\n", gpr->zero);
-	kprintf("  ra       0x%x\n", gpr->ra);
-	kprintf("  sp       0x%x\n", gpr->sp);
-	kprintf("  gp       0x%x\n", gpr->gp);
-	kprintf("  tp       0x%x\n", gpr->tp);
-	kprintf("  t0       0x%x\n", gpr->t0);
-	kprintf("  t1       0x%x\n", gpr->t1);
-	kprintf("  t2       0x%x\n", gpr->t2);
-	kprintf("  s0       0x%x\n", gpr->s0);
-	kprintf("  s1       0x%x\n", gpr->s1);
-	kprintf("  a0       0x%x\n", gpr->a0);
-	kprintf("  a1       0x%x\n", gpr->a1);
-	kprintf("  a2       0x%x\n", gpr->a2);
-	kprintf("  a3       0x%x\n", gpr->a3);
-	kprintf("  a4       0x%x\n", gpr->a4);
-	kprintf("  a5       0x%x\n", gpr->a5);
-	kprintf("  a6       0x%x\n", gpr->a6);
-	kprintf("  a7       0x%x\n", gpr->a7);
-	kprintf("  s2       0x%x\n", gpr->s2);
-	kprintf("  s3       0x%x\n", gpr->s3);
-	kprintf("  s4       0x%x\n", gpr->s4);
-	kprintf("  s5       0x%x\n", gpr->s5);
-	kprintf("  s6       0x%x\n", gpr->s6);
-	kprintf("  s7       0x%x\n", gpr->s7);
-	kprintf("  s8       0x%x\n", gpr->s8);
-	kprintf("  s9       0x%x\n", gpr->s9);
-	kprintf("  s10      0x%x\n", gpr->s10);
-	kprintf("  s11      0x%x\n", gpr->s11);
-	kprintf("  t3       0x%x\n", gpr->t3);
-	kprintf("  t4       0x%x\n", gpr->t4);
-	kprintf("  t5       0x%x\n", gpr->t5);
-	kprintf("  t6       0x%x\n\n", gpr->t6);
+    kprintf("  registers:\n");
+    kprintf("  zero     0x%x\n", gpr->zero);
+    kprintf("  ra       0x%x\n", gpr->ra);
+    kprintf("  sp       0x%x\n", gpr->sp);
+    kprintf("  gp       0x%x\n", gpr->gp);
+    kprintf("  tp       0x%x\n", gpr->tp);
+    kprintf("  t0       0x%x\n", gpr->t0);
+    kprintf("  t1       0x%x\n", gpr->t1);
+    kprintf("  t2       0x%x\n", gpr->t2);
+    kprintf("  s0       0x%x\n", gpr->s0);
+    kprintf("  s1       0x%x\n", gpr->s1);
+    kprintf("  a0       0x%x\n", gpr->a0);
+    kprintf("  a1       0x%x\n", gpr->a1);
+    kprintf("  a2       0x%x\n", gpr->a2);
+    kprintf("  a3       0x%x\n", gpr->a3);
+    kprintf("  a4       0x%x\n", gpr->a4);
+    kprintf("  a5       0x%x\n", gpr->a5);
+    kprintf("  a6       0x%x\n", gpr->a6);
+    kprintf("  a7       0x%x\n", gpr->a7);
+    kprintf("  s2       0x%x\n", gpr->s2);
+    kprintf("  s3       0x%x\n", gpr->s3);
+    kprintf("  s4       0x%x\n", gpr->s4);
+    kprintf("  s5       0x%x\n", gpr->s5);
+    kprintf("  s6       0x%x\n", gpr->s6);
+    kprintf("  s7       0x%x\n", gpr->s7);
+    kprintf("  s8       0x%x\n", gpr->s8);
+    kprintf("  s9       0x%x\n", gpr->s9);
+    kprintf("  s10      0x%x\n", gpr->s10);
+    kprintf("  s11      0x%x\n", gpr->s11);
+    kprintf("  t3       0x%x\n", gpr->t3);
+    kprintf("  t4       0x%x\n", gpr->t4);
+    kprintf("  t5       0x%x\n", gpr->t5);
+    kprintf("  t6       0x%x\n\n", gpr->t6);
 }

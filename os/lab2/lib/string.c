@@ -21,11 +21,7 @@ uint32_t strcmp(const char *s, const char *t)
 int is_begin_with(const char *str1, const char *str2)
 {
     if (!str1 || !str2)
-        return -1;
-    int len1 = strlen(str1);
-    int len2 = strlen(str2);
-    if ((len1 < len2) || !len1 || !len2)
-        return -1;
+        return 0;
     const char *p = str2;
     int i = 0;
     while (*p != '\0') {

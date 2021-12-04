@@ -10,16 +10,17 @@ extern int64_t prop_used;
 
 static uint64_t rtc_probe()
 {
-    for (size_t i = 0; i < node_used; i++) {
-        if (is_begin_with(node[node_used].name, "rtc")) {
-            for (struct property *prop_ptr = node[node_used].properties;
-                 prop_ptr; prop_ptr = prop_ptr->next) {
-                if (strcmp(prop_ptr->name, "compatible")) {
-                    if (strcmp(prop_ptr->value, "google,goldfish-rtc") == 0)
+    for (size_t i = 0; i < node_used+20; i++) {
+        if (is_begin_with(node[i].name, "rtc")) {
+            for (struct property *prop_ptr = node[i].properties; prop_ptr;
+                 prop_ptr = prop_ptr->next) {
+                if (strcmp(prop_ptr->name, "compatible") == 0) {
+                    if (strcmp(prop_ptr->value, "google,goldfish-rtc") == 0) {
                         return GOLDFISH_RTC;
-                    else if (strcmp(prop_ptr->value,
-                                    "allwinner,sun20iw1-rtc") == 0)
+                    } else if (strcmp(prop_ptr->value,
+                                      "allwinner,sun20iw1-rtc") == 0) {
                         return SUNXI_RTC;
+                    }
                 }
             }
         }

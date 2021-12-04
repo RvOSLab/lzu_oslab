@@ -18,7 +18,7 @@ struct rtc_class_ops {
 	//int (*set_offset)(struct device *, long offset);
 };
 struct rtc_class_device {
-	int id;
+	uint32_t id;
 	struct rtc_class_ops ops;
 };
 

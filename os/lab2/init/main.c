@@ -17,12 +17,13 @@ int main(void *nothing, const void *dtb_start)
     set_stvec();
     clock_init();
     kprintf("complete timer init\n");
+    dtb_start = 0x82200000;
+    unflatten_device_tree(dtb_start);
+
     plic_init();
     kprintf("complete plic init\n");
-    uart_init();
+    //uart_init();
     kprintf("complete uart init\n");
-
-    unflatten_device_tree(dtb_start);
 
     rtc_init();
     kprintf("timestamp now: %u\n", read_time());

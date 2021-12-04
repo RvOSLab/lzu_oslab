@@ -37,16 +37,20 @@ void plic_init()
     switch (plic_device.id) {
     case QEMU_PLIC:
         plic_device.plic_start_addr = 0x0c000000;
+        plic_enable_interrupt(GOLDFISH_RTC_IRQ);
+        plic_enable_interrupt(QEMU_PLIC);
+        plic_set_priority(GOLDFISH_RTC_IRQ, 1);
+        plic_set_priority(QEMU_PLIC, 1);
         break;
     case SUNXI_PLIC:
         plic_device.plic_start_addr = 0x10000000;
+        plic_enable_interrupt(SUNXI_UART_IRQ);
+        plic_enable_interrupt(SUNXI_RTC_IRQ);
+        plic_set_priority(SUNXI_UART_IRQ, 1);
+        plic_set_priority(SUNXI_RTC_IRQ, 1);
         break;
     }
     plic_set_threshold(0);
-    plic_enable_interrupt(SUNXI_UART_IRQ);
-    plic_enable_interrupt(GOLDFISH_RTC_IRQ);
-    plic_set_priority(SUNXI_UART_IRQ, 1);
-    plic_set_priority(GOLDFISH_RTC_IRQ, 2);
     set_csr(sie, 1 << IRQ_S_EXT);
 }
 
@@ -54,7 +58,7 @@ void plic_enable_interrupt(uint32_t id)
 {
     volatile uint32_t *plic_enable_address =
             (volatile uint32_t *)(plic_device.plic_start_addr + PLIC_ENABLE);
-    *plic_enable_address |= 0xffffffff;
+    plic_enable_address[id >> 5] |= (1 << (id & 0x1f));
 }
 
 // QEMU Virt machine support 7 priority (1 - 7),

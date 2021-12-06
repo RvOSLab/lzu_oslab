@@ -20,7 +20,6 @@ static uint64_t plic_probe()
     for (size_t i = 0; i < prop_used; i++) {
         if (strcmp(prop[i].name, "compatible") == 0) {
             if (strcmp(prop[i].value, "allwinner,sun20i-d1-plic") == 0) {
-                kprintf("plic: sun20i-d1-plic\n");
                 return SUNXI_PLIC;
             }
             if (strcmp(prop[i].value, "sifive,plic-1.0.0") == 0) {
@@ -36,14 +35,14 @@ void plic_init()
     plic_device.id = plic_probe();
     switch (plic_device.id) {
     case QEMU_PLIC:
-        plic_device.plic_start_addr = 0x0c000000;
+        plic_device.plic_start_addr = (volatile struct plic_regs *)0x0c000000;
         plic_enable_interrupt(GOLDFISH_RTC_IRQ);
-        plic_enable_interrupt(QEMU_PLIC);
+        plic_enable_interrupt(UART0_IRQ);
         plic_set_priority(GOLDFISH_RTC_IRQ, 1);
-        plic_set_priority(QEMU_PLIC, 1);
+        plic_set_priority(UART0_IRQ, 1);
         break;
     case SUNXI_PLIC:
-        plic_device.plic_start_addr = 0x10000000;
+        plic_device.plic_start_addr = (volatile struct plic_regs *)0x10000000;
         plic_enable_interrupt(SUNXI_UART_IRQ);
         plic_enable_interrupt(SUNXI_RTC_IRQ);
         plic_set_priority(SUNXI_UART_IRQ, 1);
@@ -56,40 +55,35 @@ void plic_init()
 
 void plic_enable_interrupt(uint32_t id)
 {
-    volatile uint32_t *plic_enable_address =
-            (volatile uint32_t *)(plic_device.plic_start_addr + PLIC_ENABLE);
-    plic_enable_address[id >> 5] |= (1 << (id & 0x1f));
+    plic_device.plic_start_addr->PLIC_IE_REG[1][id / 32] |= (1 << (id % 32));
 }
 
 // QEMU Virt machine support 7 priority (1 - 7),
 // The "0" is reserved, and the lowest priority is "1".
 void plic_set_priority(uint32_t id, uint8_t priority)
 {
-    ((volatile uint32_t *)(plic_device.plic_start_addr + PLIC_PRIORITY))[id] =
-            priority & 7;
+    plic_device.plic_start_addr->PLIC_PRIO_REG[id] = priority & 7;
 }
 
 void plic_set_threshold(uint8_t threshold)
 {
-    *(volatile uint32_t *)(plic_device.plic_start_addr + PLIC_PENDING +
-                           PLIC_THRESHOLD) = threshold & 7;
+    plic_device.plic_start_addr->PLIC_TH_CLAIM_COMPLITE_REG[1].PLIC_TH_REG = threshold & 7;
 }
 
 /**
- * @brief 获取外中断号
+ * @brief 主动获取外中断号
  *
  * @return 最高优先级的待处理中断号，不存在则返回 0
  */
 uint32_t plic_claim()
 {
-    return *(volatile uint32_t *)(plic_device.plic_start_addr + PLIC_PENDING +
-                                  PLIC_CLAIM);
+    return plic_device.plic_start_addr->PLIC_TH_CLAIM_COMPLITE_REG[1].PLIC_CLAIM_REG;
 }
 
 void plic_complete(uint32_t id)
 {
-    *(volatile uint32_t *)(plic_device.plic_start_addr + PLIC_PENDING +
-                           PLIC_COMPLETE) = id;
+    plic_device.plic_start_addr->PLIC_TH_CLAIM_COMPLITE_REG[1].PLIC_CLAIM_REG = id;
+    //plic_enable_interrupt(id);
 }
 
 /*
@@ -97,18 +91,18 @@ void plic_complete(uint32_t id)
  * @brief 返回待处理终端向量
  *
  * @note 可以先 enable 再 claim 来清空 pending
- */
+ 
 uint64_t plic_pending()
 {
-    return *(volatile uint64_t *)(plic_device.plic_start_addr + PLIC_PENDING);
+    return plic_device.plic_start_addr->PLIC_IP_REG;
 }
+*/
 
 /**
  * @brief 判断某中断是否待处理
  */
 uint32_t plic_is_pending(uint32_t id)
 {
-    uint64_t pending = plic_pending();
-    volatile uint32_t *p = (volatile uint32_t *)&pending;
-    return p[id / 32] & (id % 32);
+    volatile uint32_t *p = (volatile uint32_t *)&plic_device.plic_start_addr->PLIC_IP_REG;
+    return p[id / 32] & (1 << (id % 32));
 }

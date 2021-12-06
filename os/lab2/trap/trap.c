@@ -28,11 +28,15 @@ static struct trapframe *exception_handler(struct trapframe *tf);
 static struct trapframe *external_handler(struct trapframe *tf)
 {
     uint32_t int_id;
-    switch (int_id = plic_claim()) {
+    kprintf("before claim:%u\n", plic_is_pending(SUNXI_RTC_IRQ));
+    int_id = plic_claim();
+    kprintf("after claim:%u\n", plic_is_pending(SUNXI_RTC_IRQ));
+
+    switch (int_id) {
     case 1 ... 8:
         kprintf("virtio\n");
         break;
-	case SUNXI_UART_IRQ:
+    case SUNXI_UART_IRQ:
     case UART0_IRQ:
         uart_handler();
         break;
@@ -49,6 +53,7 @@ static struct trapframe *external_handler(struct trapframe *tf)
         kprintf("Unknown external interrupt: %d\n", int_id);
     }
     plic_complete(int_id);
+    kprintf("after complete:%u\n", plic_is_pending(SUNXI_RTC_IRQ));
     return tf;
 }
 
@@ -82,8 +87,7 @@ struct trapframe *trap(struct trapframe *tf)
  */
 static inline struct trapframe *trap_dispatch(struct trapframe *tf)
 {
-    return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) :
-                                      exception_handler(tf);
+    return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) : exception_handler(tf);
 }
 
 /**

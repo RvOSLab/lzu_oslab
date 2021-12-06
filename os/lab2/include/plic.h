@@ -14,26 +14,31 @@
 //#define PLIC_START_ADDR PLIC_START          /**< PLIC 起始地址（为虚拟分页预留） */
 /// @}
 
-/// @{ @name PLIC 偏移
-#define PLIC_PRIORITY 0x0000000           /**< 设置中断优先级 */
-#define PLIC_PENDING 0x00001000           /**< 待处理的中断位图 */
-#define PLIC_ENABLE 0x00002080            /**< 使能中断 */
-#define PLIC_THRESHOLD 0x00200000         /**< 发生中断的阈值，当且仅当中断优先级高于此阈值时发生中断 */
-#define PLIC_CLAIM 0x00200004             /**< 获取优先级最高的待处理中断 */
-#define PLIC_COMPLETE 0x00200004          /**< 告知 PLIC 已完成中断处理 */
-/// @}
+struct plic_regs {
+    volatile uint32_t PLIC_PRIO_REG[1024]; /**< 中断优先级寄存器，0保留 */
+    volatile uint32_t PLIC_IP_REG[32]; /**< 待处理中断寄存器 */
+    volatile uint32_t PLIC_PADDING1[(0x2000 - 0x1000 - 4 * 32) >> 2];
+    volatile uint32_t PLIC_IE_REG[15871][32]; /**< 中断使能寄存器 */
+    volatile uint32_t PLIC_PADDING2[(0x1FFFFC - 0x2000 - 4 * 32 * 15871) >> 2];
+    volatile uint32_t PLIC_CTRL_REG; /**< 0x1FFFFC 中断访问权限控制寄存器（D1专属） */
+    volatile struct {
+        volatile uint32_t PLIC_TH_REG; /**< 中断阈值寄存器 */
+        volatile uint32_t PLIC_CLAIM_REG; /**< 中断声明与完成寄存器 */
+        volatile uint32_t PADDING[(0x1000 - 2 * 4) >> 2];
+    } PLIC_TH_CLAIM_COMPLITE_REG[15871];
+};
 
 struct plic_class_device {
-	uint32_t id;
-    void * plic_start_addr;
+    uint32_t id;
+    volatile struct plic_regs *plic_start_addr;
 };
 
 enum plic_device_type {
-	QEMU_PLIC = 0,
-	SUNXI_PLIC = 1,
+    QEMU_PLIC = 0,
+    SUNXI_PLIC = 1,
 };
 
-enum qemu_irq{
+enum qemu_irq {
     UART0_IRQ = 10,
     GOLDFISH_RTC_IRQ = 11,
     VIRTIO_IRQ = 1, /* 1 to 8 */
@@ -42,7 +47,7 @@ enum qemu_irq{
     VIRTIO_NDEV = 0x35, /* Arbitrary maximum number of interrupts */
 };
 
-enum nezha_irq{
+enum nezha_irq {
     SUNXI_RTC_IRQ = 160,
     SUNXI_UART_IRQ = 0x12,
 };

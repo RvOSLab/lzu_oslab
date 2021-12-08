@@ -91,7 +91,7 @@ void sunxi_rtc_set_alarm(uint64_t alarm)
     // 根据布局修改 ALARM0_DAY_SET_REG
     regs->alarm0_day_set_reg = (uint64_t)day;
     // 根据布局修改 ALARM0_HH-MM-SS_SET_REG
-    regs->alarm0_cur_vlu_reg = hh << 16 | mm << 8 | ss;
+    regs->alarm0_cur_vlu_reg = hh << 16 | mm << 8 | (ss - 1);
     // 写入 ALARM0_ENABLE_REG 以启用 alarm 0 功能
     regs->alarm0_enable_reg = 1;
 }

@@ -15,25 +15,17 @@ struct sunxi_rtc_regs {
     uint32_t padding1; // 0x0c, padding
     uint32_t rtc_day_reg; // 0x10, rtc day register
     uint32_t rtc_hh_mm_ss_reg; // 0x14, rtc hour, minute, second register
-    uint32_t padding2; // 0x18, padding
-    uint32_t padding3; // 0x1c, padding
+    uint32_t padding2[2]; // 0x18, padding
     uint32_t alarm0_day_set_reg; // 0x20, alarm0 day set register
     uint32_t alarm0_cur_vlu_reg; // 0x24, alarm0 current value register
     uint32_t alarm0_enable_reg; // 0x28, alarm0 enable register
     uint32_t alarm0_irq_en; // 0x2c, alarm0 interrupt enable register
-    uint32_t alarm0_irq_sta_reg; // 0x30, alarm0 interrupt status register
-    uint32_t padding4; // 0x34, padding
-    uint32_t padding5; // 0x38, padding
-    uint32_t padding6; // 0x3c, padding
-    uint32_t padding7; // 0x40, padding
-    uint32_t padding8; // 0x44, padding
-    uint32_t padding9; // 0x48, padding
-    uint32_t padding10; // 0x4c, padding
+    uint32_t alarm0_irq_sta_reg; // 0x30, alarm0 interrupt status register, Write 1 to clear
+    uint32_t padding3[7]; // 0x34, padding
     uint32_t alarm_config_reg; // 0x50, alarm configuration register
 };
 
-static void timestamp_to_day_hh_mm_ss(uint64_t timestamp, uint32_t *day,
-                                      uint32_t *hh, uint32_t *mm, uint32_t *ss)
+static void timestamp_to_day_hh_mm_ss(uint64_t timestamp, uint32_t *day, uint32_t *hh, uint32_t *mm, uint32_t *ss)
 {
     timestamp /= 1000000000; // ns -> s
     *day = timestamp / SEC_PER_DAY;
@@ -42,11 +34,9 @@ static void timestamp_to_day_hh_mm_ss(uint64_t timestamp, uint32_t *day,
     *ss = timestamp % SEC_PER_MIN;
 }
 
-static uint64_t day_hh_mm_ss_to_timestamp(uint32_t day, uint32_t hh,
-                                          uint32_t mm, uint32_t ss)
+static uint64_t day_hh_mm_ss_to_timestamp(uint32_t day, uint32_t hh, uint32_t mm, uint32_t ss)
 {
-    uint64_t timestamp =
-            day * SEC_PER_DAY + hh * SEC_PER_HOUR + mm * SEC_PER_MIN + ss;
+    uint64_t timestamp = day * SEC_PER_DAY + hh * SEC_PER_HOUR + mm * SEC_PER_MIN + ss;
     return timestamp * 1000000000; // s -> ns
 }
 
@@ -56,8 +46,7 @@ uint64_t sunxi_rtc_read_time()
     uint32_t day = regs->rtc_day_reg;
     uint32_t hh_mm_ss = regs->rtc_hh_mm_ss_reg;
     // 根据布局转换天、时、分、秒到时间戳
-    return day_hh_mm_ss_to_timestamp(day, (hh_mm_ss >> 16) & 0x1f,
-                                     (hh_mm_ss >> 8) & 0x3f, hh_mm_ss & 0x3f);
+    return day_hh_mm_ss_to_timestamp(day, (hh_mm_ss >> 16) & 0x1f, (hh_mm_ss >> 8) & 0x3f, hh_mm_ss & 0x3f);
 }
 
 void sunxi_rtc_set_time(uint64_t now)
@@ -114,22 +103,21 @@ uint64_t sunxi_rtc_read_alarm()
     // 可以通过 ALARM0_DAY_SET_REG 和 ALARM0_HH-MM-SS_SET_REG (下图中为 ALARM_CUR_VLE_REG) 实时查询闹钟时间。
     uint32_t day = regs->alarm0_day_set_reg;
     uint32_t hh_mm_ss = regs->alarm0_cur_vlu_reg;
-    return day_hh_mm_ss_to_timestamp(day, (hh_mm_ss >> 16) & 0x1f,
-                                     (hh_mm_ss >> 8) & 0x3f, hh_mm_ss & 0x3f);
+    return day_hh_mm_ss_to_timestamp(day, (hh_mm_ss >> 16) & 0x1f, (hh_mm_ss >> 8) & 0x3f, hh_mm_ss & 0x3f);
 }
 
 void sunxi_rtc_interrupt_handler()
 {
     struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
     // 在进入中断处理程序后，写入 ALARM0_IRQ_STA_REG 以清除中断，并执行中断处理程序。
-    regs->alarm0_irq_sta_reg = 0;
+    regs->alarm0_irq_sta_reg = 1;
 }
 
 void sunxi_rtc_clear_alarm()
 {
     struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
     regs->alarm0_irq_en = 0;
-    regs->alarm0_irq_sta_reg = 0;
+    regs->alarm0_irq_sta_reg = 1;
     regs->alarm0_enable_reg = 0;
 }
 

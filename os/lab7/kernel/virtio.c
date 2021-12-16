@@ -1,5 +1,6 @@
 #include <virtio.h>
 #include <virtio_blk.h>
+#include <virtio_net.h>
 
 #include <stddef.h>
 #include <kdebug.h>
@@ -18,6 +19,11 @@ void virtio_probe() {
                 kprintf("Virtio device is legacy 0x%x\n", is_legacy);
                 if(device->device_id == VIRTIO_DEVICE_ID_BLOCK) {
                     virtio_blk_init(device, is_legacy);
+                    virtio_blk_test(device);
+                }
+                if(device->device_id == VIRTIO_DEVICE_ID_NETWORK) {
+                    virtio_net_init(device, is_legacy);
+                    virtio_net_test(device);
                     break;
                 }
             }
@@ -26,13 +32,12 @@ void virtio_probe() {
     if(ptr == VIRTIO_END_ADDRESS) {
         kprintf("Can not find any virtio-blk device, virtio init failed.\n");
         return;
-    }
-    virtio_blk_test(device);
+    }   
 }
 
-void virtio_set_queue(volatile struct virtio_device *device, uint64_t is_legacy, uint64_t virtq_phy_addr) {
+void virtio_set_queue(volatile struct virtio_device *device, uint64_t is_legacy, uint32_t queue_idx, uint64_t virtq_phy_addr) {
     // 1. select the queue 0
-    device->queue_sel = 0;
+    device->queue_sel = queue_idx;
     if(!is_legacy) {
     // 2. check if the queue is not already in use
         assert(device->queue_ready == 0);

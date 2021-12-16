@@ -68,6 +68,6 @@ struct virtio_device {
 #define VIRTIO_STATUS_DEVICE_NEEDS_RESET 64
 
 extern void virtio_probe();
-extern void virtio_set_queue(volatile struct virtio_device *device, uint64_t is_legacy, uint64_t virtq_phy_addr);
+extern void virtio_set_queue(volatile struct virtio_device *device, uint64_t is_legacy, uint32_t queue_idx, uint64_t virtq_phy_addr);
 
 #endif /* VIRTIO */

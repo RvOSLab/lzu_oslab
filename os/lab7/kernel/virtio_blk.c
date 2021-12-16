@@ -36,7 +36,7 @@ void virtio_blk_init(volatile struct virtio_device *device, uint64_t is_legacy) 
     }
     // 7. perform device-specific setup
     virtio_queue_init(&virtio_blk_queue);
-    virtio_set_queue(device, is_legacy, virtio_blk_queue.physical_addr);
+    virtio_set_queue(device, is_legacy, 0, virtio_blk_queue.physical_addr);
     blk_config = (volatile struct virtio_blk_config *)((uint64_t)device + VIRTIO_BLK_CONFIG_OFFSET);
     kprintf("virtio blk capacity: 0x%x\n", blk_config->capacity);
     kprintf("virtio blk size: 0x%x\n", blk_config->blk_size);

@@ -60,6 +60,8 @@ static inline uint8_t q_pow2_factor(uint64_t n) {
 #define PAGE_SIZE_LOG2 12
 #define MIN_ALLOC_SIZE_LOG2 4
 #define MAX_ALLOC_SIZE_LOG2 PAGE_SIZE_LOG2
+/* 特殊桶大小 */
+#define SPECIAL_BUCKET_SIZE_LOG2 5
 
 /* 桶描述符目录 [16, 32, 64, 128, 256, 512, 1024, 2048, 4096] */
 struct bucket_desc* bucket_dir[MAX_ALLOC_SIZE_LOG2 - MIN_ALLOC_SIZE_LOG2 + 1] = { NULL };
@@ -74,47 +76,47 @@ struct bucket_desc {
 };
 
 /**
- * @brief 向bucket_dir[idx]中插入桶描述符
+ * @brief 初始化指定的桶页面
  *
- * 插入空的桶描述符，每次申请一页内存。
+ * 将指定的桶页面按给定的块大小初始化。
  *
- * @param idx bucket_dir的索引
- * @return bucket_dir[idx]
- */
-struct bucket_desc* add_some_bucket_desc(uint8_t idx) {
-    uint64_t new_page = VIRTUAL(get_free_page());
-    uint64_t bucket_addr = new_page;
-    struct bucket_desc *bucket;
-    while (bucket_addr < new_page + PAGE_SIZE) {
-        bucket = (struct bucket_desc *) bucket_addr;
-        bucket->page = 0;
-        bucket->next = bucket + 1;
-        bucket_addr = (uint64_t) bucket->next;
-    }
-    bucket->next = bucket_dir[idx];
-    bucket_dir[idx] = (struct bucket_desc *) new_page;
-    return bucket_dir[idx];
-}
-
-/**
- * @brief 初始化指定的桶
- *
- * 将指定的桶按给定的块大小初始化。
- *
- * @param bucket 桶描述符指针
+ * @param page_addr 桶页面地址
  * @param alloc_size 分配的块大小(指数形式)
  */
-void init_bucket_desc(struct bucket_desc * bucket, uint64_t alloc_size) {
-    uint64_t new_page = VIRTUAL(get_free_page());
+void init_bucket_page(uint64_t page_addr, uint8_t alloc_size) {
     uint8_t *idx_ptr;
     uint64_t block_count = 1 << (PAGE_SIZE_LOG2 - alloc_size);
     for (uint64_t i = 0; i < block_count; i += 1) {
-        idx_ptr = (uint8_t *)(new_page + (i << alloc_size));
+        idx_ptr = (uint8_t *)(page_addr + (i << alloc_size));
         *idx_ptr = i + 1;
     }
-    bucket->page = new_page;
-    bucket->refcnt = 0;
-    bucket->freeidx = 0;
+}
+
+/**
+ * @brief 取得空桶
+ *
+ * 取得空桶，使用了一些奇怪的技巧。
+ *
+ * @param alloc_size 分配的块大小(指数形式)
+ * @return empty_bucket
+ */
+struct bucket_desc* take_empty_bucket(uint8_t alloc_size) {
+    struct bucket_desc *bucket;
+    uint64_t bucket_page_addr = VIRTUAL(get_free_page());
+    init_bucket_page(bucket_page_addr, alloc_size);
+    if (alloc_size == SPECIAL_BUCKET_SIZE_LOG2) {
+        bucket = (struct bucket_desc *) bucket_page_addr;
+        bucket->refcnt = 1;
+        bucket->freeidx = 1;
+    } else {
+        bucket = (struct bucket_desc *) kmalloc_i(sizeof(struct bucket_desc));
+        bucket->refcnt = 0;
+        bucket->freeidx = 0;
+    }
+    bucket->page = bucket_page_addr;
+    bucket->next = bucket_dir[alloc_size - MIN_ALLOC_SIZE_LOG2];
+    bucket_dir[alloc_size - MIN_ALLOC_SIZE_LOG2] = bucket;
+    return bucket;
 }
 
 /**
@@ -126,7 +128,7 @@ void init_bucket_desc(struct bucket_desc * bucket, uint64_t alloc_size) {
  * @param size 申请的内存大小(最大为PAGE_SIZE)
  * @return 所申请内存的起始地址
  */
-void* kmalloc(uint64_t size) {
+void* kmalloc_i(uint64_t size) {
     /* 计算实际分配的块大小 */
     uint8_t alloc_size = q_log2_ceil(size); /* 指数形式 */
     switch (alloc_size) {
@@ -146,8 +148,7 @@ void* kmalloc(uint64_t size) {
         }
         break;
     }
-    if (!bucket) bucket = add_some_bucket_desc(alloc_size - MIN_ALLOC_SIZE_LOG2);
-    if (!bucket->page) init_bucket_desc(bucket, alloc_size);
+    if (!bucket) bucket = take_empty_bucket(alloc_size);
     /* 从桶中获取一个空闲块 */
     bucket->refcnt += 1;
     uint64_t free_block = bucket->page + (bucket->freeidx << alloc_size);
@@ -165,7 +166,7 @@ void* kmalloc(uint64_t size) {
  * @param size 申请的内存大小(为0时自动推算)
  * @return 释放的内存大小，若为0则表示释放失败
  */
-uint64_t kfree_s(void* ptr, uint64_t size) {
+uint64_t kfree_s_i(void* ptr, uint64_t size) {
     uint64_t addr = (uint64_t) ptr;
     /* 推算分配的块大小范围 */
     uint8_t alloc_size_start = MIN_ALLOC_SIZE_LOG2;
@@ -187,13 +188,15 @@ uint64_t kfree_s(void* ptr, uint64_t size) {
         if (aligned_size < MAX_ALLOC_SIZE_LOG2) alloc_size_end = aligned_size;
     }
     /* 找到该块所在的桶 */
-    struct bucket_desc* bucket;
+    struct bucket_desc* bucket, *prev_bucket;
     uint64_t page_addr = (addr >> PAGE_SIZE_LOG2) << PAGE_SIZE_LOG2;
     uint8_t guess_alloc_size = alloc_size_start;
     while (guess_alloc_size <= alloc_size_end) {
         bucket = bucket_dir[guess_alloc_size - MIN_ALLOC_SIZE_LOG2];
+        prev_bucket = NULL;
         while (bucket) {
             if (bucket->page == page_addr) break;
+            prev_bucket = bucket;
             bucket = bucket->next;
         }
         if (bucket) break;
@@ -202,12 +205,17 @@ uint64_t kfree_s(void* ptr, uint64_t size) {
     if(!bucket) return 0;
     /* 将该块放回桶中 */
     bucket->refcnt -= 1;
-    if(bucket->refcnt) {
+    if(bucket->refcnt > 1 || (bucket->refcnt == 1 && (uint64_t) bucket != page_addr)) {
         *((uint8_t *) ptr) = bucket->freeidx;
         bucket->freeidx = (addr - page_addr) >> guess_alloc_size;
-    } else {
-        bucket->page = 0;
+    } else { /* 空桶 */
+        if (prev_bucket) {
+            prev_bucket->next = bucket->next;
+        } else {
+            bucket_dir[guess_alloc_size - MIN_ALLOC_SIZE_LOG2] = bucket->next;
+        }
         free_page(PHYSICAL(page_addr));
+        if ((uint64_t) bucket != page_addr) kfree_s_i(bucket, sizeof(struct bucket_desc));
     }
     return 1 << guess_alloc_size;
 }

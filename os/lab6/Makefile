@@ -40,14 +40,14 @@ run : build
     		-machine virt \
     		-nographic \
     		-bios tools/fw_jump.bin \
-    		-device loader,file=$(KERN_IMG),addr=0x80200000
+    		-device virtio-keyboard-device -device loader,file=$(KERN_IMG),addr=0x80200000
 
 # run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build
 	@$(QEMU) \
     		-machine virt \
     		-bios tools/fw_jump.bin \
-    		-device loader,file=$(KERN_IMG),addr=0x80200000 \
+    		-device virtio-keyboard-device -device loader,file=$(KERN_IMG),addr=0x80200000 \
     		-monitor stdio \
 
 # debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
@@ -57,7 +57,7 @@ debug : build
 				-s -S \
 				-nographic \
 				-bios tools/fw_jump.bin \
-				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
+				-device virtio-keyboard-device -device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
 	$(TMUX) attach-session -t debug
 
 # 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)

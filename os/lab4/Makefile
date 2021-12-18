@@ -29,9 +29,8 @@ all : build
 build :
 	make -C init build
 	make -C lib build
-	make -C trap build
 	make -C mm build
-	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o lib/libstd.a mm/libmm.a trap/libtrap.a
+	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o lib/libstd.a mm/libmm.a
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
 # bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
@@ -53,7 +52,7 @@ run-gui : build
 # debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
 debug : build
 	$(TMUX) new -s debug -d "$(QEMU) \
-				-machine virt \
+    			-machine virt \
 				-s -S \
 				-nographic \
 				-bios tools/fw_jump.bin \
@@ -78,6 +77,5 @@ format:
 clean :
 	-make -C init/ clean
 	-make -C lib/ clean
-	-make -C trap/ clean
 	-make -C mm/ clean
 	-rm -f $(KERN_BIN) $(KERN_IMG) $(KERN_SYM) $(KERN_ASM) $(KERN_MAP)

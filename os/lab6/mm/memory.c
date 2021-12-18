@@ -49,8 +49,11 @@ static inline void map_pages(uint64_t paddr_start, uint64_t paddr_end, uint64_t 
  */
 void map_kernel()
 {
-    map_pages(DEVICE_START, DEVICE_END, DEVICE_ADDRESS, KERN_RW | PAGE_VALID);
     map_pages(MEM_START, MEM_END, KERNEL_ADDRESS, KERN_RWX | PAGE_VALID);
+    map_pages(PLIC_START, PLIC_END, PLIC_START_ADDRESS, KERN_RW | PAGE_VALID);
+    map_pages(UART_START, CEIL(UART_END), UART_START_ADDRESS, KERN_RW | PAGE_VALID);
+    kprintf("PLIC_START_ADDRESS: %x\n", PLIC_START_ADDRESS);
+    kprintf("UART_START_ADDRESS: %x\n", UART_START_ADDRESS);
 }
 
 /**
@@ -491,26 +494,28 @@ void mem_test()
                addr, GET_PAGE_ADDR(page_table[vpns[2]]));
     }
 
-    /** 测试虚拟地址[DEVICE_ADDRESS, DEVICE_ADDRESS + DEVICE_END - DEVICE_START)是否映射到了[DEVICE_START, DEVICE_END) */
-    addr = DEVICE_ADDRESS;
-    end = DEVICE_ADDRESS + DEVICE_END - DEVICE_START;
-    for (; addr < end; addr += PAGE_SIZE) {
-        uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
-                     GET_VPN3(addr) };
-        uint64_t *page_table = pg_dir;
-        for (size_t level = 0; level < 2; ++level) {
-            uint64_t idx = vpns[level];
-            assert(page_table[idx],
-                   "page table %p of %p not exists",
-                   &page_table[idx], addr);
-            page_table = (uint64_t *)VIRTUAL(
-                GET_PAGE_ADDR(page_table[idx]));
-        }
-        assert(GET_PAGE_ADDR(page_table[vpns[2]]) ==
-                   addr + DEVICE_START - DEVICE_ADDRESS,
-               "virtual address %p maps to physical address %p", addr,
-               GET_PAGE_ADDR(page_table[vpns[2]]));
-    }
+    /*
+     * [>* 测试虚拟地址[DEVICE_ADDRESS, DEVICE_ADDRESS + DEVICE_END - DEVICE_START)是否映射到了[DEVICE_START, DEVICE_END) <]
+     * addr = PLIC_START_ADDRESS;
+     * end = CEIL(UART_END_ADDRESS);
+     * for (; addr < end; addr += PAGE_SIZE) {
+     *     uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr),
+     *                  GET_VPN3(addr) };
+     *     uint64_t *page_table = pg_dir;
+     *     for (size_t level = 0; level < 2; ++level) {
+     *         uint64_t idx = vpns[level];
+     *         assert(page_table[idx],
+     *                "page table %p of %p not exists",
+     *                &page_table[idx], addr);
+     *         page_table = (uint64_t *)VIRTUAL(
+     *             GET_PAGE_ADDR(page_table[idx]));
+     *     }
+     *     assert(GET_PAGE_ADDR(page_table[vpns[2]]) ==
+     *                addr + UART_START - UART_ADDRESS,
+     *            "virtual address %p maps to physical address %p", addr,
+     *            GET_PAGE_ADDR(page_table[vpns[2]]));
+     * }
+     */
 
     /* 分配 1000 个物理页并映射到虚拟地址 0x200000 开始的 1000 个虚拟页，
      * 这个虚拟地址空间可以看成一个进程的虚拟地址空间 */

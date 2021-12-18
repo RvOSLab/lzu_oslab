@@ -1,6 +1,5 @@
 /**
  * @file trap.c
- * @author Hanabichan (93yutf@gmail.com)
  * @brief 定义了中断相关的常量、变量与函数
  *
  * 发生中断时CPU会干的事情：
@@ -10,17 +9,65 @@
  * 发生例外时的权限模式被保存在 sstatus 的 SPP 域，然后设置当前模式为 S 模式。
  */
 
-#include <riscv.h>
-#include <trap.h>
+#include <assert.h>
 #include <clock.h>
-#include <sbi.h>
+#include <errno.h>
 #include <kdebug.h>
+#include <riscv.h>
+#include <sbi.h>
+#include <sched.h>
+#include <syscall.h>
+#include <trap.h>
+#include <plic.h>
+#include <uart.h>
 
-/** 时间片长度 */
-#define PLANED_TICK_NUM 100
+static inline struct trapframe* trap_dispatch(struct trapframe* tf);
+static struct trapframe* interrupt_handler(struct trapframe* tf);
+static struct trapframe* exception_handler(struct trapframe* tf);
+static struct trapframe* syscall_handler(struct trapframe* tf);
 
-static void interrupt_handler(struct trapframe *tf);
-static void exception_handler(struct trapframe *tf);
+void handle_virtio()
+{
+    panic("virtio\n");
+}
+
+void uart_handler()
+{
+    int8_t c = uart_read();
+    if(c > -1)
+        uart_write(c);
+
+}
+
+static struct trapframe* external_handler(struct trapframe* tf)
+{
+    uint32_t int_id;
+    switch (int_id = plic_claim()) {
+        case 1 ... 8:
+            handle_virtio();
+            break;
+        /* UART */
+        case 0xA:
+            uart_handler();
+            break;
+        /* Unsupported interrupt */
+        default:
+            panic("Unknown external interrupt");
+    }
+    plic_complete(int_id);
+    return tf;
+}
+
+/**
+ *@brief 写保护异常处理函数
+ */
+void wp_page_handler(struct trapframe* tf)
+{
+    uint64_t badvaddr = tf->badvaddr;
+    if (badvaddr < current->start_data)
+        panic("Try to write read-only memory");
+    write_verify(badvaddr);
+}
 
 /**
  * @brief 初始化中断
@@ -33,33 +80,48 @@ void trap_init()
 {
     /* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
     extern void __alltraps(void);
+    /* sscratch 保存内核栈地址 */
+    write_csr(sscratch, (char*)&init_task + PAGE_SIZE);
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
     /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
     set_csr(sstatus, SSTATUS_SIE);
+
+    kprintf("sstatus: %x\n", read_csr(sstatus));
+    plic_init();
+    kprintf("complete plic\n");
+    uart_init();
+
+    /* 启用外中断 */
+    set_csr(sie, 1 << IRQ_S_EXT);
+    unsigned long sie = read_csr(sie);
+    kprintf("sie: %x\n", sie);
 }
 
 /**
- * @brief 中断处理函数，从 trapentry.s 跳转而来，做中断类型的检查与分派
+ * @brief 中断处理函数，从 trapentry.s 跳转而来
  * @param tf 中断保存栈
  */
-void trap(struct trapframe *tf)
+struct trapframe* trap(struct trapframe* tf)
 {
-    /* interrupts，中断，scause最高位为1 */
-    if ((int64_t)tf->cause < 0) {
-        interrupt_handler(tf);
-    } else
-    /* exceptions，异常，scause最高位为0 */
-    {
-        exception_handler(tf);
-    }
+    return trap_dispatch(tf);
+}
+
+/**
+ * @brief 中断类型的检查与分派
+ * @param tf 中断保存栈
+ * @todo 清理注释
+ */
+static inline struct trapframe* trap_dispatch(struct trapframe* tf)
+{
+    return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) : exception_handler(tf);
 }
 
 /**
  * @brief 中断处理函数，将不同种类中断分配给不同分支
  * @param tf 中断保存栈
  */
-void interrupt_handler(struct trapframe *tf)
+struct trapframe* interrupt_handler(struct trapframe* tf)
 {
     /** 置cause的最高位为0 */
     int64_t cause = (tf->cause << 1) >> 1;
@@ -77,20 +139,25 @@ void interrupt_handler(struct trapframe *tf)
         kputs("Machine software interrupt\n");
         break;
     case IRQ_U_TIMER:
-        kputs("User timer interrupt\n");
-        break;
     case IRQ_S_TIMER:
         clock_set_next_event();
-        if (++ticks % PLANED_TICK_NUM == 0) {
-            kprintf("%u ticks\n", ticks);
-            if (++ticks / PLANED_TICK_NUM == 10){
-                sbi_shutdown();
-            }
+        enable_interrupt(); /* 允许嵌套中断 */
+        if (trap_in_kernel(tf)) {
+            ++current->cstime;
+        } else {
+            ++current->cutime;
         }
+        if (--current->counter)
+            return tf;
+        if (!trap_in_kernel(tf)) {
+            size_t nr = schedule();
+            tasks[0]->counter = 15;
+            kprintf("switch to task %x\n", nr);
+            switch_to(nr);
+        }
+
         break;
     case IRQ_H_TIMER:
-        kputs("Hypervisor timer interrupt\n");
-        break;
     case IRQ_M_TIMER:
         kputs("Machine timer interrupt\n");
         break;
@@ -98,76 +165,129 @@ void interrupt_handler(struct trapframe *tf)
         kputs("User external interrupt\n");
         break;
     case IRQ_S_EXT:
-        kputs("Supervisor external interrupt\n");
+        external_handler(tf);
         break;
     case IRQ_H_EXT:
         kputs("Hypervisor external interrupt\n");
         break;
     case IRQ_M_EXT:
         kputs("Machine external interrupt\n");
+        print_trapframe(tf);
         break;
     default:
         print_trapframe(tf);
         break;
     }
+    return tf;
 }
 
 /**
  * @brief 异常处理函数，将不同种类中断分配给不同分支
  * @param tf 中断保存栈
  */
-void exception_handler(struct trapframe *tf)
+struct trapframe* exception_handler(struct trapframe* tf)
 {
     switch (tf->cause) {
     case CAUSE_MISALIGNED_FETCH:
         kputs("misaligned fetch");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_FAULT_FETCH:
         kputs("fault fetch");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_ILLEGAL_INSTRUCTION:
-        kputs("illegal instruction");
+        panic("illegal instruction: %p", tf->badvaddr);
         break;
     case CAUSE_BREAKPOINT:
         kputs("breakpoint");
-        print_trapframe(tf);
         tf->epc += 2;
         break;
     case CAUSE_MISALIGNED_LOAD:
         kputs("misaligned load");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_FAULT_LOAD:
         kputs("fault load");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_MISALIGNED_STORE:
         kputs("misaligned store");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_FAULT_STORE:
         kputs("fault store");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_USER_ECALL:
-        kputs("user_ecall");
+        return syscall_handler(tf);
         break;
     case CAUSE_SUPERVISOR_ECALL:
-        kputs("supervisor_ecall");
-        break;
-    case CAUSE_HYPERVISOR_ECALL:
-        kputs("hypervisor_ecall");
+        kputs("supervisor ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_MACHINE_ECALL:
-        kputs("machine_ecall");
+        kputs("machine ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_INSTRUCTION_PAGE_FAULT:
+        /*
+         * kputs("instruction page fault");
+         * print_trapframe(tf);
+         * sbi_shutdown();
+         * break;
+         */
+    case CAUSE_LOAD_PAGE_FAULT:
+        /*
+         * kputs("load page fault");
+         * print_trapframe(tf);
+         * sbi_shutdown();
+         * break;
+         */
+    case CAUSE_STORE_PAGE_FAULT:
+        wp_page_handler(tf);
         break;
     default:
+        kputs("unknown exception");
         print_trapframe(tf);
+        sbi_shutdown();
         break;
     }
+    return tf;
+}
+
+/**
+ * @brief 系统调用处理函数
+ *
+ * 检测系统调用号，调用响应的系统调用。
+ * 当接收到错误的系统调用号时，设置 errno 为 ENOSY 并返回错误码 -1
+ */
+static struct trapframe* syscall_handler(struct trapframe* tf)
+{
+    uint64_t syscall_nr = tf->gpr.a7;
+    if (syscall_nr >= NR_syscalls) {
+        tf->gpr.a0 = -1;
+        errno = ENOSYS;
+    } else {
+        tf->gpr.a0 = syscall_table[syscall_nr](tf);
+    }
+    tf->epc += 4; /* 执行下一条指令 */
+    return tf;
 }
 
 /**
  * @brief 打印中断保存栈
  * @param tf 中断保存栈
  */
-void print_trapframe(struct trapframe *tf)
+void print_trapframe(struct trapframe* tf)
 {
     kprintf("trapframe at %p\n\n", tf);
     print_regs(&tf->gpr);
@@ -182,7 +302,7 @@ void print_trapframe(struct trapframe *tf)
  * @brief 打印中断保存栈中的寄存器信息部分
  * @param gpr 中断保存栈中的寄存器信息部分
  */
-void print_regs(struct pushregs *gpr)
+void print_regs(struct pushregs* gpr)
 {
     kprintf("  registers:\n");
     kprintf("  zero     0x%x\n", gpr->zero);
@@ -217,4 +337,15 @@ void print_regs(struct pushregs *gpr)
     kprintf("  t4       0x%x\n", gpr->t4);
     kprintf("  t5       0x%x\n", gpr->t5);
     kprintf("  t6       0x%x\n\n", gpr->t6);
+}
+
+/**
+ * @brief 检测中断是否发生在内核态
+ * @param tf 中断保存栈
+ * @return int 1为内核态，0为用户态
+ */
+int trap_in_kernel(struct trapframe* tf)
+{
+    /* 根据 sstatus.SPP（sstatus的右数第9位）是否为 1 来判断中断前的特权级，1为内核态，0为用户态 */
+    return (tf->status & SSTATUS_SPP) != 0;
 }

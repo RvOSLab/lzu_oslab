@@ -15,14 +15,14 @@ int main(void *nothing, const void *dtb_start)
     kputs("Hello LZU OS");
 
     set_stvec();
-    //clock_init();
+    clock_init();
     kprintf("complete timer init\n");
     dtb_start = (const void *)0x82200000;
     unflatten_device_tree(dtb_start);
 
     plic_init();
     kprintf("complete plic init\n");
-    //uart_init();
+    uart_init();
     kprintf("complete uart init\n");
 
     rtc_init();

@@ -32,12 +32,12 @@ static struct trapframe *external_handler(struct trapframe *tf)
     case 1 ... 8:
         kprintf("virtio\n");
         break;
-    case SUNXI_UART_IRQ:
-    case UART0_IRQ:
-        uart_handler();
+    case UART_SUNXI_IRQ:
+    case UART_16550A_IRQ:
+        uart_interrupt_handler();
         break;
-    case GOLDFISH_RTC_IRQ:
-    case SUNXI_RTC_IRQ:
+    case RTC_GOLDFISH_IRQ:
+    case RTC_SUNXI_IRQ:
         rtc_interrupt_handler();
         kprintf("!!RTC ALARM!!\n");
         set_alarm(read_time() + 1000000000);

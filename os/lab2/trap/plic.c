@@ -36,17 +36,17 @@ void plic_init()
     switch (plic_device.id) {
     case QEMU_PLIC:
         plic_device.plic_start_addr = (volatile struct plic_regs *)0x0c000000;
-        plic_enable_interrupt(GOLDFISH_RTC_IRQ);
-        plic_enable_interrupt(UART0_IRQ);
-        plic_set_priority(GOLDFISH_RTC_IRQ, 1);
-        plic_set_priority(UART0_IRQ, 1);
+        plic_enable_interrupt(RTC_GOLDFISH_IRQ);
+        plic_enable_interrupt(UART_16550A_IRQ);
+        plic_set_priority(RTC_GOLDFISH_IRQ, 1);
+        plic_set_priority(UART_16550A_IRQ, 1);
         break;
     case SUNXI_PLIC:
         plic_device.plic_start_addr = (volatile struct plic_regs *)0x10000000;
-        plic_enable_interrupt(SUNXI_UART_IRQ);
-        plic_enable_interrupt(SUNXI_RTC_IRQ);
-        plic_set_priority(SUNXI_UART_IRQ, 1);
-        plic_set_priority(SUNXI_RTC_IRQ, 1);
+        plic_enable_interrupt(UART_SUNXI_IRQ);
+        plic_enable_interrupt(RTC_SUNXI_IRQ);
+        plic_set_priority(UART_SUNXI_IRQ, 1);
+        plic_set_priority(RTC_SUNXI_IRQ, 1);
         break;
     }
     plic_set_threshold(0);

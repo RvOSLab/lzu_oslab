@@ -1,7 +1,16 @@
 #include <uart.h>
 #include <stddef.h>
+int8_t uart_16550a_read();
+void uart_16550a_write(int8_t c);
+void uart_16550a_interrupt_handler();
 
-void uart_init()
+static const struct uart_class_ops uart_16550a_ops = {
+    .uart_interrupt_handler = uart_16550a_interrupt_handler,
+    .uart_read = uart_16550a_read,
+    .uart_write = uart_16550a_write,
+};
+
+void uart_16550a_init()
 {
     volatile uint8_t *base = (uint8_t *)UART_START_ADDR;
     *(base + UART_LCR) = 0b11; /* 8bits char */
@@ -16,9 +25,12 @@ void uart_init()
     *(base + UART_DLL) = divisor_least;
     *(base + UART_DLM) = divisor_most;
     *(base + UART_LCR) = lcr; /* back to normal */
+
+    extern struct uart_class_device uart_device;
+    uart_device.ops = uart_16550a_ops;
 }
 
-int8_t uart_read()
+int8_t uart_16550a_read()
 {
     volatile int8_t *base = (int8_t *)UART_START_ADDR;
     if ((*(base + UART_LSR) & 1) == 0) {
@@ -28,15 +40,15 @@ int8_t uart_read()
     }
 }
 
-void uart_write(int8_t c)
+void uart_16550a_write(int8_t c)
 {
     volatile int8_t *base = (int8_t *)UART_START_ADDR;
     *(base + UART_THR) = c;
 }
 
-void uart_handler()
+void uart_16550a_interrupt_handler()
 {
-	int8_t c = uart_read();
-	if (c > -1)
-		uart_write(c);
+    int8_t c = uart_read();
+    if (c > -1)
+        uart_write(c);
 }

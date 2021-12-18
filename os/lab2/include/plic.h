@@ -39,8 +39,8 @@ enum plic_device_type {
 };
 
 enum qemu_irq {
-    UART0_IRQ = 10,
-    GOLDFISH_RTC_IRQ = 11,
+    UART_16550A_IRQ = 10,
+    RTC_GOLDFISH_IRQ = 11,
     VIRTIO_IRQ = 1, /* 1 to 8 */
     VIRTIO_COUNT = 8,
     PCIE_IRQ = 0x20, /* 32 to 35 */
@@ -48,8 +48,8 @@ enum qemu_irq {
 };
 
 enum nezha_irq {
-    SUNXI_RTC_IRQ = 160,
-    SUNXI_UART_IRQ = 0x12,
+    RTC_SUNXI_IRQ = 160,
+    UART_SUNXI_IRQ = 0x12,
 };
 
 void plic_enable_interrupt(uint32_t id);

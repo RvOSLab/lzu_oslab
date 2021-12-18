@@ -11,6 +11,21 @@
 #define UART_END        (UART_START + UART_LENGTH) /**< UART MMIO 结束物理地址 */
 #define UART_START_ADDR UART_START                 /**< UART MMIO 起始地址(为虚拟分页预留) */
 /// @}
+struct uart_class_ops {
+	void (*uart_write)(int8_t c);
+	int8_t (*uart_read)();
+	void (*uart_interrupt_handler)();
+};
+
+struct uart_class_device {
+	uint32_t id;
+	struct uart_class_ops ops;
+};
+enum uart_device_type {
+	UART_16550A = 0,
+	UART_SUNXI = 1,
+};
+
 
 /// @{ @name UART 寄存器偏移
 #define UART_RBR    0x00 /** Receiver Buffer Register **/
@@ -30,5 +45,7 @@
 void uart_init();
 int8_t uart_read();
 void uart_write(int8_t c);
-void uart_handler();
+void uart_interrupt_handler();
+void uart_16550a_init();
+void uart_sunxi_init();
 #endif /* end of include guard: __UART_H__ */

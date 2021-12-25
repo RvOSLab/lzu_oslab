@@ -42,7 +42,7 @@ static uint64_t day_hh_mm_ss_to_timestamp(uint32_t day, uint32_t hh, uint32_t mm
 
 uint64_t sunxi_rtc_read_time()
 {
-    struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
+    volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
     uint32_t day = regs->rtc_day_reg;
     uint32_t hh_mm_ss = regs->rtc_hh_mm_ss_reg;
     // 根据布局转换天、时、分、秒到时间戳
@@ -56,7 +56,7 @@ void sunxi_rtc_set_time(uint64_t now)
     uint32_t mm;
     uint32_t ss;
 
-    struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
+    volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
 
     // 转换时间戳到天、时、分、秒
     timestamp_to_day_hh_mm_ss(now, &day, &hh, &mm, &ss);
@@ -81,7 +81,7 @@ void sunxi_rtc_set_alarm(uint64_t alarm)
     uint32_t mm;
     uint32_t ss;
 
-    struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
+    volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
     // 通过写 ALARM0_IRQ_EN 启用 alram0 中断。
     regs->alarm0_irq_en = 1;
     // 设置时钟比较器：向 ALARM0_DAY_SET_REG 与 ALARM0_HH-MM-SS_SET_REG 写入闹钟的日、小时、分钟、秒。
@@ -98,7 +98,7 @@ void sunxi_rtc_set_alarm(uint64_t alarm)
 
 uint64_t sunxi_rtc_read_alarm()
 {
-    struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
+    volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
 
     // 可以通过 ALARM0_DAY_SET_REG 和 ALARM0_HH-MM-SS_SET_REG (下图中为 ALARM_CUR_VLE_REG) 实时查询闹钟时间。
     uint32_t day = regs->alarm0_day_set_reg;
@@ -108,14 +108,14 @@ uint64_t sunxi_rtc_read_alarm()
 
 void sunxi_rtc_interrupt_handler()
 {
-    struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
+    volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
     // 在进入中断处理程序后，写入 ALARM0_IRQ_STA_REG 以清除中断，并执行中断处理程序。
     regs->alarm0_irq_sta_reg = 1;
 }
 
 void sunxi_rtc_clear_alarm()
 {
-    struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
+    volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
     regs->alarm0_irq_en = 0;
     regs->alarm0_irq_sta_reg = 1;
     regs->alarm0_enable_reg = 0;

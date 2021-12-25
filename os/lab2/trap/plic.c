@@ -37,9 +37,9 @@ void plic_init()
     case QEMU_PLIC:
         plic_device.plic_start_addr = (volatile struct plic_regs *)0x0c000000;
         plic_enable_interrupt(RTC_GOLDFISH_IRQ);
-        plic_enable_interrupt(UART_16550A_IRQ);
+        plic_enable_interrupt(UART_QEMU_IRQ);
         plic_set_priority(RTC_GOLDFISH_IRQ, 1);
-        plic_set_priority(UART_16550A_IRQ, 1);
+        plic_set_priority(UART_QEMU_IRQ, 1);
         break;
     case SUNXI_PLIC:
         plic_device.plic_start_addr = (volatile struct plic_regs *)0x10000000;

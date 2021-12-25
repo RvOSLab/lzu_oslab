@@ -39,7 +39,7 @@ enum plic_device_type {
 };
 
 enum qemu_irq {
-    UART_16550A_IRQ = 10,
+    UART_QEMU_IRQ = 10,
     RTC_GOLDFISH_IRQ = 11,
     VIRTIO_IRQ = 1, /* 1 to 8 */
     VIRTIO_COUNT = 8,

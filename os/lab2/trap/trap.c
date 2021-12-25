@@ -33,7 +33,7 @@ static struct trapframe *external_handler(struct trapframe *tf)
         kprintf("virtio\n");
         break;
     case UART_SUNXI_IRQ:
-    case UART_16550A_IRQ:
+    case UART_QEMU_IRQ:
         uart_interrupt_handler();
         break;
     case RTC_GOLDFISH_IRQ:

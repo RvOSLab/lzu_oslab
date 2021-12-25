@@ -15,7 +15,7 @@ static uint64_t uart_probe()
             for (struct property *prop_ptr = node[i].properties; prop_ptr; prop_ptr = prop_ptr->next) {
                 if (strcmp(prop_ptr->name, "compatible") == 0) {
                     if (strcmp(prop_ptr->value, "ns16550a") == 0) {
-                        return UART_16550A;
+                        return UART_QEMU;
                     } else if (strcmp(prop_ptr->value, "allwinner,sun20i-uart") == 0) {
                         return UART_SUNXI;
                     }
@@ -30,11 +30,11 @@ void uart_init()
 {
     uart_device.id = uart_probe();
     switch (uart_device.id) {
-    case UART_16550A:
-        uart_16550a_init();
+    case UART_QEMU:
+        uart_qemu_init();
         break;
     case UART_SUNXI:
-        //uart_sunxi_init();
+        uart_sunxi_init();
         break;
     }
 }
@@ -44,12 +44,17 @@ int8_t uart_read()
     return (*uart_device.ops.uart_read)();
 }
 
-void uart_write(int8_t c)
+void uart_directly_write(int8_t c)
 {
-    (*uart_device.ops.uart_write)(c);
+    (*uart_device.ops.uart_directly_write)(c);
 }
 
 void uart_interrupt_handler()
 {
     (*uart_device.ops.uart_interrupt_handler)();
+}
+
+void uart_putc(int8_t c)
+{
+    (*uart_device.ops.uart_putc)(c);
 }

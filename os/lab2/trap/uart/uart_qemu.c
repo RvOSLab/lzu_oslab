@@ -16,8 +16,6 @@ struct uart_qemu_regs {
     uint8_t LCR; // 0x03, Line Control Register
     uint8_t MCR; // 0x04, Modem Control Register
     uint8_t LSR; // 0x05, Line Status Register
-    uint8_t MSR; // 0x06, Modem Status Register
-    uint8_t SCR; // 0x07, Scratch Register
 };
 
 static const struct uart_class_ops uart_16550a_ops = {
@@ -46,6 +44,7 @@ static void uart_16550a_init()
     volatile struct uart_qemu_regs *regs = (struct uart_qemu_regs *)uart_device.uart_start_addr;
 
     regs->IER_DLM = 0; // 关闭 16550a 的所有中断，避免初始化未完成就发生中断
+    while(!(regs->LSR & (1 << LSR_THRE))); // 等待发送缓冲区为空
 
     // 设置波特率
     uint8_t divisor_least = uart_device.divisor & 0xFF;

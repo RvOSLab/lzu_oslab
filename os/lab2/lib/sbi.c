@@ -99,6 +99,18 @@ void sbi_shutdown()
                  : "memory");
 }
 
+void sbi_reboot()
+{
+    register uint64_t a0 asm("x10") = 1;
+    register uint64_t a1 asm("x11") = 0;
+    register uint64_t a7 asm("x17") = RESET_EXTENTION;
+    register uint64_t a6 asm("x16") = 0;
+    __asm__ __volatile__("ecall \n\t"
+                 : /* empty output list */
+                 : "r"(a0), "r"(a1), "r"(a6), "r"(a7)
+                 : "memory");
+}
+
 void print_system_infomation()
 {
     struct sbiret ret;

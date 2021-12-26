@@ -62,7 +62,7 @@ extern void __trapret();
 extern void __alltraps();
 
 struct trapframe * trap(struct trapframe *tf);
-void trap_init();
+void set_stvec();
 void print_trapframe(struct trapframe *tf);
 void print_regs(struct pushregs *gpr);
 int trap_in_kernel(struct trapframe *tf);

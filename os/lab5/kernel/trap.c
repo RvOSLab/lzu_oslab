@@ -12,12 +12,15 @@
 #include <assert.h>
 #include <clock.h>
 #include <errno.h>
-#include <kdebug.h>
+
 #include <riscv.h>
 #include <sbi.h>
+#include <kdebug.h>
 #include <sched.h>
 #include <syscall.h>
 #include <trap.h>
+#include <plic.h>
+#include <uart.h>
 
 static inline struct trapframe* trap_dispatch(struct trapframe* tf);
 static struct trapframe* interrupt_handler(struct trapframe* tf);
@@ -34,6 +37,32 @@ void wp_page_handler(struct trapframe* tf)
         panic("Try to write read-only memory");
     write_verify(badvaddr);
 }
+void uart_handler()
+{
+    int8_t c = uart_read();
+    if(c > -1)
+        uart_write(c);
+}
+
+static struct trapframe* external_handler(struct trapframe* tf)
+{
+    uint32_t int_id;
+    switch (int_id = plic_claim()) {
+        case 1 ... 8:
+            kprintf("virtio\n");
+            break;
+        /* UART */
+        case 0xA:
+            uart_handler();
+            break;
+        /* Unsupported interrupt */
+        default:
+            kprintf("Unknown external interrupt");
+    }
+    plic_complete(int_id);
+    return tf;
+}
+
 
 /**
  * @brief 初始化中断
@@ -42,7 +71,7 @@ void wp_page_handler(struct trapframe* tf)
  * 在 SSTATUS 中启用 interrupt
  * 注：下面的CSR操作均为宏定义，寄存器名直接以字符串形式传递，并没有相应的变量
  */
-void trap_init()
+void set_stvec()
 {
     /* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
     extern void __alltraps(void);
@@ -50,8 +79,6 @@ void trap_init()
     write_csr(sscratch, (char*)&init_task + PAGE_SIZE);
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
-    /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
-    set_csr(sstatus, SSTATUS_SIE);
 }
 
 /**
@@ -114,6 +141,8 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
 
         break;
     case IRQ_H_TIMER:
+        kputs("Hypervisor timer interrupt\n");
+        break;
     case IRQ_M_TIMER:
         kputs("Machine timer interrupt\n");
         break;
@@ -121,7 +150,7 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         kputs("User external interrupt\n");
         break;
     case IRQ_S_EXT:
-        kputs("Supervisor external interrupt\n");
+        external_handler(tf);
         break;
     case IRQ_H_EXT:
         kputs("Hypervisor external interrupt\n");
@@ -154,10 +183,11 @@ struct trapframe* exception_handler(struct trapframe* tf)
         sbi_shutdown();
         break;
     case CAUSE_ILLEGAL_INSTRUCTION:
-        panic("illegal instruction: %p", tf->badvaddr);
+        panic("illegal instruction: %p", tf->epc);
         break;
     case CAUSE_BREAKPOINT:
         kputs("breakpoint");
+        print_trapframe(tf);
         tf->epc += 2;
         break;
     case CAUSE_MISALIGNED_LOAD:
@@ -185,6 +215,11 @@ struct trapframe* exception_handler(struct trapframe* tf)
         break;
     case CAUSE_SUPERVISOR_ECALL:
         kputs("supervisor ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_HYPERVISOR_ECALL:
+        kputs("hypervisor ecall");
         print_trapframe(tf);
         sbi_shutdown();
         break;

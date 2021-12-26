@@ -14,6 +14,7 @@ NM := $(PREFIX)-nm
 AS := $(PREFIX)-as
 TMUX := tmux
 QEMU := qemu-system-riscv64
+GDB := riscv64-unknown-elf-gdb
 
 KERN_IMG := kernel.img
 KERN_BIN := kernel.bin

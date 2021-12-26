@@ -7,7 +7,7 @@ vpath %.h ../include
 .PHONY : clean build
 build : libtrap.a
 
-libtrap.a : $(objects) trapentry.o
+libtrap.a : $(objects) trapentry.o rtc/rtc_goldfish.o rtc/rtc_sunxi.o rtc/rtc.o uart/uart.o uart/uart_sunxi.o uart/uart_qemu.o
 	$(AR) vq $@ $^
 
 $(objects) : %.o : %.c

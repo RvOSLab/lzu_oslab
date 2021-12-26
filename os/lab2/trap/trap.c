@@ -11,55 +11,85 @@
  */
 
 #include <riscv.h>
-#include <trap.h>
 #include <clock.h>
 #include <sbi.h>
 #include <kdebug.h>
+#include <trap.h>
+#include <plic.h>
+#include <uart.h>
+#include <rtc.h>
 
 /** 时间片长度 */
 #define PLANED_TICK_NUM 100
+static inline struct trapframe *trap_dispatch(struct trapframe *tf);
+static struct trapframe *interrupt_handler(struct trapframe *tf);
+static struct trapframe *exception_handler(struct trapframe *tf);
 
-static void interrupt_handler(struct trapframe *tf);
-static void exception_handler(struct trapframe *tf);
+static struct trapframe *external_handler(struct trapframe *tf)
+{
+    uint32_t int_id;
+    switch (int_id = plic_claim()) {
+    case 1 ... 8:
+        kprintf("virtio\n");
+        break;
+    case UART_SUNXI_IRQ:
+    case UART_QEMU_IRQ:
+        uart_interrupt_handler();
+        break;
+    case RTC_GOLDFISH_IRQ:
+    case RTC_SUNXI_IRQ:
+        rtc_interrupt_handler();
+        kprintf("!!RTC ALARM!!\n");
+        set_alarm(read_time() + 1000000000);
+        kprintf("timestamp now: %u\n", read_time());
+        kprintf("next alarm time: %u\n", read_alarm());
+        break;
+    /* Unsupported interrupt */
+    default:
+        kprintf("Unknown external interrupt: %d\n", int_id);
+    }
+    plic_complete(int_id);
+    return tf;
+}
 
 /**
- * @brief 初始化中断
+ * @brief 设置 STVEC
  * 设置 STVEC（中断向量表）的值为 __alltraps 的地址
  *
- * 在 SSTATUS 中启用 interrupt
  * 注：下面的CSR操作均为宏定义，寄存器名直接以字符串形式传递，并没有相应的变量
  */
-void trap_init()
+void set_stvec()
 {
     /* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
     extern void __alltraps(void);
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
-    /* 启用 interrupt，sstatus的SSTATUS_SIE位置1 */
-    set_csr(sstatus, SSTATUS_SIE);
 }
 
 /**
  * @brief 中断处理函数，从 trapentry.s 跳转而来，做中断类型的检查与分派
  * @param tf 中断保存栈
  */
-void trap(struct trapframe *tf)
+struct trapframe *trap(struct trapframe *tf)
 {
-    /* interrupts，中断，scause最高位为1 */
-    if ((int64_t)tf->cause < 0) {
-        interrupt_handler(tf);
-    } else
-    /* exceptions，异常，scause最高位为0 */
-    {
-        exception_handler(tf);
-    }
+    return trap_dispatch(tf);
+}
+
+/**
+ * @brief 中断类型的检查与分派
+ * @param tf 中断保存栈
+ * @todo 清理注释
+ */
+static inline struct trapframe *trap_dispatch(struct trapframe *tf)
+{
+    return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) : exception_handler(tf);
 }
 
 /**
  * @brief 中断处理函数，将不同种类中断分配给不同分支
  * @param tf 中断保存栈
  */
-void interrupt_handler(struct trapframe *tf)
+struct trapframe *interrupt_handler(struct trapframe *tf)
 {
     /** 置cause的最高位为0 */
     int64_t cause = (tf->cause << 1) >> 1;
@@ -83,10 +113,11 @@ void interrupt_handler(struct trapframe *tf)
         clock_set_next_event();
         if (++ticks % PLANED_TICK_NUM == 0) {
             kprintf("%u ticks\n", ticks);
-            if (++ticks / PLANED_TICK_NUM == 10){
+            if (++ticks / PLANED_TICK_NUM == 100) {
                 sbi_shutdown();
             }
         }
+        enable_interrupt(); /* 允许嵌套中断 */
         break;
     case IRQ_H_TIMER:
         kputs("Hypervisor timer interrupt\n");
@@ -98,7 +129,7 @@ void interrupt_handler(struct trapframe *tf)
         kputs("User external interrupt\n");
         break;
     case IRQ_S_EXT:
-        kputs("Supervisor external interrupt\n");
+        external_handler(tf);
         break;
     case IRQ_H_EXT:
         kputs("Hypervisor external interrupt\n");
@@ -110,23 +141,28 @@ void interrupt_handler(struct trapframe *tf)
         print_trapframe(tf);
         break;
     }
+    return tf;
 }
 
 /**
  * @brief 异常处理函数，将不同种类中断分配给不同分支
  * @param tf 中断保存栈
  */
-void exception_handler(struct trapframe *tf)
+struct trapframe *exception_handler(struct trapframe *tf)
 {
     switch (tf->cause) {
     case CAUSE_MISALIGNED_FETCH:
         kputs("misaligned fetch");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_FAULT_FETCH:
         kputs("fault fetch");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_ILLEGAL_INSTRUCTION:
-        kputs("illegal instruction");
+        kprintf("illegal instruction: %p", tf->epc);
         break;
     case CAUSE_BREAKPOINT:
         kputs("breakpoint");
@@ -135,32 +171,66 @@ void exception_handler(struct trapframe *tf)
         break;
     case CAUSE_MISALIGNED_LOAD:
         kputs("misaligned load");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_FAULT_LOAD:
         kputs("fault load");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_MISALIGNED_STORE:
         kputs("misaligned store");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_FAULT_STORE:
         kputs("fault store");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_USER_ECALL:
         kputs("user_ecall");
         break;
     case CAUSE_SUPERVISOR_ECALL:
-        kputs("supervisor_ecall");
+        kputs("supervisor ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_HYPERVISOR_ECALL:
-        kputs("hypervisor_ecall");
+        kputs("hypervisor ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
         break;
     case CAUSE_MACHINE_ECALL:
-        kputs("machine_ecall");
+        kputs("machine ecall");
+        print_trapframe(tf);
+        sbi_shutdown();
+        break;
+    case CAUSE_INSTRUCTION_PAGE_FAULT:
+        /*
+         * kputs("instruction page fault");
+         * print_trapframe(tf);
+         * sbi_shutdown();
+         * break;
+         */
+    case CAUSE_LOAD_PAGE_FAULT:
+        /*
+         * kputs("load page fault");
+         * print_trapframe(tf);
+         * sbi_shutdown();
+         * break;
+         */
+    case CAUSE_STORE_PAGE_FAULT:
+        //wp_page_handler(tf);
         break;
     default:
+        kputs("unknown exception");
         print_trapframe(tf);
+        sbi_shutdown();
         break;
     }
+    return tf;
 }
 
 /**

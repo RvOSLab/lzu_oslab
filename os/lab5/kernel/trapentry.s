@@ -66,7 +66,7 @@ trap_from_user:
 
     # 保存完x0-x31之后这些寄存器就可以随意使用了，下面马上用到：
     # 读取sscratch到s0，赋 sscratch = 0（在内核态中，时刻保持sscratch为0，让s0存原有的sp）
-    csrrw s0, sscratch, x0
+    csrr s0, sscratch
 
     # 读取 sstatus, sepc, stval, scause寄存器的值到s0-s4（x1-x31中的特定几个）寄存器
     csrr s1, sstatus

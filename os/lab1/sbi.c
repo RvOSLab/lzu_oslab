@@ -73,6 +73,19 @@ struct sbiret sbi_get_impl_version()
     return (struct sbiret){ error, value };
 }
 
+struct sbiret sbi_get_mvendorid()
+{
+    register uint64_t a7 asm("x17") = BASE_EXTENSTION;
+    register uint32_t a6 asm("x16") = 4;
+    register uint64_t error asm("x10");
+    register uint64_t value asm("x11");
+    __asm__ __volatile__("ecall \n\t"
+                 : "=r"(error), "=r"(value)
+                 : "r"(a6), "r"(a7)
+                 : "memory");
+    return (struct sbiret){ error, value };
+}
+
 struct sbiret sbi_probe_extension(long extension_id)
 {
     register uint64_t a7 asm("x17") = BASE_EXTENSTION;

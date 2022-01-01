@@ -9,7 +9,7 @@ size_t strlen(const char *str)
     return i;
 }
 
-uint32_t strcmp(const char *s, const char *t)
+int64_t strcmp(const char *s, const char *t)
 {
     while (*s && *t && *s == *t) {
         s++;
@@ -18,7 +18,7 @@ uint32_t strcmp(const char *s, const char *t)
     return *s - *t;
 }
 
-int is_begin_with(const char *str1, const char *str2)
+uint64_t is_begin_with(const char *str1, const char *str2)
 {
     if (!str1 || !str2)
         return 0;

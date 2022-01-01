@@ -2,9 +2,9 @@
 
 void sbi_set_timer(uint64_t stime_value)
 {
-    register uint64_t a0 asm("x10") = stime_value;
-    register uint64_t a6 asm("x16") = 0;
-    register uint64_t a7 asm("x17") = TIMER_EXTENTION;
+    register uint64_t a0 asm("a0") = stime_value;
+    register uint64_t a6 asm("a6") = 0;
+    register uint64_t a7 asm("a7") = TIMER_EXTENTION;
     __asm__ __volatile__("ecall \n\t"
                  : /* empty output list */
                  : "r"(a0), "r"(a6), "r"(a7)
@@ -13,9 +13,9 @@ void sbi_set_timer(uint64_t stime_value)
 
 void sbi_console_putchar(int ch)
 {
-    register int a0 asm("x10") = ch;
-    register uint64_t a6 asm("x16") = 0;
-    register uint64_t a7 asm("x17") = 1;
+    register int a0 asm("a0") = ch;
+    register uint64_t a6 asm("a6") = 0;
+    register uint64_t a7 asm("a7") = 1;
     __asm__ __volatile__("ecall \n\t"
                  : /* empty output list */
                  : "r"(a0), "r"(a6), "r"(a7)
@@ -24,9 +24,9 @@ void sbi_console_putchar(int ch)
 
 int sbi_console_getchar()
 {
-    register uint64_t a6 asm("x16") = 0;
-    register uint64_t a7 asm("x17") = 2;
-    register uint64_t ret asm("x10");
+    register uint64_t a6 asm("a6") = 0;
+    register uint64_t a7 asm("a7") = 2;
+    register uint64_t ret asm("a0");
     __asm__ __volatile__("ecall \n\t"
                  : "+r"(ret)
                  : "r"(a6), "r"(a7)
@@ -36,10 +36,10 @@ int sbi_console_getchar()
 
 struct sbiret sbi_get_spec_version()
 {
-    register uint64_t a7 asm("x17") = BASE_EXTENSTION;
-    register uint32_t a6 asm("x16") = 0;
-    register uint64_t error asm("x10");
-    register uint64_t value asm("x11");
+    register uint64_t a7 asm("a7") = BASE_EXTENSTION;
+    register uint32_t a6 asm("a6") = 0;
+    register uint64_t error asm("a0");
+    register uint64_t value asm("a1");
     __asm__ __volatile__("ecall \n\t"
                  : "=r"(error), "=r"(value)
                  : "r"(a6), "r"(a7)
@@ -49,10 +49,10 @@ struct sbiret sbi_get_spec_version()
 
 struct sbiret sbi_get_impl_id()
 {
-    register uint64_t a7 asm("x17") = BASE_EXTENSTION;
-    register uint32_t a6 asm("x16") = 1;
-    register uint64_t error asm("x10");
-    register uint64_t value asm("x11");
+    register uint64_t a7 asm("a7") = BASE_EXTENSTION;
+    register uint32_t a6 asm("a6") = 1;
+    register uint64_t error asm("a0");
+    register uint64_t value asm("a1");
     __asm__ __volatile__("ecall \n\t"
                  : "=r"(error), "=r"(value)
                  : "r"(a6), "r"(a7)
@@ -62,10 +62,10 @@ struct sbiret sbi_get_impl_id()
 
 struct sbiret sbi_get_impl_version()
 {
-    register uint64_t a7 asm("x17") = BASE_EXTENSTION;
-    register uint32_t a6 asm("x16") = 2;
-    register uint64_t error asm("x10");
-    register uint64_t value asm("x11");
+    register uint64_t a7 asm("a7") = BASE_EXTENSTION;
+    register uint32_t a6 asm("a6") = 2;
+    register uint64_t error asm("a0");
+    register uint64_t value asm("a1");
     __asm__ __volatile__("ecall \n\t"
                  : "=r"(error), "=r"(value)
                  : "r"(a6), "r"(a7)
@@ -75,10 +75,10 @@ struct sbiret sbi_get_impl_version()
 
 struct sbiret sbi_get_mvendorid()
 {
-    register uint64_t a7 asm("x17") = BASE_EXTENSTION;
-    register uint32_t a6 asm("x16") = 4;
-    register uint64_t error asm("x10");
-    register uint64_t value asm("x11");
+    register uint64_t a7 asm("a7") = BASE_EXTENSTION;
+    register uint32_t a6 asm("a6") = 4;
+    register uint64_t error asm("a0");
+    register uint64_t value asm("a1");
     __asm__ __volatile__("ecall \n\t"
                  : "=r"(error), "=r"(value)
                  : "r"(a6), "r"(a7)
@@ -88,10 +88,10 @@ struct sbiret sbi_get_mvendorid()
 
 struct sbiret sbi_probe_extension(long extension_id)
 {
-    register uint64_t a7 asm("x17") = BASE_EXTENSTION;
-    register uint64_t a6 asm("x16") = 3;
-    register uint64_t error asm("x10") = (uint64_t)extension_id;
-    register uint64_t value asm("x11");
+    register uint64_t a7 asm("a7") = BASE_EXTENSTION;
+    register uint64_t a6 asm("a6") = 3;
+    register uint64_t error asm("a0") = (uint64_t)extension_id;
+    register uint64_t value asm("a1");
     __asm__ __volatile__("ecall \n\t"
                  : "+r"(error), "=r"(value)
                  : "r"(a6), "r"(a7)
@@ -101,10 +101,10 @@ struct sbiret sbi_probe_extension(long extension_id)
 
 void sbi_shutdown()
 {
-    register uint64_t a0 asm("x10") = 0;
-    register uint64_t a1 asm("x11") = 0;
-    register uint64_t a7 asm("x17") = RESET_EXTENTION;
-    register uint64_t a6 asm("x16") = 0;
+    register uint64_t a0 asm("a0") = 0;
+    register uint64_t a1 asm("a1") = 0;
+    register uint64_t a7 asm("a7") = RESET_EXTENTION;
+    register uint64_t a6 asm("a6") = 0;
     __asm__ __volatile__("ecall \n\t"
                  : /* empty output list */
                  : "r"(a0), "r"(a1), "r"(a6), "r"(a7)

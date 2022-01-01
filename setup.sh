@@ -1,6 +1,6 @@
 echo -e "\033[41;37m 正在安装必要软件包 \033[0m"
 sudo apt update
-sudo apt install -y build-essential gettext pkg-config libglib2.0-dev python3-dev libpixman-1-dev binutils libgtk-3-dev texinfo make gcc-riscv64-linux-gnu libncurses5-dev ninja-build tmux axel git
+sudo apt install -y build-essential gettext pkg-config libglib2.0-dev python3-dev libpixman-1-dev binutils libgtk-3-dev texinfo make gcc-riscv64-unknown-elf libncurses5-dev ninja-build tmux axel git
 echo -e "\033[41;37m 正在下载必要源码包 \033[0m"
 mkdir resource
 cd resource

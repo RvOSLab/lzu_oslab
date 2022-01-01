@@ -1,0 +1,17 @@
+{
+    "name": "LZU OSLab 开发环境",
+    "build": {
+        "dockerfile": "Dockerfile.develop",
+        "context": "."
+    },
+    "postStartCommand": "cp -d /root/* ${containerWorkspaceFolder}/",
+  
+    "settings": {
+      "terminal.integrated.defaultProfile.linux": "bash"
+    },
+    "extensions": [
+        "ms-vscode.cpptools",
+        "ms-ceintl.vscode-language-pack-zh-hans",
+        "ms-vscode.hexeditor"
+    ]
+  }

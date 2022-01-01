@@ -1,5 +1,5 @@
 #include <sbi.h>
-void kputchar(int ch);
+void kputchar(char ch);
 int kputs(const char *msg);
 
 int main()
@@ -54,7 +54,7 @@ int main()
     return 0;
 }
 
-void kputchar(int ch)
+void kputchar(char ch)
 {
     sbi_console_putchar(ch);
 }

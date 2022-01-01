@@ -5,7 +5,7 @@
 
 static uint64_t kpow(uint64_t x, uint64_t y);
 
-void kputchar(int ch)
+void kputchar(char ch)
 {
     sbi_console_putchar(ch);
 }

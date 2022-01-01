@@ -12,7 +12,7 @@ void sbi_set_timer(uint64_t stime_value)
                  : "memory");
 }
 
-void sbi_console_putchar(int ch)
+void sbi_console_putchar(char ch)
 {
     register uint64_t a0 asm("a0") = ch;
     register uint64_t a6 asm("a6") = 0;
@@ -23,7 +23,7 @@ void sbi_console_putchar(int ch)
                  : "memory");
 }
 
-int sbi_console_getchar()
+char sbi_console_getchar()
 {
     register uint64_t a6 asm("a6") = 0;
     register uint64_t a7 asm("a7") = 2;

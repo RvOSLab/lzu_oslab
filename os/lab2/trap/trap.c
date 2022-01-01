@@ -35,14 +35,13 @@ static struct trapframe *external_handler(struct trapframe *tf)
     case UART_SUNXI_IRQ:
     case UART_QEMU_IRQ:
         uart_interrupt_handler();
+        game_keyboard_update();
         break;
     case RTC_GOLDFISH_IRQ:
     case RTC_SUNXI_IRQ:
         rtc_interrupt_handler();
-        kprintf("!!RTC ALARM!!\n");
         set_alarm(read_time() + 1000000000);
-        kprintf("timestamp now: %u\n", read_time());
-        kprintf("next alarm time: %u\n", read_alarm());
+        game_time_update();
         break;
     /* Unsupported interrupt */
     default:
@@ -82,7 +81,8 @@ struct trapframe *trap(struct trapframe *tf)
  */
 static inline struct trapframe *trap_dispatch(struct trapframe *tf)
 {
-    return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) : exception_handler(tf);
+    return ((int64_t)tf->cause < 0) ? interrupt_handler(tf) :
+                                      exception_handler(tf);
 }
 
 /**

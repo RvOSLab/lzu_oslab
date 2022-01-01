@@ -15,7 +15,7 @@ int main(void *nothing, const void *dtb_start)
     kputs("Hello LZU OS");
 
     set_stvec();
-    clock_init();
+    // clock_init();
     kprintf("complete timer init\n");
     dtb_start = (const void *)0x82200000;
     unflatten_device_tree(dtb_start);
@@ -34,11 +34,9 @@ int main(void *nothing, const void *dtb_start)
 
     enable_interrupt(); // 启用 interrupt，sstatus的SSTATUS_SIE位置1
 
-    __asm__ __volatile__("ebreak \n\t");
-
-    kputs("SYSTEM END");
-
+    game_start();
     while (1)
         ; /* infinite loop */
+
     return 0;
 }

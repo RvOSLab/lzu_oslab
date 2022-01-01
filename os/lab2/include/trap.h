@@ -61,5 +61,9 @@ struct trapframe* trap(struct trapframe* tf);
 void set_stvec();
 void print_trapframe(struct trapframe *tf);
 void print_regs(struct pushregs *gpr);
+void game_start();
+void game_keyboard_update(); // 与用户输入有关的更新
+void game_time_update(); // 与用户输入无关的更新
+
 
 #endif

@@ -50,6 +50,7 @@ void show()
         }
         uart_putc('|');
         uart_putc('\n');
+        uart_putc('\r');
     }
     kprintf("score: %u\n", score);
 }

@@ -35,7 +35,6 @@ static struct trapframe *external_handler(struct trapframe *tf)
     case UART_SUNXI_IRQ:
     case UART_QEMU_IRQ:
         uart_interrupt_handler();
-        game_keyboard_update();
         break;
     case RTC_GOLDFISH_IRQ:
     case RTC_SUNXI_IRQ:

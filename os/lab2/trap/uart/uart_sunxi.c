@@ -106,6 +106,6 @@ static void uart_16550a_interrupt_handler()
     while (regs->LSR & (1 << LSR_DR)) {
         int8_t c = uart_read();
         if (c > -1)
-            uart_16550a_putc(c);
+            game_keyboard_update(c);
     }
 }

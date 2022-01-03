@@ -4,17 +4,19 @@
 // 全局变量
 #define HIGH 20 // 游戏画面高
 #define WIDTH 30 // 游戏画面宽
+#define BULLET_MAX 10 // 最多子弹数
+#define ENEMY_MAX 10 // 最多敌人数
 char screen[HIGH][WIDTH + 4]; // 游戏画面
 uint64_t position_x, position_y; // 飞机位置
 struct bullet {
     uint64_t x;
     uint64_t y;
-} bullets[10]; // 子弹
+} bullets[BULLET_MAX]; // 子弹
 uint64_t bullet_index = 0; // 子弹数量
 struct enemy {
     uint64_t x;
     uint64_t y;
-} enemies[10]; // 敌机
+} enemies[ENEMY_MAX]; // 敌机
 uint64_t enemy_num = 1; // 敌机数量
 uint64_t score; // 得分
 uint64_t rand_seed = 10; // 随机数种子
@@ -54,7 +56,7 @@ void show()
     screen[position_x / HIGH][position_y / WIDTH] = '^';
     for (i = 0; i < enemy_num; i++)
         screen[enemies[i].x][enemies[i].y] = '*';
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < BULLET_MAX; i++)
         if (bullets[i].x != -1)
             screen[bullets[i].x][bullets[i].y] = '|';
 
@@ -66,21 +68,25 @@ void show()
 
 void detect_hit()
 {
-    if ((bullet_x == enemy_x) && (bullet_y == enemy_y)) // 子弹击中敌机
-    {
-        score++; // 分数加1
-        new_enemy();
-        bullet_x = -1; // 使子弹无效
+    for (uint64_t i = 0; i < BULLET_MAX; i++) {
+        for (uint64_t j = 0; j < enemy_num; j++) {
+            if (((bullets[i].x == enemies[j].x) ||
+                 (bullets[i].x - 1 == enemies[j].x)) &&
+                bullets[i].y == enemies[j].y) // 子弹击中敌机
+            {
+                score++; // 分数加1
+                new_enemy(j);
+                bullets[i].x = -1; // 使子弹无效
+            }
+        }
     }
 }
 void game_time_update()
 {
     detect_hit();
-
-    for (int bullet_i = 0; bullet_i < 10; bullet_i++)
+    for (int bullet_i = 0; bullet_i < BULLET_MAX; bullet_i++)
         if (bullets[bullet_i].x != -1)
             bullets[bullet_i].x--;
-
     for (int enemy_i = 0; enemy_i < enemy_num; enemy_i++)
         if (enemies[enemy_i].x > HIGH)
             new_enemy(enemy_i);
@@ -93,7 +99,7 @@ void shoot()
 {
     bullets[bullet_index].x = (position_x - 1) % HIGH;
     bullets[bullet_index].y = position_y % WIDTH;
-    bullet_index = (bullet_index + 1) % 10;
+    bullet_index = (bullet_index + 1) % BULLET_MAX;
 }
 
 void game_keyboard_update(char input)

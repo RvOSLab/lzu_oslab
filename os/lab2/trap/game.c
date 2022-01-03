@@ -2,10 +2,20 @@
 #include <kdebug.h>
 #include <stddef.h>
 // 全局变量
+#define HIGH 20 // 游戏画面高
+#define WIDTH 30 // 游戏画面宽
+char screen[HIGH][WIDTH + 4]; // 游戏画面
 uint64_t position_x, position_y; // 飞机位置
-uint64_t bullet_x, bullet_y; // 子弹位置
-uint64_t enemy_x, enemy_y; // 敌机位置
-uint64_t high, width; //  游戏画面尺寸
+struct bullet {
+    uint64_t x;
+    uint64_t y;
+} bullets[10]; // 子弹
+uint64_t bullet_index = 0; // 子弹数量
+struct enemy {
+    uint64_t x;
+    uint64_t y;
+} enemies[10]; // 敌机
+uint64_t enemy_num = 1; // 敌机数量
 uint64_t score; // 得分
 uint64_t rand_seed = 10; // 随机数种子
 
@@ -15,42 +25,41 @@ uint64_t rand()
     return (rand_seed / 65536) % 32768;
 }
 
-void new_enemy() // 新敌机出现
+void new_enemy(uint64_t i) // 新敌机出现
 {
-    enemy_x = 0;
-    enemy_y = rand() % width;
+    enemies[i].x = 0;
+    enemies[i].y = rand() % WIDTH;
 }
 
 void game_start() // 数据初始化
 {
-    high = 20;
-    width = 30;
-    position_x = high * 10000 + high / 2;
-    position_y = width * 10000 + width / 2;
-    bullet_x = -1;
-    bullet_y = position_y;
-    new_enemy();
+    position_x = HIGH * 10000 + HIGH / 2;
+    position_y = WIDTH * 10000 + WIDTH / 2;
+    new_enemy(0);
     score = 0;
 }
 
 void show()
 {
     uint64_t i, j;
-    for (i = 0; i < high; i++) {
-        uart_putc('|');
-        for (j = 0; j < width; j++) {
-            if ((i == position_x % high) && (j == position_y % width))
-                uart_putc('^'); //   输出飞机
-            else if ((i == enemy_x) && (j == enemy_y))
-                uart_putc('*'); //   输出敌机
-            else if ((i == bullet_x) && (j == bullet_y))
-                uart_putc('|'); //   输出子弹
-            else
-                uart_putc(' '); //   输出空白
+    for (i = 0; i < HIGH; i++) {
+        screen[i][0] = '|';
+        for (j = 0; j < WIDTH; j++) {
+            screen[i][j + 1] = ' ';
         }
-        uart_putc('|');
-        uart_putc('\n');
-        uart_putc('\r');
+        screen[i][++j] = '|';
+        screen[i][++j] = '\n';
+        screen[i][j] = '\r';
+    }
+    screen[position_x / HIGH][position_y / WIDTH] = '^';
+    for (i = 0; i < enemy_num; i++)
+        screen[enemies[i].x][enemies[i].y] = '*';
+    for (i = 0; i < 10; i++)
+        if (bullets[i].x != -1)
+            screen[bullets[i].x][bullets[i].y] = '|';
+
+    for (i = 0; i < HIGH * WIDTH; i++) {
+        uart_putc(*((char *)screen + i));
     }
     kprintf("score: %u\n", score);
 }
@@ -66,18 +75,25 @@ void detect_hit()
 }
 void game_time_update()
 {
-    if (bullet_x != -1) {
-        bullet_x--;
-        detect_hit();
-    }
+    detect_hit();
 
-    if (enemy_x > high) // 敌机跑出显示屏幕
-        new_enemy();
-    else {
-        enemy_x++;
-        detect_hit();
-    }
+    for (int bullet_i = 0; bullet_i < 10; bullet_i++)
+        if (bullets[bullet_i].x != -1)
+            bullets[bullet_i].x--;
+
+    for (int enemy_i = 0; enemy_i < enemy_num; enemy_i++)
+        if (enemies[enemy_i].x > HIGH)
+            new_enemy(enemy_i);
+        else
+            enemies[enemy_i].x++;
     show();
+}
+
+void shoot()
+{
+    bullets[bullet_index].x = (position_x - 1) % HIGH;
+    bullets[bullet_index].y = position_y % WIDTH;
+    bullet_index = (bullet_index + 1) % 10;
 }
 
 void game_keyboard_update(char input)
@@ -96,8 +112,7 @@ void game_keyboard_update(char input)
         position_x++; // 下
         break;
     case ' ': // 发射子弹
-        bullet_x = (position_x - 1) % high;
-        bullet_y = position_y % width;
+        shoot();
         break;
     }
     show();

@@ -1,5 +1,7 @@
 #include <uart.h>
 #include <stddef.h>
+#include <trap.h>
+
 static int8_t uart_16550a_read();
 static void uart_16550a_directly_write(int8_t c);
 static void uart_16550a_interrupt_handler();

@@ -46,21 +46,20 @@ void show()
     uint64_t i, j;
     for (i = 0; i < HIGH; i++) {
         screen[i][0] = '|';
-        for (j = 0; j < WIDTH; j++) {
-            screen[i][j + 1] = ' ';
-        }
-        screen[i][++j] = '|';
-        screen[i][++j] = '\n';
+        for (j = 1; j < WIDTH; screen[i][j++] = ' ')
+            ;
+        screen[i][j++] = '|';
+        screen[i][j++] = '\n';
         screen[i][j] = '\r';
     }
-    screen[position_x / HIGH][position_y / WIDTH] = '^';
+    screen[position_x % HIGH][position_y % WIDTH + 1] = '^';
     for (i = 0; i < enemy_num; i++)
-        screen[enemies[i].x][enemies[i].y] = '*';
+        screen[enemies[i].x][enemies[i].y + 1] = '*';
     for (i = 0; i < BULLET_MAX; i++)
         if (bullets[i].x != -1)
-            screen[bullets[i].x][bullets[i].y] = '|';
+            screen[bullets[i].x][bullets[i].y + 1] = '|';
 
-    for (i = 0; i < HIGH * WIDTH; i++) {
+    for (i = 0; i < HIGH * (WIDTH + 4); i++) {
         uart_putc(*((char *)screen + i));
     }
     kprintf("score: %u\n", score);

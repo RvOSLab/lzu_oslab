@@ -87,7 +87,7 @@ void game_time_update()
         if (bullets[bullet_i].x != -1)
             bullets[bullet_i].x--;
     for (int enemy_i = 0; enemy_i < enemy_num; enemy_i++)
-        if (enemies[enemy_i].x > HIGH)
+        if (enemies[enemy_i].x >= HIGH - 1) // 敌机将超出边界
             new_enemy(enemy_i);
         else
             enemies[enemy_i].x++;

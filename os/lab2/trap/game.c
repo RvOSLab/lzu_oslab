@@ -6,6 +6,7 @@
 #define WIDTH 30 // 游戏画面宽
 #define BULLET_MAX 10 // 最多子弹数
 #define ENEMY_MAX 10 // 最多敌人数
+#define ENEMY_GROW_SPEED 3 // 敌人增加速度(每N分数增加一个敌人)
 char screen[HIGH][WIDTH + 4]; // 游戏画面
 uint64_t position_x, position_y; // 飞机位置
 struct bullet {
@@ -74,6 +75,11 @@ void detect_hit()
                 bullets[i].y == enemies[j].y) // 子弹击中敌机
             {
                 score++; // 分数加1
+                if (score % ENEMY_GROW_SPEED == 0 &&
+                    score < ENEMY_MAX * ENEMY_GROW_SPEED) { // 每N分数出现一个敌机
+                    enemy_num++; // 敌机数量加1
+                    new_enemy(enemy_num - 1);
+                }
                 new_enemy(j);
                 bullets[i].x = -1; // 使子弹无效
             }

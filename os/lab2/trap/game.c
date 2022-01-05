@@ -47,7 +47,7 @@ void show()
     uint64_t i, j;
     for (i = 0; i < HIGH; i++) {
         screen[i][0] = '|';
-        for (j = 1; j < WIDTH; screen[i][j++] = ' ')
+        for (j = 1; j < WIDTH + 1; screen[i][j++] = ' ')
             ;
         screen[i][j++] = '|';
         screen[i][j++] = '\n';
@@ -76,7 +76,8 @@ void detect_hit()
             {
                 score++; // 分数加1
                 if (score % ENEMY_GROW_SPEED == 0 &&
-                    score < ENEMY_MAX * ENEMY_GROW_SPEED) { // 每N分数出现一个敌机
+                    score < ENEMY_MAX *
+                                    ENEMY_GROW_SPEED) { // 每N分数出现一个敌机
                     enemy_num++; // 敌机数量加1
                     new_enemy(enemy_num - 1);
                 }

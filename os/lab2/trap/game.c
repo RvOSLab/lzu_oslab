@@ -46,6 +46,9 @@ void game_start() // 数据初始化
     bullet_index = 0;
     score = 0;
     die = 0;
+    for (int i = 0; i < BULLET_MAX; i++) {
+        bullets[i].x = -1;
+    }
 
     new_enemy(0);
     show();

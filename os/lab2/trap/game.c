@@ -1,24 +1,28 @@
 #include <uart.h>
 #include <kdebug.h>
 #include <stddef.h>
+#include <rtc.h>
 // 全局变量
 #define HIGH 20 // 游戏画面高
 #define WIDTH 30 // 游戏画面宽
 #define BULLET_MAX 10 // 最多子弹数
 #define ENEMY_MAX 10 // 最多敌人数
 #define ENEMY_GROW_SPEED 3 // 敌人增加速度(每N分数增加一个敌人)
+void show();
+
 char screen[HIGH][WIDTH + 4]; // 游戏画面
 uint64_t position_x, position_y; // 飞机位置
 struct bullet {
     uint64_t x;
     uint64_t y;
 } bullets[BULLET_MAX]; // 子弹
-uint64_t bullet_index = 0; // 子弹数量
+uint64_t bullet_index; // 下一子弹下标
 struct enemy {
     uint64_t x;
     uint64_t y;
 } enemies[ENEMY_MAX]; // 敌机
-uint64_t enemy_num = 1; // 敌机数量
+uint64_t die; // 是否死亡
+uint64_t enemy_num; // 敌机数量
 uint64_t score; // 得分
 uint64_t rand_seed = 10; // 随机数种子
 
@@ -38,8 +42,14 @@ void game_start() // 数据初始化
 {
     position_x = HIGH * 10000 + HIGH / 2;
     position_y = WIDTH * 10000 + WIDTH / 2;
-    new_enemy(0);
+    enemy_num = 1;
+    bullet_index = 0;
     score = 0;
+    die = 0;
+
+    new_enemy(0);
+    show();
+    set_alarm(read_time() + 1000000000);
 }
 
 void show()
@@ -87,6 +97,17 @@ void detect_hit()
         }
     }
 }
+void detect_die()
+{
+    for (uint64_t i = 0; i < enemy_num; i++) {
+        if (enemies[i].x == position_x % HIGH &&
+            enemies[i].y == position_y % WIDTH) {
+            clear_alarm();
+            die = 1;
+            kprintf("YOU DIED, PRESS r TO RESTART.\n");
+        }
+    }
+}
 void game_time_update()
 {
     detect_hit();
@@ -99,6 +120,7 @@ void game_time_update()
         else
             enemies[enemy_i].x++;
     show();
+    detect_die();
 }
 
 void shoot()
@@ -110,22 +132,29 @@ void shoot()
 
 void game_keyboard_update(char input)
 {
-    switch (input) {
-    case 'a':
-        position_y--; // 左
-        break;
-    case 'd':
-        position_y++; // 右
-        break;
-    case 'w':
-        position_x--; // 上
-        break;
-    case 's':
-        position_x++; // 下
-        break;
-    case ' ': // 发射子弹
-        shoot();
-        break;
+    if (die) {
+        if (input == 'r') {
+            game_start();
+        }
+    } else {
+        switch (input) {
+        case 'a':
+            position_y--; // 左
+            break;
+        case 'd':
+            position_y++; // 右
+            break;
+        case 'w':
+            position_x--; // 上
+            break;
+        case 's':
+            position_x++; // 下
+            break;
+        case ' ': // 发射子弹
+            shoot();
+            break;
+        }
+        show();
+        detect_die();
     }
-    show();
 }

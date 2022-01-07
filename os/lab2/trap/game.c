@@ -2,6 +2,8 @@
 #include <kdebug.h>
 #include <stddef.h>
 #include <rtc.h>
+
+#define CLEAR_LINE "\033[2K" // 控制序列：清除整行
 // 全局变量
 #define HIGH 20 // 游戏画面高
 #define WIDTH 30 // 游戏画面宽
@@ -10,7 +12,6 @@
 #define ENEMY_GROW_SPEED 3 // 敌人增加速度(每N分数增加一个敌人)
 void show();
 
-char screen[HIGH][WIDTH + 4]; // 游戏画面
 uint64_t position_x, position_y; // 飞机位置
 struct bullet {
     uint64_t x;
@@ -60,7 +61,10 @@ void game_start() // 数据初始化
 
 void show()
 {
+    char screen[HIGH][WIDTH + 4]; // 游戏画面
     uint64_t i, j;
+    kprintf(CLEAR_LINE "score: %u, missing: %u/%u\n", score, missing, missing_max);
+
     for (i = 0; i < HIGH; i++) {
         screen[i][0] = '|';
         for (j = 1; j < WIDTH + 1; screen[i][j++] = ' ')
@@ -79,7 +83,7 @@ void show()
     for (i = 0; i < HIGH * (WIDTH + 4); i++) {
         uart_putc(*((char *)screen + i));
     }
-    kprintf("score: %u, missing: %u/%u\n", score, missing, missing_max);
+    kprintf("\033[%uA", HIGH + 1); // 回到顶部
 }
 
 void detect_hit()
@@ -114,7 +118,7 @@ void detect_be_hit()
 {
     for (uint64_t i = 0; i < enemy_num; i++) {
         if (enemies[i].x == position_x % HIGH && enemies[i].y == position_y % WIDTH) {
-            do_die("YOU ARE HIT, PRESS r TO RESTART.\n");
+            do_die(CLEAR_LINE "YOU ARE HIT, PRESS r TO RESTART.\r");
         }
     }
 }
@@ -129,7 +133,7 @@ void game_time_update()
         if (enemies[enemy_i].x >= HIGH - 1) { // 敌机将超出边界
             missing++;
             if (missing > missing_max) {
-                do_die("MISSING TO MANY ENEMIES, PRESS r TO RESTART.\n");
+                do_die(CLEAR_LINE "MISSING TO MANY ENEMIES, PRESS r TO RESTART.\r");
                 return;
             } else
                 new_enemy(enemy_i);

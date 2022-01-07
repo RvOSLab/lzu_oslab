@@ -24,6 +24,7 @@ struct enemy {
 uint64_t die; // 是否死亡
 uint64_t enemy_num; // 敌机数量
 uint64_t score; // 得分
+uint64_t missing, missing_max; // 漏掉的敌机数量/最大可漏掉的敌机数量
 uint64_t rand_seed = 10; // 随机数种子
 
 uint64_t rand()
@@ -46,6 +47,8 @@ void game_start() // 数据初始化
     bullet_index = 0;
     score = 0;
     die = 0;
+    missing = 0;
+    missing_max = 1;
     for (int i = 0; i < BULLET_MAX; i++) {
         bullets[i].x = -1;
     }
@@ -76,7 +79,7 @@ void show()
     for (i = 0; i < HIGH * (WIDTH + 4); i++) {
         uart_putc(*((char *)screen + i));
     }
-    kprintf("score: %u\n", score);
+    kprintf("score: %u, missing: %u/%u\n", score, missing, missing_max);
 }
 
 void detect_hit()
@@ -100,17 +103,24 @@ void detect_hit()
         }
     }
 }
-void detect_die()
+
+void do_die(const char *message)
+{
+    clear_alarm();
+    die = 1;
+    kprintf(message);
+}
+
+void detect_be_hit()
 {
     for (uint64_t i = 0; i < enemy_num; i++) {
         if (enemies[i].x == position_x % HIGH &&
             enemies[i].y == position_y % WIDTH) {
-            clear_alarm();
-            die = 1;
-            kprintf("YOU DIED, PRESS r TO RESTART.\n");
+            do_die("YOU ARE HIT, PRESS r TO RESTART.\n");
         }
     }
 }
+
 void game_time_update()
 {
     detect_hit();
@@ -118,12 +128,17 @@ void game_time_update()
         if (bullets[bullet_i].x != -1)
             bullets[bullet_i].x--;
     for (int enemy_i = 0; enemy_i < enemy_num; enemy_i++)
-        if (enemies[enemy_i].x >= HIGH - 1) // 敌机将超出边界
-            new_enemy(enemy_i);
-        else
+        if (enemies[enemy_i].x >= HIGH - 1) { // 敌机将超出边界
+            missing++;
+            if (missing > missing_max) {
+                do_die("MISSING TO MANY ENEMIES, PRESS r TO RESTART.\n");
+                return;
+            } else
+                new_enemy(enemy_i);
+        } else
             enemies[enemy_i].x++;
     show();
-    detect_die();
+    detect_be_hit();
 }
 
 void shoot()
@@ -158,6 +173,6 @@ void game_keyboard_update(char input)
             break;
         }
         show();
-        detect_die();
+        detect_be_hit();
     }
 }

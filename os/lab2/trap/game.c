@@ -86,16 +86,15 @@ void detect_hit()
 {
     for (uint64_t i = 0; i < BULLET_MAX; i++) {
         for (uint64_t j = 0; j < enemy_num; j++) {
-            if (((bullets[i].x == enemies[j].x) ||
-                 (bullets[i].x - 1 == enemies[j].x)) &&
-                bullets[i].y == enemies[j].y) // 子弹击中敌机
+            if (((bullets[i].x == enemies[j].x) || (bullets[i].x - 1 == enemies[j].x)) && bullets[i].y == enemies[j].y) // 子弹击中敌机
             {
                 score++; // 分数加1
-                if (score % ENEMY_GROW_SPEED == 0 &&
-                    score < ENEMY_MAX *
-                                    ENEMY_GROW_SPEED) { // 每N分数出现一个敌机
-                    enemy_num++; // 敌机数量加1
-                    new_enemy(enemy_num - 1);
+                if (score % ENEMY_GROW_SPEED == 0) {
+                    missing_max++; // 奖励最大漏掉的敌机数量加 1
+                    if (score < ENEMY_MAX * ENEMY_GROW_SPEED) { // 每N分数出现一个敌机
+                        enemy_num++; // 敌机数量加1
+                        new_enemy(enemy_num - 1);
+                    }
                 }
                 new_enemy(j);
                 bullets[i].x = -1; // 使子弹无效
@@ -114,8 +113,7 @@ void do_die(const char *message)
 void detect_be_hit()
 {
     for (uint64_t i = 0; i < enemy_num; i++) {
-        if (enemies[i].x == position_x % HIGH &&
-            enemies[i].y == position_y % WIDTH) {
+        if (enemies[i].x == position_x % HIGH && enemies[i].y == position_y % WIDTH) {
             do_die("YOU ARE HIT, PRESS r TO RESTART.\n");
         }
     }

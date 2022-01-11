@@ -95,8 +95,8 @@ $RECYCLE.BIN/
 
 ### Virual Studio Code ###
 # Workspace config
-.vscode/**
-.vscode-test/**
+.vscode/
+.vscode-test/
 *.code-workspace
 
 ### LZU OSLab ###

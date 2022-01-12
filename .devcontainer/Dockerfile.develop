@@ -5,15 +5,31 @@ RUN node gen_workspace.js && \
     rm gen_workspace.js && \
     chmod 644 ./*
 
+FROM ubuntu:20.04 AS build-qemu
+WORKDIR /root/
+RUN sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates git build-essential python-is-python3 ninja-build pkg-config libglib2.0-dev libpixman-1-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    git clone http://mirrors.tuna.tsinghua.edu.cn/git/qemu.git && \
+    cd qemu && \
+    git checkout v6.2.0 && \
+    ./configure --target-list=riscv32-softmmu,riscv64-softmmu && \
+    make
+
 FROM ubuntu:20.04
 WORKDIR /root/
 RUN sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        ca-certificates git make gcc-riscv64-unknown-elf qemu-system-riscv64 gdb-multiarch && \
+        ca-certificates git make gcc-riscv64-unknown-elf gdb-multiarch libpixman-1-0 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=build-workspace --chown=root:root \
     /home/node/* .
+COPY --from=build-qemu --chown=root:root \
+    /root/qemu/build/qemu-system-riscv64 /usr/local/bin/
 
 CMD [ "bash" ]

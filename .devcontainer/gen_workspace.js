@@ -26,6 +26,7 @@ let workspaceTemplate = {
         ],
         "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
         "C_Cpp.default.browse.path": ["${workspaceFolder}"],
+        "C_Cpp.default.compilerPath": "riscv64-unknown-elf-gcc",
         "C_Cpp.default.cStandard": "gnu11",
         "C_Cpp.vcFormat.newLine.beforeElse": false,
         "C_Cpp.vcFormat.newLine.beforeOpenBrace.block": "sameLine",
@@ -139,7 +140,14 @@ let workspaceTemplate = {
                         "description": "Set target architecture",
                         "ignoreFailures": true
                     }
-                ]
+                ],
+                "postRemoteConnectCommands": [
+                    // avoid access error when gdb read memory of breakpoint
+                    {"text": "maintenance packet Qqemu.PhyMemMode:1"},
+                    {"text": "tbreak main"},
+                    {"text": "-break-commands 2 \"maintenance packet Qqemu.PhyMemMode:0\"" }
+                ],
+                "miDebuggerArgs": "-q"
             }
         ])
     }

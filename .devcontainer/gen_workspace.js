@@ -55,7 +55,9 @@ let workspaceTemplate = {
             ".clang-format": true
         },
         "search.useIgnoreFiles": true,
-        "files.insertFinalNewline": true
+        "[c][riscv]": {
+            "files.insertFinalNewline": true
+        },
     },
     "tasks": {
         "version": "2.0.0",

@@ -12,6 +12,7 @@
     "extensions": [
         "ms-vscode.cpptools",
         "ms-ceintl.vscode-language-pack-zh-hans",
-        "ms-vscode.hexeditor"
+        "ms-vscode.hexeditor",
+        "zhwu95.riscv"
     ]
   }

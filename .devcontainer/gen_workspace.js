@@ -2,7 +2,10 @@
 
 let workspaceTemplate = {
     "extensions": {
-        "recommendations": ["ms-vscode.cpptools"],
+        "recommendations": [
+            "ms-vscode.cpptools",
+            "zhwu95.riscv"
+        ],
         "unwantedRecommendations": ["ms-vscode.cpptools-extension-pack"]
     },
     "folders": render([

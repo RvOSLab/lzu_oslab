@@ -44,8 +44,18 @@ let workspaceTemplate = {
         "C_Cpp.vcFormat.newLine.beforeCatch": false,
         "files.associations": {
             "*.c": "c",
-            "*.h": "c"
-        }
+            "*.h": "c",
+            "*.s": "riscv"
+        },
+        "search.exclude": {
+            "**/*.md": true,
+            "html": true,
+            "Doxyfile": true,
+            "kernel.map": true,
+            ".clang-format": true
+        },
+        "search.useIgnoreFiles": true,
+        "files.insertFinalNewline": true
     },
     "tasks": {
         "version": "2.0.0",

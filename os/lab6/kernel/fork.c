@@ -87,7 +87,7 @@ long sys_fork(struct trapframe *tf)
 
     memcpy(p, current, sizeof(struct task_struct) - sizeof(struct trapframe));
     p->context = *tf;
-    p->context.epc += 4;
+    p->context.epc += INST_LEN(p->context.epc);
     p->pg_dir = (uint64_t *)VIRTUAL(page_dir);
     tasks[nr] = p;
     kprintf("process %x forks process %x\n", (uint64_t)current->pid, (uint64_t)nr);

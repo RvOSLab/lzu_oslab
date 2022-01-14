@@ -107,6 +107,7 @@ struct task_struct {
     set_csr(sstatus, SSTATUS_SPIE);                                         \
     set_csr(sstatus, SSTATUS_UPIE);                                         \
     write_csr(sepc, &&ret - 4 - (SBI_END + LINEAR_OFFSET - START_CODE));    \
+    write_csr(sscratch, (char*)&init_task + PAGE_SIZE);                     \
     register uint64_t a7 asm("a7") = 0;                                     \
     __asm__ __volatile__("call __alltraps \n\t" ::"r"(a7):"memory");        \
     ret: ;                                                                  \

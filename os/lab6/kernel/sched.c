@@ -66,6 +66,10 @@ void sched_init()
         .start_stack = START_STACK,
         .start_kernel = START_KERNEL,
         .start_time = ticks /* 0 */,
+        .start_rodata = (uint64_t)&rodata_start - (0xC0000000 - 0x00010000),
+        .start_data = (uint64_t)&data_start - (0xC0000000 - 0x00010000),
+        .end_data = (uint64_t)&kernel_end - (0xC0000000 - 0x00010000),
+        .brk = (uint64_t)kernel_end - (0xC0000000 - 0x00010000),
         .pg_dir = pg_dir,
     };
 
@@ -218,10 +222,6 @@ long sys_init(struct trapframe* tf)
     tf->gpr.sp = START_STACK - ((uint64_t)boot_stack_top - tf->gpr.sp);
     /* GCC 使用 s0 指向函数栈帧起始地址（高地址），因此这里也要修改，否则切换到进程0会访问到内核区 */
     tf->gpr.s0 = START_STACK;
-    current->start_rodata = (uint64_t)&rodata_start - (0xC0000000 - 0x00010000);
-    current->start_data = (uint64_t)&data_start - (0xC0000000 - 0x00010000);
-    current->end_data = (uint64_t)&kernel_end - (0xC0000000 - 0x00010000);
-    current->brk = (uint64_t)kernel_end - (0xC0000000 - 0x00010000);
     save_context(tf);
     return 0;
 }

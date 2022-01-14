@@ -76,8 +76,6 @@ void set_stvec()
 {
     /* 引入 trapentry.s 中定义的外部函数，便于下面取地址 */
     extern void __alltraps(void);
-    /* sscratch 保存内核栈地址 */
-    write_csr(sscratch, (char*)&init_task + PAGE_SIZE);
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
 }
@@ -189,7 +187,7 @@ struct trapframe* exception_handler(struct trapframe* tf)
     case CAUSE_BREAKPOINT:
         kputs("breakpoint");
         print_trapframe(tf);
-        tf->epc += 2;
+        tf->epc += INST_LEN(tf->epc);
         break;
     case CAUSE_MISALIGNED_LOAD:
         kputs("misaligned load");
@@ -266,7 +264,7 @@ static struct trapframe* syscall_handler(struct trapframe* tf)
     } else {
         tf->gpr.a0 = syscall_table[syscall_nr](tf);
     }
-    tf->epc += 4; /* 执行下一条指令 */
+    tf->epc += INST_LEN(tf->epc); /* 执行下一条指令 */
     return tf;
 }
 

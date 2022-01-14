@@ -67,6 +67,8 @@
 #define MACHINE    2
 /// @}
 
+#define INST_LEN(inst_ptr) (((*(char*)(inst_ptr)) & 0x3) < 0x3 ? 2 : 4)
+
 /// @{ @name 操作控制状态寄存器（CSR）
 
 /** 读取 CSR */

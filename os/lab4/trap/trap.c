@@ -13,6 +13,7 @@
 #include <clock.h>
 #include <sbi.h>
 #include <kdebug.h>
+#include <assert.h>
 #include <trap.h>
 #include <plic.h>
 #include <uart.h>

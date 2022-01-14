@@ -16,6 +16,7 @@
 #include <riscv.h>
 #include <sbi.h>
 #include <kdebug.h>
+#include <assert.h>
 #include <sched.h>
 #include <syscall.h>
 #include <trap.h>

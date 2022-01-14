@@ -1,0 +1,3 @@
+FROM mapleee/lzuoslab:env
+WORKDIR /root/
+CMD [ "bash" ]

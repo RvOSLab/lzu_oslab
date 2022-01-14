@@ -1,6 +1,7 @@
 include ../tools/toolchain.mk
 objects := $(patsubst %.c, %.o, $(wildcard *.c))
 CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I../include
+ASFLAGS := -g
 
 vpath %.h ../include
 

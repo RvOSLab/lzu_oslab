@@ -1,126 +1,47 @@
+### C ###
 # Prerequisites
 *.d
 
 # Object files
 *.o
-*.ko
-*.obj
-*.elf
 
 # Linker output
-*.ilk
 *.map
-*.exp
-
-# Git
-*.orig
-
-# Precompiled Headers
-*.gch
-*.pch
 
 # Libraries
-*.lib
 *.a
-*.la
-*.lo
 
-# Shared objects (inc. Windows DLLs)
-*.dll
+# Shared objects
 *.so
-*.so.*
-*.dylib
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+### Linux ###
+*~
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# KDE directory preferences
+.directory
 
-# fd dotfile
-.fdignore
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
 
-# rg dotfile
-.fdignore
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*
 
-# Vim-generated file
-.nvimlog
-.root
-.project
-.swp
-.session
-session
-swp
-.undo
-undo
-.projectins.json
-compile_commands.json
-.ycm_extra_config.py
-
-# os
-*.tmp
-*.img
-*.bin
-*.sym
-kernel.asm
-
-# other
-TODO
-TODO.wiki
-
-# LSP
-.clangd
-.ccl
-# cache
-.cache
-compile_commands.json
-
-# tags
-GPATH
-GTAGS
-GRTAGS
-tags
-.notags
-
-# LZU_OS
-*.asm
-**/lab*/doc/
-doc/html/
-*.png
-*.js
-*.css
-*.html
-!fw_jump.bin
-
-# VSCode
-vsc_diag_suppress.h
-workspace.code-workspace
-*.code-workspace
-*.vscode
-
-# macOS
+### macOS ###
+# General
 .DS_Store
 .AppleDouble
 .LSOverride
-Icon
+
+# Icon must end with a \r
+Icon?
+
+# Thumbnails
 ._*
+
+# Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
 .Spotlight-V100
@@ -128,8 +49,59 @@ Icon
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
 Network Trash Folder
 Temporary Items
 .apdisk
+
+### Vim ###
+# Swap
+[._]*.s[a-v][a-z]
+!*.svg
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session
+Session.vim
+Sessionx.vim
+
+# Temporary
+.netrwhist
+# Auto-generated tag files
+tags
+# Persistent undo
+[._]*.un~
+
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows shortcuts
+*.lnk
+
+### Virual Studio Code ###
+# Workspace config
+.vscode/
+.vscode-test/
+*.code-workspace
+
+### LZU OSLab ###
+vsc_diag_suppress.h
+doc/html/
+*.img
+*.bin
+!fw_jump.bin

@@ -2,8 +2,8 @@
 #define __STRING_H__
 #include <stddef.h>
 size_t strlen(const char *str);
-uint32_t strcmp(const char *s, const char *t);
-int is_begin_with(const char *str1, const char *str2);
+int64_t strcmp(const char *s, const char *t);
+uint64_t is_begin_with(const char *str1, const char *str2);
 static inline uint32_t fdt32_to_cpu(uint32_t val)
 {
     uint8_t *byte_i = (uint8_t *)&val;

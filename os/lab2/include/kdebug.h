@@ -5,5 +5,5 @@
 #include <sbi.h>
 int kputs(const char *msg);
 int kprintf(const char *fmt, ...);
-void kputchar(int ch);
+void kputchar(char ch);
 #endif

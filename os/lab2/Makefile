@@ -18,7 +18,8 @@ KERN_ASM := kernel.asm
 # -fno-strict-aliasing 允许未定义的类型间强制转换
 # -nostdinc 不使用系统标准库
 # -I include 优先在include目录搜索头文件
-CFLAGS := -mcmodel=medany -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include
+# -Wno-main 不报告main函数形参错误
+CFLAGS := -mcmodel=medany -Wall -Wno-main -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include
 
 # .PHONY表示后面这些都是伪造的target，无论同名文件是否存在都会运行
 .PHONY : all build run run-gui symbol debug clean disassembly format

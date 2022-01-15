@@ -1,6 +1,7 @@
 #include <sbi.h>
 #include <kdebug.h>
 #include <mm.h>
+#include <device.h>
 #include <trap.h>
 #include <sched.h>
 #include <clock.h>
@@ -13,6 +14,7 @@ int main()
     mem_init();
     mem_test();
     malloc_test();
+    init_device_table();
     set_stvec();
     sched_init();
     clock_init();

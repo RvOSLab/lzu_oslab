@@ -12,6 +12,7 @@ int main()
     print_system_infomation();
     mem_init();
     mem_test();
+    malloc_test();
     set_stvec();
     sched_init();
     clock_init();

@@ -40,6 +40,7 @@
 #ifndef __MM_H__
 #define __MM_H__
 #include <stddef.h>
+#include <riscv.h>
 /// @{ @name 物理内存布局和物理地址操作
 #define PAGE_SIZE 4096
 #define FLOOR(addr) ((addr) / PAGE_SIZE * PAGE_SIZE)/**< 向下取整到 4K 边界 */
@@ -131,8 +132,20 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag);
 void show_page_tables();
 void map_kernel();
 void active_mapping();
-void * kmalloc(uint64_t size);       /* 通用内核内存分配函数 */
-uint64_t kfree_s(void * obj, uint64_t size);      /* 释放指定对象占用的内存 */
+void * kmalloc_i(uint64_t size);       /* 通用内核内存分配函数 */
+uint64_t kfree_s_i(void * obj, uint64_t size);      /* 释放指定对象占用的内存 */
+static inline void * kmalloc(uint64_t size) {
+    disable_interrupt();
+    void *ptr = kmalloc_i(size);
+    enable_interrupt();
+    return ptr;
+}
+static inline uint64_t kfree_s(void * obj, uint64_t size) {
+    disable_interrupt();
+    uint64_t real_size = kfree_s_i(obj, size);
+    enable_interrupt();
+    return real_size;
+}
 #define kfree(ptr) kfree_s((ptr), 0)
 void malloc_test();
 

@@ -133,4 +133,7 @@ void schedule();
 void save_context(context *context);
 context* push_context(char *stack, context *context);
 void switch_to(size_t task);
+void interruptible_sleep_on(struct task_struct **p);
+void sleep_on(struct task_struct **p);
+void wake_up(struct task_struct **p);
 #endif /* end of include guard: __SCHED_H__ */

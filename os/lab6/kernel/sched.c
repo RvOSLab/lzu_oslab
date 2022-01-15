@@ -173,6 +173,61 @@ void schedule()
     switch_to(next);
 }
 
+static inline void __sleep_on(struct task_struct **p, int state)
+{
+	struct task_struct *tmp;
+
+	if (!p) {
+		return;
+	}
+	if (current == &(init_task.task)) {
+		panic("task[0] trying to sleep");
+	}
+	tmp = *p;
+	*p = current;
+	current->state = state;
+repeat:	schedule();
+	if (*p && *p != current) {
+		(**p).state = TASK_RUNNING;
+		current->state = TASK_UNINTERRUPTIBLE;
+		goto repeat;
+	}
+	if (!*p) {
+		kputs("Warning: *P = NULL\n\r");
+	}
+	if ((*p = tmp)) {
+		tmp->state = 0;
+	}
+}
+
+void interruptible_sleep_on(struct task_struct **p)
+{
+	__sleep_on(p, TASK_INTERRUPTIBLE);
+}
+
+void sleep_on(struct task_struct **p)
+{
+	__sleep_on(p, TASK_UNINTERRUPTIBLE);
+}
+
+/**
+ * 唤醒不可中断等待任务
+ * @param 		p 		任务结构指针
+ * @return		void
+ */
+void wake_up(struct task_struct **p)
+{
+	if (p && *p) {
+		if ((**p).state == TASK_STOPPED) {
+			kputs("wake_up: TASK_STOPPED");
+		}
+		if ((**p).state == TASK_ZOMBIE) {
+			kputs("wake_up: TASK_ZOMBIE");
+		}
+		(**p).state = TASK_RUNNING;
+	}
+}
+
 /**
  * @brief 创建进程 0 各段的映射
  *

@@ -129,7 +129,7 @@ extern struct task_struct *tasks[NR_TASKS];
 extern union task_union init_task;
 
 void sched_init();
-size_t schedule();
+void schedule();
 void save_context(context *context);
 context* push_context(char *stack, context *context);
 void switch_to(size_t task);

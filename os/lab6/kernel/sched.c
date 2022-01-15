@@ -138,7 +138,7 @@ ret:
  *
  * @return 目标进程的进程号
  */
-size_t schedule()
+void schedule()
 {
     int i, next, c;
     struct task_struct** p;
@@ -169,7 +169,8 @@ size_t schedule()
             }
         }
     }
-    return next;
+    kprintf("switch to %u\n", next);
+    switch_to(next);
 }
 
 /**

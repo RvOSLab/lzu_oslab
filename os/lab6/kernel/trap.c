@@ -132,10 +132,7 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         if (--current->counter)
             return tf;
         if (!trap_in_kernel(tf)) {
-            size_t nr = schedule();
-            tasks[0]->counter = 15;
-            kprintf("switch to task %x\n", nr);
-            switch_to(nr);
+            schedule();
         }
 
         break;

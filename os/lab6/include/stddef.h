@@ -21,4 +21,16 @@ typedef signed long long ssize_t;
  * typedef uint64_t uintptr_t;
  */
 
+#define typeof __typeof__
+#ifdef __compiler_offsetof
+#define offsetof(type, member) __compiler_offsetof(type, member)
+#else
+#define offsetof(type, member) ((uint64_t) & ((type *)0)->member)
+#endif
+#define container_of(ptr, type, member) \
+    ({ \
+        const typeof(((type *)0)->member) *_mptr = (ptr); \
+        (type *)((char *)_mptr - offsetof(type, member)); \
+    })
+
 #endif

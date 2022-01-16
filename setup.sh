@@ -4,19 +4,19 @@ sudo apt install -y build-essential gettext pkg-config libglib2.0-dev python3-de
 echo -e "\033[41;37m 正在下载必要源码包 \033[0m"
 mkdir resource
 cd resource
-axel -n 15 https://download.qemu.org/qemu-6.0.0.tar.xz
-axel -n 15 https://mirror.lzu.edu.cn/gnu/gdb/gdb-10.2.tar.xz
+axel -n 15 https://download.qemu.org/qemu-6.2.0.tar.xz
+axel -n 15 https://mirror.lzu.edu.cn/gnu/gdb/gdb-11.2.tar.xz
 echo -e "\033[41;37m 正在解压 \033[0m"
-tar xJf qemu-6.0.0.tar.xz
-tar xJf gdb-10.2.tar.xz
+tar xJf qemu-6.2.0.tar.xz
+tar xJf gdb-11.2.tar.xz
 echo -e "\033[41;37m 解压完成 \033[0m"
-cd qemu-6.0.0
+cd qemu-6.2.0
 echo -e "\033[41;37m 开始编译安装 QEMU \033[0m"
 ./configure --target-list=riscv32-softmmu,riscv64-softmmu --enable-gtk
 make -j$(nproc)
 sudo make install
 echo -e "\033[41;37m 开始编译安装 GDB \033[0m"
-cd ../gdb-10.2/
+cd ../gdb-11.2/
 ./configure --target=riscv64-unknown-elf --enable-tui=yes -with-python=python3
 make -j$(nproc)
 sudo make install

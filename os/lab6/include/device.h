@@ -36,6 +36,7 @@ extern struct hash_table device_table;
 void init_device_table();
 uint32_t device_table_get_major_num(uint32_t major);
 uint32_t device_table_get_next_minor(uint32_t major, uint32_t minor_start);
+void load_drivers();
 
 static inline void device_set_data(struct device *dev, void *data) {
     dev->driver_data = data;

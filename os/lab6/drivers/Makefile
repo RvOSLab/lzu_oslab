@@ -7,11 +7,17 @@ vpath %.h ../include
 .PHONY : clean build
 build : libdrivers.a
 
-libdrivers.a : $(objects)
+libdrivers.a : $(objects) ../mm/libmm.a ../lib/libstd.a
 	$(AR) vq $@ $^
 
 $(objects) : %.o : %.c
 	$(CC) $(CFLAGS) -c $<
+
+../lib/libstd.a:
+	make -C ../lib build
+
+../lib/libmm.a:
+	make -C ../mm build
 
 clean:
 	-find . -name '*.o' -exec rm {} \;

@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <device.h>
 #include <device/test.h>
+#include <device/test/mapl-test.h>
 
 #define SIFIVE_TEST_MAJOR 0x1234
 

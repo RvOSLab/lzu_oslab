@@ -52,3 +52,12 @@ uint32_t device_table_get_next_minor(uint32_t major, uint32_t minor_start) {
         minor += 1;
     }
 }
+
+struct device *get_dev_by_major_minor(uint32_t major, uint32_t minor) {
+    struct device dev;
+    device_set_major(&dev, major);
+    device_set_minor(&dev, minor);
+    struct hash_table_node *node;
+    node = hash_table_get(&device_table, &dev.hash_node);
+    return container_of(node, struct device, hash_node);
+}

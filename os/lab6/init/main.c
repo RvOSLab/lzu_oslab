@@ -16,6 +16,7 @@ int main()
     malloc_test();
     init_device_table();
     load_drivers();
+    drivers_test();
     set_stvec();
     sched_init();
     clock_init();

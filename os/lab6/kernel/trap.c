@@ -20,6 +20,7 @@
 #include <sched.h>
 #include <syscall.h>
 #include <trap.h>
+#include <device/irq.h>
 
 static inline struct trapframe* trap_dispatch(struct trapframe* tf);
 static struct trapframe* interrupt_handler(struct trapframe* tf);
@@ -39,6 +40,7 @@ void wp_page_handler(struct trapframe* tf)
 
 static struct trapframe* external_handler(struct trapframe* tf)
 {
+    irq_handle();
     return tf;
 }
 

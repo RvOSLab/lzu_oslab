@@ -62,6 +62,9 @@ static inline void device_set_data(struct device *dev, void *data) {
 static inline void *device_get_data(struct device *dev) {
     return dev->driver_data;
 }
+static inline void *device_get_match_data(struct device *dev) {
+    return dev->match_data;
+}
 static inline void device_set_interface(struct device *dev, uint64_t flag, void *(*getter)(struct device *, uint64_t)) {
     dev->interface_flag = flag;
     dev->get_interface = getter;

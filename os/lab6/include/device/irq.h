@@ -14,9 +14,11 @@ struct irq_descriptor {
 /* 初始状态: 不使能任何IRQ, 阈值为最低 */
 struct irq_device {
     void (*enable_irq)(struct device *dev, uint32_t hart_id, uint32_t irq_id);
+    void (*disable_irq)(struct device *dev, uint32_t hart_id, uint32_t irq_id);
     void (*set_threshold)(struct device *dev, uint32_t hart_id, uint32_t threshold);
     void (*set_priority)(struct device *dev, uint32_t irq_id, uint32_t priority);
     void (*set_handler)(struct device *dev, uint32_t hart_id, uint32_t irq_id, struct irq_descriptor* descriptor);
+    void (*interrupt_handle)(struct device *dev);
 };
 
 #endif

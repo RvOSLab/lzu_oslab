@@ -86,7 +86,7 @@ void plic_interrupt_handle(struct device *dev) {
     struct plic_handler tmp = {
         .irq_id = irq_id
     };
-    struct hash_table_node *hash_node = hash_table_get(&plic_handler_table, &tmp);
+    struct hash_table_node *hash_node = hash_table_get(&plic_handler_table, &tmp.hash_node);
     struct plic_handler *handler = container_of(hash_node, struct plic_handler, hash_node);
     if(handler) handler->descriptor->handler();
     plic_complete(0, irq_id);

@@ -27,6 +27,7 @@ void * sifive_test_get_interface(struct device *dev, uint64_t flag) {
 }
 
 uint64_t test_device_probe(struct device *dev) {
+    device_init(dev);
     device_set_data(dev, NULL);
     device_set_interface(dev, RESET_INTERFACE_BIT, sifive_test_get_interface);
     device_register(dev, "sifive test", SIFIVE_TEST_MAJOR, NULL);

@@ -81,13 +81,19 @@ static inline uint64_t device_set_major(struct device *dev, uint32_t major) {
 static inline uint64_t device_set_minor(struct device *dev, uint32_t minor) {
     return dev->device_id = ((uint64_t)minor & 0xFFFFFFFF) | device_get_major(dev);
 }
+static inline void device_init(struct device *dev) {
+    dev->ref_count = 0;
+    dev->parent = NULL;
+    dev->driver_data = NULL;
+    dev->interface_flag = 0;
+    dev->get_interface = NULL;
+    linked_list_init(&dev->resource_list);
+}
 static inline void device_register(struct device *dev, const char *name, uint32_t major, struct device *parent) {
     uint32_t minor = device_table_get_next_minor(major, 1);
     device_set_major(dev, major);
     device_set_minor(dev, minor);
-    linked_list_init(&dev->resource_list);
     dev->device_name = name;
-    dev->ref_count = 0;
     dev->parent = parent;
     if (parent) dev->parent->ref_count += 1;
     hash_table_set(&device_table, &dev->hash_node);

@@ -3,8 +3,14 @@
 #include <device/test.h>
 #include <device/test/mapl-test.h>
 
+struct driver_resource mapl_test_mmio_res = {
+    .resource_start = 0x100000,
+    .resource_end = 0x101000,
+    .resource_type = DRIVER_RESOURCE_MEM
+};
+
 void mapl_test_shutdown(struct device *dev) {
-    while (1) ;
+    *((uint32_t *)mapl_test_mmio_res.map_address) = 0x5555;
 }
 
 struct test_device mapl_test_device = {
@@ -20,6 +26,7 @@ uint64_t test_device_probe(struct device *dev) {
     device_set_data(dev, NULL);
     device_set_interface(dev, TEST_INTERFACE_BIT, mapl_test_get_interface);
     device_register(dev, "sifive test", SIFIVE_TEST_MAJOR, NULL);
+    device_add_resource(dev, &mapl_test_mmio_res);
     return 0;
 }
 

@@ -20,8 +20,6 @@
 #include <sched.h>
 #include <syscall.h>
 #include <trap.h>
-#include <plic.h>
-#include <uart.h>
 
 static inline struct trapframe* trap_dispatch(struct trapframe* tf);
 static struct trapframe* interrupt_handler(struct trapframe* tf);
@@ -38,29 +36,9 @@ void wp_page_handler(struct trapframe* tf)
         panic("Try to write read-only memory");
     write_verify(badvaddr);
 }
-void uart_handler()
-{
-    int8_t c = uart_read();
-    if(c > -1)
-        uart_write(c);
-}
 
 static struct trapframe* external_handler(struct trapframe* tf)
 {
-    uint32_t int_id;
-    switch (int_id = plic_claim()) {
-        case 1 ... 8:
-            kprintf("virtio\n");
-            break;
-        /* UART */
-        case 0xA:
-            uart_handler();
-            break;
-        /* Unsupported interrupt */
-        default:
-            kprintf("Unknown external interrupt");
-    }
-    plic_complete(int_id);
     return tf;
 }
 

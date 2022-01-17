@@ -9,8 +9,6 @@
 #include <kdebug.h>
 #include <mm.h>
 #include <stddef.h>
-#include <plic.h>
-#include <uart.h>
 
 /** 内核页目录（定义在 entry.s 中）*/
 extern uint64_t boot_pg_dir[512];
@@ -53,10 +51,6 @@ void map_kernel()
 {
     // map_pages(DEVICE_START, DEVICE_END, DEVICE_ADDRESS, KERN_RW | PAGE_VALID);
     map_pages(MEM_START, MEM_END, KERNEL_ADDRESS, KERN_RWX | PAGE_VALID);
-    map_pages(PLIC_START, PLIC_END, PLIC_START_ADDR, KERN_RW | PAGE_VALID);
-    map_pages(UART_START, CEIL(UART_END), UART_START_ADDR, KERN_RW | PAGE_VALID);
-    kprintf("PLIC_START_ADDR: %x\n", PLIC_START_ADDR);
-    kprintf("UART_START_ADDR: %x\n", UART_START_ADDR);
 }
 
 /**

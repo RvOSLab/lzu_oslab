@@ -1,5 +1,5 @@
 #include <device.h>
-#include <device/test.h>
+#include <device/reset.h>
 #include <device/reset/sifive_test.h>
 
 void drivers_test() {

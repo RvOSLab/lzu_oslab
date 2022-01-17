@@ -1,6 +1,5 @@
 #include <stddef.h>
-#include <device.h>
-#include <device/test.h>
+
 #include <device/reset/sifive_test.h>
 
 struct driver_resource sifive_test_mmio_res = {

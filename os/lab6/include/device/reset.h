@@ -1,6 +1,8 @@
 #ifndef DEVICE_RESET_H
 #define DEVICE_RESET_H
 
+#include <device.h>
+
 #define RESET_INTERFACE_BIT (1 << 12)
 
 struct reset_device {

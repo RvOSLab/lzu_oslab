@@ -3,14 +3,17 @@
 #include <mm.h>
 #include <device.h>
 #include <device/reset/sifive_test.h>
+#include <device/irq/plic.h>
 
 struct device_driver *driver_list[] = {
     &test_driver,
+    &plic_driver,
     NULL
 };
 
 const char * device_list[] = {
     "sifive,test1",
+    "sifive,plic-1.0.0",
     NULL
 };
 
@@ -29,7 +32,7 @@ void load_drivers() {
                     dev->match_data = match_table.match_data;
                     driver->device_probe(dev);
                     is_device_matched = 1;
-                    kprintf("load device %s\n\tdriver:%s\n", device_compatible, driver->driver_name);
+                    kprintf("load device %s\n\tdriver: %s\n", device_compatible, driver->driver_name);
                     break;
                 }
             }

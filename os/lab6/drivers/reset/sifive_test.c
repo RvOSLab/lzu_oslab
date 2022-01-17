@@ -12,8 +12,13 @@ void sifive_test_shutdown(struct device *dev) {
     *((uint32_t *)sifive_test_mmio_res.map_address) = 0x5555;
 }
 
+void sifive_test_reboot(struct device *dev) {
+    *((uint32_t *)sifive_test_mmio_res.map_address) = 0x7777;
+}
+
 struct reset_device sifive_test_device = {
-    .shutdown = sifive_test_shutdown
+    .shutdown = sifive_test_shutdown,
+    .reboot = sifive_test_reboot
 };
 
 void * sifive_test_get_interface(struct device *dev, uint64_t flag) {

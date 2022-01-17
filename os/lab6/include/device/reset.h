@@ -5,6 +5,7 @@
 
 struct reset_device {
     void (*shutdown)(struct device *dev);
+    void (*reboot)(struct device *dev);
 };
 
 #endif

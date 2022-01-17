@@ -21,7 +21,7 @@ struct irq_device {
     void (*interrupt_handle)(struct device *dev);
 };
 
-struct device *irq_dev = NULL;
+extern struct device *irq_dev;
 static inline void set_irq_dev(struct device *dev) {
     irq_dev = dev;
 }

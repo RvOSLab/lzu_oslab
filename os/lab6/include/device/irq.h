@@ -21,13 +21,22 @@ struct irq_device {
     void (*interrupt_handle)(struct device *dev);
 };
 
-extern struct device *irq_dev;
-static inline void set_irq_dev(struct device *dev) {
-    irq_dev = dev;
+extern struct device *irq_device;
+extern void (*interrupt_handle)(struct device *dev);
+static inline void setup_irq_dev(struct device *dev) {
+    if (dev) {
+        struct irq_device *irq_dev = dev->get_interface(dev, IRQ_INTERFACE_BIT);
+        if (irq_dev) {
+            irq_device = dev;
+            interrupt_handle = irq_dev->interrupt_handle;
+        }
+    }
 }
 
-static inline struct device *get_irq_dev() {
-    return irq_dev;
+static inline void irq_handle() {
+    if(irq_device) {
+        interrupt_handle(irq_device);
+    }
 }
 
 #endif

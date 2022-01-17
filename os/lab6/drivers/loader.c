@@ -2,7 +2,7 @@
 #include <kdebug.h>
 #include <mm.h>
 #include <device.h>
-#include <device/test/mapl-test.h>
+#include <device/reset/sifive_test.h>
 
 struct device_driver *driver_list[] = {
     &test_driver,

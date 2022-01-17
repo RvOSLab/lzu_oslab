@@ -1,9 +1,9 @@
-#ifndef DEVICE_TEST_H
-#define DEVICE_TEST_H
+#ifndef DEVICE_RESET_H
+#define DEVICE_RESET_H
 
-#define TEST_INTERFACE_BIT (1 << 12)
+#define RESET_INTERFACE_BIT (1 << 12)
 
-struct test_device {
+struct reset_device {
     void (*shutdown)(struct device *dev);
 };
 

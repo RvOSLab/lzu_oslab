@@ -16,7 +16,8 @@ struct hash_table device_table = {
     .buffer = device_table_buffer,
     .buffer_length = DEVICE_TABLE_BUFFER_LENGTH,
     .get_hash = device_table_get_hash,
-    .is_equal = device_table_is_equal};
+    .is_equal = device_table_is_equal
+};
 
 void init_device_table() {
     hash_table_init(&device_table);

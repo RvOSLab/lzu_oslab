@@ -125,6 +125,7 @@ uint64_t plic_device_probe(struct device *dev) {
     device_init(dev);
     plic_device_init(dev);
     device_set_data(dev, NULL);
+    plic_irq_device.dev = dev;
     device_set_interface(dev, IRQ_INTERFACE_BIT, plic_get_interface);
     device_register(dev, "plic", PLIC_MAJOR, NULL);
     setup_irq_dev(dev);

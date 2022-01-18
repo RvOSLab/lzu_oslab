@@ -58,6 +58,7 @@ void set_stvec()
     extern void __alltraps(void);
     /* 设置STVEC的值，MODE=00，因为地址的最后两位四字节对齐后必为0，因此不用单独设置MODE */
     write_csr(stvec, &__alltraps);
+    set_csr(sie, 1 << IRQ_S_EXT);
 }
 
 /**

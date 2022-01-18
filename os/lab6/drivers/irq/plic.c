@@ -79,6 +79,7 @@ void plic_set_handler(struct device *dev, uint32_t hart_id, uint32_t irq_id, str
     handler->irq_id = irq_id;
     handler->descriptor = descriptor;
     hash_table_set(&plic_handler_table, &handler->hash_node);
+    plic_enable_irq(dev, hart_id, irq_id);
 }
 
 void plic_interrupt_handle(struct device *dev) {
@@ -113,7 +114,7 @@ struct irq_device plic_irq_device = {
     .set_priority = plic_set_priority,
     .set_threshold = plic_set_threshold,
     .set_handler = plic_set_handler,
-    .interrupt_handle = NULL
+    .interrupt_handle = plic_interrupt_handle
 };
 
 void *plic_get_interface(struct device *dev, uint64_t flag) {

@@ -36,5 +36,10 @@ static inline void irq_handle() {
         g_irq_dev->interrupt_handle(g_irq_dev->dev);
     }
 }
+static inline void irq_add(uint32_t hart_id, uint32_t irq_id, struct irq_descriptor* descriptor) {
+    if(g_irq_dev) {
+        g_irq_dev->set_handler(g_irq_dev->dev, hart_id, irq_id, descriptor);
+    }
+}
 
 #endif

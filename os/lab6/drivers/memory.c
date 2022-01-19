@@ -1,7 +1,7 @@
 #include <mm.h>
 #include <device.h>
 
-#define DRIVER_MEM_START 0xFC000000
+#define DRIVER_MEM_START 0xCC000000
 uint64_t mem_resource_ptr = DRIVER_MEM_START;
 
 void mem_resource_map(struct driver_resource *res) {

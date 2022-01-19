@@ -4,16 +4,19 @@
 #include <device.h>
 #include <device/reset/sifive_test.h>
 #include <device/irq/plic.h>
+#include <device/serial/uart8250.h>
 
 struct device_driver *driver_list[] = {
     &test_driver,
     &plic_driver,
+    &uart8250_driver,
     NULL
 };
 
 const char * device_list[] = {
     "sifive,test1",
     "sifive,plic-1.0.0",
+    "ns8250",
     NULL
 };
 

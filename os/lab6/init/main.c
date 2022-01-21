@@ -6,8 +6,9 @@
 #include <sched.h>
 #include <clock.h>
 #include <syscall.h>
+#include <device/fdt.h>
 
-int main()
+int main(const char* args, const struct fdt_header *fdt)
 {
     kputs("\nLZU OS STARTING....................");
     print_system_infomation();
@@ -21,7 +22,8 @@ int main()
     sched_init();
     clock_init();
     kputs("Hello LZU OS");
-    enable_interrupt();
+    fdt_test(fdt);
+    // enable_interrupt();
     // init_task0();
     // syscall(NR_fork);    /* task 0 creates task 1 */
     // syscall(NR_fork);    /* task 0 creates task 2, task 1 creates task 3 */

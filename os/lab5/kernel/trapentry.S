@@ -137,6 +137,7 @@ _to_kernel:
 # 代码段开始
 .section .text
 .globl __alltraps
+.align 4
 __alltraps:
     # 保存上下文
     SAVE_ALL

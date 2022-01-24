@@ -67,8 +67,12 @@ static inline uint32_t fdt_align_length(uint32_t length) {
     return (length + FDT_DATA_ALIGN) & ~FDT_DATA_ALIGN;
 }
 
+static inline uint32_t fdt_get_prop_value_len(const struct fdt_property *prop) {
+    return fdt32_to_cpu(prop->length);
+}
+
 static inline void fdt_walk_prop(union fdt_walk_pointer *pointer) {
-    pointer->address += fdt_align_length(fdt32_to_cpu(pointer->prop->length));
+    pointer->address += fdt_align_length(fdt_get_prop_value_len(pointer->prop));
     pointer->address += sizeof(struct fdt_property);
 }
 
@@ -170,8 +174,6 @@ static inline struct fdt_node_header *fdt_find_node_by_path(const struct fdt_hea
     return pointer.node;
 }
 
-
-
 static inline const char *fdt_get_prop_name(const struct fdt_header *fdt, fdt32_t name_offset) {
     uint64_t string_address = (uint64_t) fdt;
     string_address += fdt32_to_cpu(fdt->off_dt_strings);
@@ -199,10 +201,6 @@ static inline struct fdt_property *fdt_get_prop(const struct fdt_header *fdt, st
     return NULL;
 }
 
-static inline uint32_t fdt_get_prop_value_len(const struct fdt_property *prop) {
-    return fdt32_to_cpu(prop->length);
-}
-
 static inline uint32_t fdt_get_prop_num_value(const struct fdt_property *prop, uint32_t idx) {
     fdt32_t *values = (fdt32_t *)(prop->data);
     return fdt32_to_cpu(values[idx]);
@@ -211,6 +209,27 @@ static inline uint32_t fdt_get_prop_num_value(const struct fdt_property *prop, u
 static inline const char *fdt_get_prop_str_value(const struct fdt_property *prop, uint32_t offset) {
     const char *str = (const char *)prop->data;
     return str + offset;
+}
+
+static inline fdt32_t fdt_get_prop_phandle_value(const struct fdt_property *prop, uint32_t idx) {
+    fdt32_t *values = (fdt32_t *)(prop->data);
+    return values[idx];
+}
+
+static inline struct fdt_node_header *fdt_find_node_by_phandle(const struct fdt_header *fdt, fdt32_t phandle) {
+    union fdt_walk_pointer pointer = { .address = (uint64_t)fdt };
+    pointer.address += fdt32_to_cpu(fdt->off_dt_struct);
+    while (pointer.address) {
+        if (pointer.node->tag == FDT_BEGIN_NODE) {
+            struct fdt_property *prop = fdt_get_prop(fdt, pointer.node, "phandle");
+            if (prop) {
+                if (fdt_get_prop_value_len(prop) != sizeof(fdt32_t)) return NULL;
+                if (fdt_get_prop_phandle_value(prop, 0) == phandle) return pointer.node;
+            }
+        }
+        fdt_walk_node(&pointer);
+    }
+    return NULL;
 }
 
 void fdt_loader(const struct fdt_header *fdt);

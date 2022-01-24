@@ -11,13 +11,11 @@ void fdt_match_drivers_by_node(const struct fdt_header *fdt, struct fdt_node_hea
     struct fdt_property *prop = fdt_get_prop(fdt, node, "compatible");
     if (!prop) return;
     // if (!device_list) return;
-    const char *compatible = fdt_get_prop_str_value(prop, 0);
     uint32_t prop_used_len = 0;
     while (prop_used_len < fdt_get_prop_value_len(prop)) {
-        uint32_t prop_next_len = strlen(compatible) + 1;
+        const char *compatible = fdt_get_prop_str_value(prop, prop_used_len);
         kprintf("%s ", compatible);
-        prop_used_len += prop_next_len;
-        compatible = fdt_get_prop_str_value(prop, prop_used_len);
+        prop_used_len += strlen(compatible) + 1;
     }
     kputchar('\n');
 }

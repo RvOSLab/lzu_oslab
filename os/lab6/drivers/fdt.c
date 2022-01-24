@@ -32,7 +32,7 @@ void fdt_loader(const struct fdt_header *fdt) {
     pointer.address += fdt32_to_cpu(fdt->off_dt_struct);
 
     while (pointer.address) {
-        if(pointer.node->tag == FDT_BEGIN_NODE) {
+        if (pointer.node->tag == FDT_BEGIN_NODE) {
             fdt_match_drivers_by_node(fdt, pointer.node, NULL);
         }
         fdt_walk_node(&pointer);

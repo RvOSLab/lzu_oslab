@@ -135,7 +135,7 @@ static inline uint32_t fdt_skip_node(union fdt_walk_pointer *pointer) {
     return deepth;
 }
 
-static inline struct fdt_node_header *fdt_find_node(const struct fdt_header *fdt, const char* path) {
+static inline struct fdt_node_header *fdt_find_node_by_path(const struct fdt_header *fdt, const char* path) {
     char sep = '/';
     if (!path || !fdt || *path != sep) return NULL;
     union fdt_walk_pointer pointer = { .address = (uint64_t)fdt };
@@ -169,6 +169,8 @@ static inline struct fdt_node_header *fdt_find_node(const struct fdt_header *fdt
     }
     return pointer.node;
 }
+
+
 
 static inline const char *fdt_get_prop_name(const struct fdt_header *fdt, fdt32_t name_offset) {
     uint64_t string_address = (uint64_t) fdt;

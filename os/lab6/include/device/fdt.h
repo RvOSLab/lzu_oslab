@@ -197,6 +197,20 @@ static inline struct fdt_property *fdt_get_prop(const struct fdt_header *fdt, st
     return NULL;
 }
 
-void fdt_test(const struct fdt_header *fdt);
+static inline uint32_t fdt_get_prop_value_len(const struct fdt_property *prop) {
+    return fdt32_to_cpu(prop->length);
+}
+
+static inline uint32_t fdt_get_prop_num_value(const struct fdt_property *prop, uint32_t idx) {
+    fdt32_t *values = (fdt32_t *)(prop->data);
+    return fdt32_to_cpu(values[idx]);
+}
+
+static inline const char *fdt_get_prop_str_value(const struct fdt_property *prop, uint32_t offset) {
+    const char *str = (const char *)prop->data;
+    return str + offset;
+}
+
+void fdt_loader(const struct fdt_header *fdt);
 
 #endif

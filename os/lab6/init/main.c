@@ -22,7 +22,7 @@ int main(const char* args, const struct fdt_header *fdt)
     sched_init();
     clock_init();
     kputs("Hello LZU OS");
-    fdt_test(fdt);
+    fdt_loader(fdt);
     // enable_interrupt();
     // init_task0();
     // syscall(NR_fork);    /* task 0 creates task 1 */

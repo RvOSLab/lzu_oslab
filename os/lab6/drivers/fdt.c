@@ -24,6 +24,7 @@ void fdt_match_drivers_by_node(const struct fdt_header *fdt, struct fdt_node_hea
                 if (!strcmp(driver_match_str, device_compatible)) {
                     struct device *dev = kmalloc(sizeof(struct device));
                     dev->match_data = match_table.match_data;
+                    dev->fdt_node = node;
                     driver->device_probe(dev);
                     is_device_matched = 1;
                     kprintf("load device %s\n\tdriver: %s\n", device_compatible, driver->driver_name);

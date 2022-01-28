@@ -6,7 +6,7 @@
 #include <sched.h>
 #include <clock.h>
 #include <syscall.h>
-#include <device/fdt.h>
+#include <device/loader.h>
 
 int main(const char* args, const struct fdt_header *fdt)
 {

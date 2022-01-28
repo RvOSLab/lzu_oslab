@@ -52,8 +52,6 @@ uint32_t device_table_get_major_num(uint32_t major);
 uint32_t device_table_get_next_minor(uint32_t major, uint32_t minor_start);
 struct device *get_dev_by_major_minor(uint32_t major, uint32_t minor);
 
-extern struct device_driver *driver_list[];
-
 void drivers_test();
 
 void mem_resource_map(struct driver_resource *res);

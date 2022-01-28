@@ -1,7 +1,6 @@
 #include <sbi.h>
 #include <kdebug.h>
 #include <mm.h>
-#include <device.h>
 #include <trap.h>
 #include <sched.h>
 #include <clock.h>

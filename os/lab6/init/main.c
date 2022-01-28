@@ -16,13 +16,12 @@ int main(const char* args, const struct fdt_header *fdt)
     mem_test();
     malloc_test();
     init_device_table();
-    load_drivers();
+    fdt_loader(fdt, driver_list);
     drivers_test();
     set_stvec();
     sched_init();
     clock_init();
     kputs("Hello LZU OS");
-    fdt_loader(fdt);
     // enable_interrupt();
     // init_task0();
     // syscall(NR_fork);    /* task 0 creates task 1 */

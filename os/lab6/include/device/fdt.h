@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <device.h>
 
 typedef uint32_t fdt32_t;
 
@@ -232,6 +233,6 @@ static inline struct fdt_node_header *fdt_find_node_by_phandle(const struct fdt_
     return NULL;
 }
 
-void fdt_loader(const struct fdt_header *fdt);
+void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[]);
 
 #endif

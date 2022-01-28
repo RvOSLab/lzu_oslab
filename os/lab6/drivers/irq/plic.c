@@ -134,7 +134,7 @@ uint64_t plic_device_probe(struct device *dev) {
 }
 
 struct driver_match_table plic_match_table[] = {
-    { .compatible = "sifive,plic-1.0.0", .match_data = &qemu_match_info },
+    { .compatible = "riscv,plic0", .match_data = &qemu_match_info },
     { NULL }
 };
 

@@ -78,7 +78,7 @@ uint64_t uart8250_device_probe(struct device *dev) {
 }
 
 struct driver_match_table uart8250_match_table[] = {
-    { .compatible = "ns8250" },
+    { .compatible = "ns16550a" },
     { NULL }
 };
 

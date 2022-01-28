@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <utils/linked_list.h>
 #include <utils/hash_table.h>
+#include <device/fdt.h>
 
 struct device {
     uint64_t ref_count;
@@ -13,6 +14,7 @@ struct device {
     const char *device_name;
     uint64_t device_id;
     void *match_data;
+    struct fdt_node_header *fdt_node;
     struct linked_list_node resource_list;
 
     void *driver_data;
@@ -64,6 +66,9 @@ static inline void *device_get_data(struct device *dev) {
 }
 static inline void *device_get_match_data(struct device *dev) {
     return dev->match_data;
+}
+static inline struct fdt_node_header *device_get_fdt_node(struct device *dev) {
+    return dev->fdt_node;
 }
 static inline void device_set_interface(struct device *dev, uint64_t flag, void *(*getter)(struct device *, uint64_t)) {
     dev->interface_flag = flag;

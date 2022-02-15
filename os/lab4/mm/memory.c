@@ -688,6 +688,7 @@ void mem_test()
     }
 
     pg_dir = old_pg_dir;
+    free_page_tables(0x200000, 1000 * PAGE_SIZE);
     kputs("mem_test(): Passed");
 }
 

@@ -144,7 +144,7 @@ __alltraps:
     # 将sp存入a0作为trap函数的第一个参数
     mv a0, sp
     # 跳转到trap函数执行（PC+4的值存入了x1寄存器），执行结束后会返回到这里继续向下执行恢复上下文
-    jal trap
+    call trap
 .globl __trapret
 __trapret:
     # 恢复上下文

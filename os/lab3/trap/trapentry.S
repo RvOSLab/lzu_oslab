@@ -126,6 +126,7 @@ __alltraps:
 .globl __trapret
 __trapret:
     # 恢复上下文
+    move sp, a0
     RESTORE_ALL
     # 从内核态中断中返回
     sret

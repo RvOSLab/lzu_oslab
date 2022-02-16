@@ -19,7 +19,7 @@ static uint64_t plic_probe()
 {
     for (size_t i = 0; i < prop_used; i++) {
         if (strcmp(prop[i].name, "compatible") == 0) {
-            if (strcmp(prop[i].value, "allwinner,sun20i-d1-plic") == 0) {
+            if (strcmp(prop[i].value, "thead,c900-plic") == 0) {
                 return SUNXI_PLIC;
             }
             if (strcmp(prop[i].value, "sifive,plic-1.0.0") == 0) {

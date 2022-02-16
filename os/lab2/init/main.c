@@ -17,7 +17,7 @@ int main(void *nothing, const void *dtb_start)
     set_stvec();
     clock_init();
     kprintf("complete timer init\n");
-    dtb_start = (const void *)0x82200000;
+    //dtb_start = (const void *)0x82200000;
     unflatten_device_tree(dtb_start);
 
     plic_init();

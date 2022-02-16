@@ -25,7 +25,7 @@ struct sunxi_rtc_regs {
     uint32_t alarm_config_reg; // 0x50, alarm configuration register
 };
 
-static void timestamp_to_day_hh_mm_ss(uint64_t timestamp, uint32_t *day, uint32_t *hh, uint32_t *mm, uint32_t *ss)
+static void timestamp_to_day_hh_mm_ss(uint64_t timestamp, uint64_t *day, uint64_t *hh, uint64_t *mm, uint64_t *ss)
 {
     timestamp /= 1000000000; // ns -> s
     *day = timestamp / SEC_PER_DAY;
@@ -34,7 +34,7 @@ static void timestamp_to_day_hh_mm_ss(uint64_t timestamp, uint32_t *day, uint32_
     *ss = timestamp % SEC_PER_MIN;
 }
 
-static uint64_t day_hh_mm_ss_to_timestamp(uint32_t day, uint32_t hh, uint32_t mm, uint32_t ss)
+static uint64_t day_hh_mm_ss_to_timestamp(uint64_t day, uint64_t hh, uint64_t mm, uint64_t ss)
 {
     uint64_t timestamp = day * SEC_PER_DAY + hh * SEC_PER_HOUR + mm * SEC_PER_MIN + ss;
     return timestamp * 1000000000; // s -> ns
@@ -43,18 +43,18 @@ static uint64_t day_hh_mm_ss_to_timestamp(uint32_t day, uint32_t hh, uint32_t mm
 uint64_t sunxi_rtc_read_time()
 {
     volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
-    uint32_t day = regs->rtc_day_reg;
-    uint32_t hh_mm_ss = regs->rtc_hh_mm_ss_reg;
+    uint64_t day = regs->rtc_day_reg;
+    uint64_t hh_mm_ss = regs->rtc_hh_mm_ss_reg;
     // 根据布局转换天、时、分、秒到时间戳
     return day_hh_mm_ss_to_timestamp(day, (hh_mm_ss >> 16) & 0x1f, (hh_mm_ss >> 8) & 0x3f, hh_mm_ss & 0x3f);
 }
 
 void sunxi_rtc_set_time(uint64_t now)
 {
-    uint32_t day;
-    uint32_t hh;
-    uint32_t mm;
-    uint32_t ss;
+    uint64_t day;
+    uint64_t hh;
+    uint64_t mm;
+    uint64_t ss;
 
     volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
 
@@ -76,10 +76,10 @@ void sunxi_rtc_set_time(uint64_t now)
 
 void sunxi_rtc_set_alarm(uint64_t alarm)
 {
-    uint32_t day;
-    uint32_t hh;
-    uint32_t mm;
-    uint32_t ss;
+    uint64_t day;
+    uint64_t hh;
+    uint64_t mm;
+    uint64_t ss;
 
     volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
     // 通过写 ALARM0_IRQ_EN 启用 alram0 中断。
@@ -101,8 +101,8 @@ uint64_t sunxi_rtc_read_alarm()
     volatile struct sunxi_rtc_regs *regs = (struct sunxi_rtc_regs *)SUNXI_RTC_START_ADDR;
 
     // 可以通过 ALARM0_DAY_SET_REG 和 ALARM0_HH-MM-SS_SET_REG (下图中为 ALARM_CUR_VLE_REG) 实时查询闹钟时间。
-    uint32_t day = regs->alarm0_day_set_reg;
-    uint32_t hh_mm_ss = regs->alarm0_cur_vlu_reg;
+    uint64_t day = regs->alarm0_day_set_reg;
+    uint64_t hh_mm_ss = regs->alarm0_cur_vlu_reg;
     return day_hh_mm_ss_to_timestamp(day, (hh_mm_ss >> 16) & 0x1f, (hh_mm_ss >> 8) & 0x3f, hh_mm_ss & 0x3f);
 }
 

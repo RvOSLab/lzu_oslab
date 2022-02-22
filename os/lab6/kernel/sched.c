@@ -169,7 +169,7 @@ void schedule()
             }
         }
     }
-    kprintf("switch to %u\n", next);
+    // kprintf("switch to %u\n", next);
     switch_to(next);
 }
 

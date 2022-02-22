@@ -21,11 +21,12 @@ int main(const char* args, const struct fdt_header *fdt)
     sched_init();
     clock_init();
     kputs("Hello LZU OS");
-    // enable_interrupt();
-    // init_task0();
-    // syscall(NR_fork);    /* task 0 creates task 1 */
+    enable_interrupt();
+    init_task0();
+    syscall(NR_fork);    /* task 0 creates task 1 */
+    long local = syscall(NR_getpid) + 100;
+    if (local == 101) syscall(NR_mapl);
     // syscall(NR_fork);    /* task 0 creates task 2, task 1 creates task 3 */
-    // long local = syscall(NR_getpid) + 100;
     // syscall(NR_test_fork, local);
     while (1)
         ; /* infinite loop */

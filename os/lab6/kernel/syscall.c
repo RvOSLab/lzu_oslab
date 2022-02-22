@@ -14,6 +14,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sched.h>
+#include <device.h>
 
 extern long sys_init(struct trapframe *);
 extern long sys_fork(struct trapframe *);
@@ -57,11 +58,19 @@ static long sys_getppid(struct trapframe *tf)
 }
 
 /**
+ * @brief MaPl测试系统调用
+ */
+static long sys_mapl(struct trapframe *tf)
+{
+    char_dev_test();
+}
+
+/**
  * @brief 系统调用表
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid};
+fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_mapl};
 
 /**
  * @brief 通过系统调用号调用对应的系统调用

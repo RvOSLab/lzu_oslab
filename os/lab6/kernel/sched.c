@@ -196,7 +196,7 @@ repeat:	schedule();
 		kputs("Warning: *P = NULL\n\r");
 	}
 	if ((*p = tmp)) {
-		tmp->state = 0;
+		tmp->state = TASK_RUNNING;
 	}
 }
 

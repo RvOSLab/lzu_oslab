@@ -19,9 +19,9 @@ void virtio_net_init(struct virtio_device *device, uint64_t is_legacy) {
     device->status |= VIRTIO_STATUS_DRIVER;
     // 4. config features
     uint32_t features = device->device_features;
-    kprintf("supported features: %x\n", features);
+    kprintf("virtio_net: supported features: %x\n", features);
     if(!(features & VIRTIO_NET_F_MAC)) {
-        panic("virtio net device can not provide mac address");
+        panic("virtio_net device can not provide mac address");
     }
     if(!is_legacy) {
         features = (
@@ -33,7 +33,7 @@ void virtio_net_init(struct virtio_device *device, uint64_t is_legacy) {
     // 6. check features ok
         if(!(device->status & VIRTIO_STATUS_FEATURES_OK)) {
             device->status |= VIRTIO_STATUS_FAILED;
-            panic("virtio net device does not support features");
+            panic("virtio_net device does not support features");
         }
     }
     // 7. perform device-specific setup
@@ -43,7 +43,7 @@ void virtio_net_init(struct virtio_device *device, uint64_t is_legacy) {
     virtio_set_queue(device, is_legacy, 1, virtio_net_queue_tx.physical_addr);
     net_config = (struct virtio_net_config *)((uint64_t)device + VIRTIO_NET_CONFIG_OFFSET);
     kprintf(
-        "virtio_net_mac: %x:%x:%x:%x:%x:%x\n",
+        "virtio_net: mac: %x:%x:%x:%x:%x:%x\n",
         net_config->mac[0],
         net_config->mac[1],
         net_config->mac[2],
@@ -98,13 +98,13 @@ void virtio_net_test(struct virtio_device *device) {
         virtio_net_queue_tx.desc[idx].next = 0;
         virtq_put_avail(&virtio_net_queue_tx, head);
         device->queue_notify = 1;
-        kprintf("added tx packet\n");
+        kprintf("virtio_net: added tx packet\n");
         while (!used_elem) { // wait for use
             used_elem = virtq_get_used_elem(&virtio_net_queue_tx);
         }
-        kprintf("tx packet has gone\n");
+        kprintf("virtio_net: tx packet has gone\n");
         while (used_elem) { // free desp
-            kprintf("free used elem\n");
+            kprintf("virtio_net: free used elem\n");
             virtq_free_desc_chain(&virtio_net_queue_tx, used_elem->id);
             used_elem = virtq_get_used_elem(&virtio_net_queue_tx); // next chain
         }
@@ -118,11 +118,11 @@ void virtio_net_test(struct virtio_device *device) {
         virtio_net_queue_rx.desc[idx].next = 0;
         virtq_put_avail(&virtio_net_queue_rx, head);
         device->queue_notify = 0;
-        kprintf("added rx buffer\n");
+        kprintf("virtio_net: added rx buffer\n");
         while (!used_elem) { // wait for use
             used_elem = virtq_get_used_elem(&virtio_net_queue_rx);
         }
-        kprintf("received a packet\n");
+        kprintf("virtio_net: received a packet\n");
         while (used_elem) { // free desp
             if(buffer[12] == 0x08 || 1) {
                 uint64_t used_len = used_elem->len;

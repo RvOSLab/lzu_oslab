@@ -65,7 +65,7 @@ void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[
     fdt = (const struct fdt_header *)fdt_mem.map_address;
     
     union fdt_walk_pointer first_pointer = {
-        .address = fdt + fdt32_to_cpu(fdt->off_dt_struct)
+        .address = (uint64_t)fdt + fdt32_to_cpu(fdt->off_dt_struct)
     };
     fdt_driver_loader(fdt, first_pointer, driver_list, 1);
 

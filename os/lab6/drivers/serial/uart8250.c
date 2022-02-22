@@ -15,11 +15,11 @@ uint8_t uart8250_rx_buffer[UART8250_BUFF_LEN];
 uint64_t uart8250_rx_buffer_start = 0;
 uint64_t uart8250_rx_buffer_end = 0;
 uint64_t uart8250_rx_buffer_empty = 1;
-struct task_struct *p = NULL;
+struct task_struct *uart8250_rx_buffer_wait = NULL;
 
 void uart8250_rx_irq_handler() {
     struct uart_qemu_regs *regs = (struct uart_qemu_regs *)uart8250_mmio_res.map_address;
-    if (p) wake_up(&p);
+    wake_up(&uart8250_rx_buffer_wait);
     while (regs->LSR & (1 << LSR_DR)) {
         uart8250_rx_buffer_empty = 0;
         uart8250_rx_buffer[uart8250_rx_buffer_end] = regs->RBR_THR_DLL;
@@ -65,9 +65,7 @@ uint64_t uart8250_request(struct device *dev, void *buffer, uint64_t size, uint6
     char *char_buffer = (char *)buffer;
     if (is_read) {
         for (uint64_t i = 0; i < size; i += 1) {
-            p = current; 
-            if (uart8250_rx_buffer_empty) sleep_on(&p);
-            p = NULL;
+            if (uart8250_rx_buffer_empty) sleep_on(&uart8250_rx_buffer_wait);
             char_buffer[i] = uart8250_rx_buffer[uart8250_rx_buffer_start];
             uart8250_rx_buffer_start = (uart8250_rx_buffer_start + 1) % UART8250_BUFF_LEN;
             if (uart8250_rx_buffer_start == uart8250_rx_buffer_end) { // empty

@@ -12,7 +12,7 @@ void virtio_mmio_probe(struct device *dev) {
     if(device->magic_value == VIRTIO_MAGIC) {
         if(device->version == VIRTIO_VERSION || device->version == VIRTIO_VERSION_LEGACY) {
             uint64_t is_legacy = device->version == VIRTIO_VERSION_LEGACY;
-            kprintf("Virtio device is legacy 0x%x\n", is_legacy);
+            if (is_legacy) kprintf("virtio: device is legacy\n");
             if(device->device_id == VIRTIO_DEVICE_ID_BLOCK) {
                 virtio_blk_init(device, is_legacy);
                 virtio_blk_test(device);

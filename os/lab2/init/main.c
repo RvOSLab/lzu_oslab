@@ -27,8 +27,6 @@ int main(void *nothing, const void *dtb_start)
 
     rtc_init();
     kprintf("timestamp now: %u\n", read_time());
-    set_time(0);
-    kprintf("timestamp now: %u\n", read_time());
     set_alarm(read_time() + 1000000000);
     kprintf("alarm time: %u\n", read_alarm());
 

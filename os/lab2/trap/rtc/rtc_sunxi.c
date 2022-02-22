@@ -86,12 +86,12 @@ void sunxi_rtc_set_alarm(uint64_t alarm)
     regs->alarm0_irq_en = 1;
     // 设置时钟比较器：向 ALARM0_DAY_SET_REG 与 ALARM0_HH-MM-SS_SET_REG 写入闹钟的日、小时、分钟、秒。
     // 转换时间戳到天、时、分、秒
-    timestamp_to_day_hh_mm_ss(alarm, &day, &hh, &mm, &ss);
+    timestamp_to_day_hh_mm_ss(alarm - 1000, &day, &hh, &mm, &ss);
     alarm >>= 9; // ns -> s
     // 根据布局修改 ALARM0_DAY_SET_REG
     regs->alarm0_day_set_reg = (uint64_t)day;
     // 根据布局修改 ALARM0_HH-MM-SS_SET_REG
-    regs->alarm0_cur_vlu_reg = hh << 16 | mm << 8 | (ss - 1);
+    regs->alarm0_cur_vlu_reg = hh << 16 | mm << 8 | ss;
     // 写入 ALARM0_ENABLE_REG 以启用 alarm 0 功能
     regs->alarm0_enable_reg = 1;
 }

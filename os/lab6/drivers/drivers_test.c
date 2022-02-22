@@ -9,14 +9,9 @@ void drivers_test() {
     // test->shutdown(dev);
 }
 
-void char_dev_test() {
+uint64_t char_dev_test(uint64_t c) {
     struct device *dev = get_dev_by_major_minor(UART8250_MAJOR, 1);
-    struct serial_device *test = dev->get_interface(dev, SERIAL_INTERFACE_BIT);
-    const char *test_str = "mapl char dev test\n";
-    test->request(dev, test_str, strlen(test_str), 0);
-
-    char buffer[256];
-    test->request(dev, buffer, 4, 1);
-    buffer[4] = '\0';
-    kputs(buffer);
+    struct serial_device *char_test = dev->get_interface(dev, SERIAL_INTERFACE_BIT);
+    char_test->request(dev, &c, 1, !c);
+    return c;
 }

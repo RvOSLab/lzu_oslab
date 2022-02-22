@@ -8,8 +8,7 @@
 
 struct serial_device {
     struct device *dev;
-    uint64_t (*write)(struct device *dev, void *buffer, uint64_t size);
-    uint64_t (*read)(struct device *dev, void *buffer, uint64_t size);
+    uint64_t (*request)(struct device *dev, void *buffer, uint64_t size, uint64_t is_read);
 };
 
 #endif

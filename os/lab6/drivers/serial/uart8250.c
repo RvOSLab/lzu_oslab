@@ -2,6 +2,7 @@
 #include <device/irq.h>
 #include <kdebug.h>
 #include <riscv.h>
+#include <sched.h>
 
 struct driver_resource uart8250_mmio_res = {
     .resource_start = 0x10000000,
@@ -9,14 +10,18 @@ struct driver_resource uart8250_mmio_res = {
     .resource_type = DRIVER_RESOURCE_MEM
 };
 
-#define UART8250_BUFF_LEN 5
+#define UART8250_BUFF_LEN 1024
 uint8_t uart8250_rx_buffer[UART8250_BUFF_LEN];
 uint64_t uart8250_rx_buffer_start = 0;
 uint64_t uart8250_rx_buffer_end = 0;
+uint64_t uart8250_rx_buffer_empty = 1;
+struct task_struct *p = NULL;
 
 void uart8250_rx_irq_handler() {
     struct uart_qemu_regs *regs = (struct uart_qemu_regs *)uart8250_mmio_res.map_address;
+    if (p) wake_up(&p);
     while (regs->LSR & (1 << LSR_DR)) {
+        uart8250_rx_buffer_empty = 0;
         uart8250_rx_buffer[uart8250_rx_buffer_end] = regs->RBR_THR_DLL;
         uart8250_rx_buffer_end = (uart8250_rx_buffer_end + 1) % UART8250_BUFF_LEN;
         if (uart8250_rx_buffer_start == uart8250_rx_buffer_end) { // full
@@ -56,9 +61,32 @@ void uart8250_init(struct device *dev) {
     irq_add(0, 0x0a, &uart8250_rx_irq);
 }
 
+uint64_t uart8250_request(struct device *dev, void *buffer, uint64_t size, uint64_t is_read) {
+    char *char_buffer = (char *)buffer;
+    if (is_read) {
+        for (uint64_t i = 0; i < size; i += 1) {
+            p = current; 
+            if (uart8250_rx_buffer_empty) sleep_on(&p);
+            p = NULL;
+            char_buffer[i] = uart8250_rx_buffer[uart8250_rx_buffer_start];
+            uart8250_rx_buffer_start = (uart8250_rx_buffer_start + 1) % UART8250_BUFF_LEN;
+            if (uart8250_rx_buffer_start == uart8250_rx_buffer_end) { // empty
+                uart8250_rx_buffer_empty = 1;
+            }
+        }
+        return size;
+    } else {// !is_read
+        struct uart_qemu_regs *regs = (struct uart_qemu_regs *)uart8250_mmio_res.map_address;
+        for (uint64_t i = 0; i < size; i += 1) {
+            while (!(regs->LSR & (1 << LSR_THRE)));
+            regs->RBR_THR_DLL = char_buffer[i];
+        }
+        return size;
+    }
+}
+
 struct serial_device uart8250_serial_device = {
-    .read = NULL,
-    .write = NULL
+    .request = uart8250_request
 };
 
 void *uart8250_get_interface(struct device *dev, uint64_t flag) {

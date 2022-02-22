@@ -11,8 +11,6 @@ void fdt_match_drivers_by_node(const struct fdt_header *fdt, struct fdt_node_hea
     if (!driver_list) return;
     struct fdt_property *prop = fdt_get_prop(fdt, node, "compatible");
     if (!prop) return;
-    struct fdt_property *is_irqc = fdt_get_prop(fdt, node, "interrupt-controller");
-    if (is_irqc) return;
     uint32_t prop_used_len = 0;
     while (prop_used_len < fdt_get_prop_value_len(prop)) {
         const char *device_compatible = fdt_get_prop_str_value(prop, prop_used_len);
@@ -39,6 +37,18 @@ void fdt_match_drivers_by_node(const struct fdt_header *fdt, struct fdt_node_hea
     }
 }
 
+void fdt_driver_loader(const struct fdt_header *fdt, union fdt_walk_pointer pointer, struct device_driver *driver_list[], uint64_t load_irqc) {
+    while (pointer.address) {
+        if (pointer.node->tag == FDT_BEGIN_NODE) {
+            struct fdt_property *is_irqc = fdt_get_prop(fdt, pointer.node, "interrupt-controller");
+            if (!is_irqc ^ load_irqc) {
+                fdt_match_drivers_by_node(fdt, pointer.node, driver_list);
+            }
+        }
+        fdt_walk_node(&pointer);
+    }
+}
+
 void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[]) {
     if (!fdt) {
         kprintf("fdt: fdt pointer is NULL\n");
@@ -52,19 +62,18 @@ void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[
     device_add_resource(dev, &fdt_mem);
 
     fdt = (const struct fdt_header *)fdt_mem.map_address;
-    union fdt_walk_pointer pointer = {
+    
+    union fdt_walk_pointer first_pointer = {
+        .address = fdt + fdt32_to_cpu(fdt->off_dt_struct)
+    };
+    fdt_driver_loader(fdt, first_pointer, driver_list, 1);
+
+    union fdt_walk_pointer second_pointer = {
         .node = fdt_find_node_by_path(fdt, "/soc")
     };
-
-    if (!pointer.address) {
+    if (!second_pointer.address) {
         kprintf("fdt: /soc not found\n");
         return;
     }
-
-    while (pointer.address) {
-        if (pointer.node->tag == FDT_BEGIN_NODE) {
-            fdt_match_drivers_by_node(fdt, pointer.node, driver_list);
-        }
-        fdt_walk_node(&pointer);
-    }
+    fdt_driver_loader(fdt, second_pointer, driver_list, 0);
 }

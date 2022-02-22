@@ -110,7 +110,7 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         } else {
             ++current->cutime;
         }
-        if (--current->counter)
+        if (current->counter && --current->counter)
             return tf;
         if (!trap_in_kernel(tf)) {
             schedule();

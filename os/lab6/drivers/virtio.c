@@ -1,6 +1,9 @@
 #include <device/virtio.h>
+#include <device/virtio/virtio_mmio.h>
+
 #include <device/fdt.h>
 #include <device/irq.h>
+
 #include <kdebug.h>
 #include <mm.h>
 
@@ -17,7 +20,8 @@ uint64_t virtio_device_probe(struct device *dev) {
     mem->resource_end += fdt_get_prop_num_value(reg, 2) << sizeof(fdt32_t);
     mem->resource_end += fdt_get_prop_num_value(reg, 3);
     device_add_resource(dev, mem);
-    // TODO
+    device_set_data(dev, mem);
+    virtio_mmio_probe(dev);
     return 0;
 }
 

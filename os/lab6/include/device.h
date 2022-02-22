@@ -14,6 +14,7 @@ struct device {
     const char *device_name;
     uint64_t device_id;
     void *match_data;
+    struct fdt_header *fdt;
     struct fdt_node_header *fdt_node;
     struct linked_list_node resource_list;
 
@@ -64,6 +65,9 @@ static inline void *device_get_data(struct device *dev) {
 }
 static inline void *device_get_match_data(struct device *dev) {
     return dev->match_data;
+}
+static inline struct fdt_header *device_get_fdt(struct device *dev) {
+    return dev->fdt;
 }
 static inline struct fdt_node_header *device_get_fdt_node(struct device *dev) {
     return dev->fdt_node;

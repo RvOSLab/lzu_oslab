@@ -8,9 +8,11 @@ struct driver_resource fdt_mem = {
 };
 
 void fdt_match_drivers_by_node(const struct fdt_header *fdt, struct fdt_node_header *node, struct device_driver *driver_list[]) {
+    if (!driver_list) return;
     struct fdt_property *prop = fdt_get_prop(fdt, node, "compatible");
     if (!prop) return;
-    if (!driver_list) return;
+    struct fdt_property *is_irqc = fdt_get_prop(fdt, node, "interrupt-controller");
+    if (is_irqc) return;
     uint32_t prop_used_len = 0;
     while (prop_used_len < fdt_get_prop_value_len(prop)) {
         const char *device_compatible = fdt_get_prop_str_value(prop, prop_used_len);
@@ -38,6 +40,11 @@ void fdt_match_drivers_by_node(const struct fdt_header *fdt, struct fdt_node_hea
 }
 
 void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[]) {
+    if (!fdt) {
+        kprintf("fdt: fdt pointer is NULL\n");
+        return;
+    }
+
     struct device *dev = kmalloc(sizeof(struct device));
     device_init(dev);
     fdt_mem.resource_start = (uint64_t)fdt;
@@ -45,8 +52,14 @@ void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[
     device_add_resource(dev, &fdt_mem);
 
     fdt = (const struct fdt_header *)fdt_mem.map_address;
-    union fdt_walk_pointer pointer = { .address = (uint64_t)fdt };
-    pointer.address += fdt32_to_cpu(fdt->off_dt_struct);
+    union fdt_walk_pointer pointer = {
+        .node = fdt_find_node_by_path(fdt, "/soc")
+    };
+
+    if (!pointer.address) {
+        kprintf("fdt: /soc not found\n");
+        return;
+    }
 
     while (pointer.address) {
         if (pointer.node->tag == FDT_BEGIN_NODE) {

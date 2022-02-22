@@ -18,9 +18,9 @@ void virtio_blk_init(struct virtio_device *device, uint64_t is_legacy) {
     device->status |= VIRTIO_STATUS_DRIVER;
     // 4. config features
     uint32_t features = device->device_features;
-    kprintf("supported features: %x\n", features);
+    kprintf("virtio_blk: supported features: %x\n", features);
     if(features & VIRTIO_BLK_F_RO) {
-        panic("virtio blk device is read-only");
+        panic("virtio_blk device is read-only");
     }
     if(!is_legacy) {
         features = (
@@ -32,15 +32,15 @@ void virtio_blk_init(struct virtio_device *device, uint64_t is_legacy) {
     // 6. check features ok
         if(!(device->status & VIRTIO_STATUS_FEATURES_OK)) {
             device->status |= VIRTIO_STATUS_FAILED;
-            panic("virtio blk device does not support features");
+            panic("virtio_blk device does not support features");
         }
     }
     // 7. perform device-specific setup
     virtio_queue_init(&virtio_blk_queue);
     virtio_set_queue(device, is_legacy, 0, virtio_blk_queue.physical_addr);
     blk_config = (struct virtio_blk_config *)((uint64_t)device + VIRTIO_BLK_CONFIG_OFFSET);
-    kprintf("virtio blk capacity: 0x%x\n", blk_config->capacity);
-    kprintf("virtio blk size: 0x%x\n", blk_config->blk_size);
+    kprintf("virtio_blk: capacity: 0x%x\n", blk_config->capacity);
+    kprintf("virtio_blk: size: 0x%x\n", blk_config->blk_size);
     // 8. set driver ok
     device->status |= VIRTIO_STATUS_DRIVER_OK;
 
@@ -54,7 +54,7 @@ uint8_t virtio_blk_rw(uint8_t* buffer, uint64_t sector, uint64_t is_write) {
         .sector = sector,
         .status = 0
     };
-    kprintf("virtio_blk_queue.desc @ 0x%x\n", virtio_blk_queue.desc);
+    kprintf("virtio_blk: virtio_blk_queue.desc@0x%x\n", virtio_blk_queue.desc);
     uint16_t idx, head;
     head = idx = virtq_get_desc(&virtio_blk_queue);
     assert(idx != 0xff);

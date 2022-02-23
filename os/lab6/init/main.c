@@ -16,7 +16,6 @@ int main(const char* args, const struct fdt_header *fdt)
     malloc_test();
     init_device_table();
     fdt_loader(fdt, driver_list);
-    drivers_test();
     set_stvec();
     sched_init();
     clock_init();

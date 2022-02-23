@@ -6,4 +6,6 @@
 
 extern struct device_driver virtio_driver;
 
+#define VIRTIO_MAJOR 0x7485
+
 #endif

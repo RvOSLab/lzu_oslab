@@ -2,6 +2,7 @@
 #define VIRTIO_BLK_H
 
 #include <device/virtio/virtio_mmio.h>
+#include <device/block.h>
 
 #define VIRTIO_BLK_F_BARRIER    (1 << 0)
 #define VIRTIO_BLK_F_SIZE_MAX   (1 << 1)
@@ -17,6 +18,18 @@
 #define VIRTIO_BLK_F_WRITE_ZEROES (1 << 14)
 
 #define VIRTIO_BLK_CONFIG_OFFSET 0x100
+
+struct virtio_blk_data {
+    struct virtio_device *virtio_device;
+    struct virtq virtio_blk_queue;
+};
+
+struct virtio_blk_qmap {
+    uint16_t desp_idx;
+    struct block_request *request;
+
+    struct hash_table_node hash_node;
+};
 
 struct virtio_blk_config {
     uint64_t capacity;
@@ -66,7 +79,6 @@ struct virtio_blk_req {
     uint8_t status;
 };
 
-void virtio_blk_init(struct virtio_device *device, uint64_t is_legacy);
-void virtio_blk_test(struct virtio_device *device);
+uint64_t virtio_block_device_probe(struct device *dev, struct virtio_device *device, uint64_t is_legacy);
 
 #endif /* VIRTIO_BLK_H */

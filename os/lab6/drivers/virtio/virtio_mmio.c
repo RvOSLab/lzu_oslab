@@ -14,8 +14,7 @@ void virtio_mmio_probe(struct device *dev) {
             uint64_t is_legacy = device->version == VIRTIO_VERSION_LEGACY;
             if (is_legacy) kprintf("virtio: device is legacy\n");
             if(device->device_id == VIRTIO_DEVICE_ID_BLOCK) {
-                virtio_blk_init(device, is_legacy);
-                virtio_blk_test(device);
+                virtio_block_device_probe(dev, device, is_legacy);
             }
             if(device->device_id == VIRTIO_DEVICE_ID_NETWORK) {
                 virtio_net_init(device, is_legacy);

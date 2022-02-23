@@ -55,7 +55,7 @@ int main(const char* args, const struct fdt_header *fdt)
             if (buffer[0] == 't' && !buffer[1]) {
                 puts("char dev test\n");
             } else if (buffer[0] == 'b' && !buffer[1]) {
-                __asm__ __volatile__("ebreak \n\t");
+                syscall(NR_block);
             } else {
                 if (buffer[0]) {
                     puts(buffer); puts(": command not found\n");

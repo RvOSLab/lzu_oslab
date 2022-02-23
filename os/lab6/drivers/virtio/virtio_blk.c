@@ -35,10 +35,11 @@ void virtio_block_irq_handler(struct device *dev) {
         struct virtio_blk_qmap qmap_search = {
             .desp_idx = used_elem->id
         };
+        virtq_free_desc_chain(virtio_blk_queue, used_elem->id);
         struct hash_table_node *node = hash_table_get(&virtio_blk_table, &qmap_search.hash_node);
         struct virtio_blk_qmap * qmap = container_of(node, struct virtio_blk_qmap, hash_node);
         wake_up(&qmap->request->wait_queue);
-        virtq_free_desc_chain(virtio_blk_queue, used_elem->id);
+        hash_table_del(&virtio_blk_table, &qmap->hash_node);
         used_elem = virtq_get_used_elem(virtio_blk_queue);
     }
 }
@@ -118,14 +119,16 @@ void virtio_block_request(struct device *dev, struct block_request *request) {
     virtio_blk_queue->desc[idx].flags = VIRTQ_DESC_F_WRITE;
     virtio_blk_queue->desc[idx].next = 0;
     
-    virtq_put_avail(virtio_blk_queue, head);
-    device->queue_notify = 0;
-
     struct virtio_blk_qmap qmap = {
         .desp_idx = head,
         .request = request
     };
     hash_table_set(&virtio_blk_table, &qmap.hash_node);
+    
+    virtq_put_avail(virtio_blk_queue, head);
+    kprintf("virtio_blk: avail desc head = 0x%u\n", head);
+    device->queue_notify = 0;
+
     sleep_on(&request->wait_queue);
 }
 

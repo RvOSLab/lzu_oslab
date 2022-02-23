@@ -9,3 +9,7 @@ uint64_t char_dev_test(uint64_t c) {
     char_test->request(dev, &c, 1, !c);
     return c;
 }
+
+uint64_t block_dev_test() {
+    return 0;
+}

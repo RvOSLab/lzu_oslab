@@ -17,7 +17,7 @@ uint64_t uart8250_rx_buffer_end = 0;
 uint64_t uart8250_rx_buffer_empty = 1;
 struct task_struct *uart8250_rx_buffer_wait = NULL;
 
-void uart8250_rx_irq_handler() {
+void uart8250_rx_irq_handler(struct device *dev) {
     struct uart_qemu_regs *regs = (struct uart_qemu_regs *)uart8250_mmio_res.map_address;
     wake_up(&uart8250_rx_buffer_wait);
     while (regs->LSR & (1 << LSR_DR)) {

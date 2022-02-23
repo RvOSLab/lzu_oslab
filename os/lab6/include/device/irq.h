@@ -8,7 +8,8 @@
 
 struct irq_descriptor {
     const char* name;
-    void (*handler)();
+    struct device *dev;
+    void (*handler)(struct device *dev);
 };
 
 /* 初始状态: 不使能任何IRQ, 阈值为最低 */

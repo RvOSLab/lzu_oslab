@@ -28,9 +28,9 @@ struct hash_table virtio_blk_table = {
 
 void virtio_block_irq_handler(struct device *dev) {
     struct virtio_blk_data *data = device_get_data(dev);
-    struct virtq virtio_blk_queue = data->virtio_blk_queue;
+    struct virtq *virtio_blk_queue = &data->virtio_blk_queue;
 
-    struct virtq_used_elem *used_elem = virtq_get_used_elem(&virtio_blk_queue);
+    struct virtq_used_elem *used_elem = virtq_get_used_elem(virtio_blk_queue);
     while (used_elem) {
         struct virtio_blk_qmap qmap_search = {
             .desp_idx = used_elem->id
@@ -38,8 +38,8 @@ void virtio_block_irq_handler(struct device *dev) {
         struct hash_table_node *node = hash_table_get(&virtio_blk_table, &qmap_search.hash_node);
         struct virtio_blk_qmap * qmap = container_of(node, struct virtio_blk_qmap, hash_node);
         wake_up(&qmap->request->wait_queue);
-        virtq_free_desc_chain(&virtio_blk_queue, used_elem->id);
-        used_elem = virtq_get_used_elem(&virtio_blk_queue);
+        virtq_free_desc_chain(virtio_blk_queue, used_elem->id);
+        used_elem = virtq_get_used_elem(virtio_blk_queue);
     }
 }
 
@@ -50,7 +50,7 @@ struct irq_descriptor virtio_block_irq = {
 
 void virtio_blk_config(struct virtio_blk_data *data, uint64_t is_legacy) {
     struct virtio_device *device = data->virtio_device;
-    struct virtq virtio_blk_queue = data->virtio_blk_queue;
+    struct virtq *virtio_blk_queue = &data->virtio_blk_queue;
 
     struct virtio_blk_config *blk_config;
     // 1. reset device
@@ -79,8 +79,8 @@ void virtio_blk_config(struct virtio_blk_data *data, uint64_t is_legacy) {
         }
     }
     // 7. perform device-specific setup
-    virtio_queue_init(&virtio_blk_queue);
-    virtio_set_queue(device, is_legacy, 0, virtio_blk_queue.physical_addr);
+    virtio_queue_init(virtio_blk_queue);
+    virtio_set_queue(device, is_legacy, 0, virtio_blk_queue->physical_addr);
     blk_config = (struct virtio_blk_config *)((uint64_t)device + VIRTIO_BLK_CONFIG_OFFSET);
     kprintf("virtio_blk: capacity: 0x%x\n", blk_config->capacity);
     kprintf("virtio_blk: size: 0x%x\n", blk_config->blk_size);
@@ -91,7 +91,7 @@ void virtio_blk_config(struct virtio_blk_data *data, uint64_t is_legacy) {
 void virtio_block_request(struct device *dev, struct block_request *request) {
     struct virtio_blk_data *data = device_get_data(dev);
     struct virtio_device *device = data->virtio_device;
-    struct virtq virtio_blk_queue = data->virtio_blk_queue;
+    struct virtq *virtio_blk_queue = &data->virtio_blk_queue;
 
     struct virtio_blk_req req = {
         .type = request->is_read ? VIRTIO_BLK_T_IN : VIRTIO_BLK_T_OUT,
@@ -101,24 +101,24 @@ void virtio_block_request(struct device *dev, struct block_request *request) {
     };
 
     uint16_t idx, head;
-    head = idx = virtq_get_desc(&virtio_blk_queue);
+    head = idx = virtq_get_desc(virtio_blk_queue);
     assert(idx != 0xff);
-    virtio_blk_queue.desc[idx].addr = PHYSICAL(((uint64_t)&req));
-    virtio_blk_queue.desc[idx].len = 16;
-    virtio_blk_queue.desc[idx].flags = VIRTQ_DESC_F_NEXT;
-    idx = virtq_get_desc(&virtio_blk_queue);
+    virtio_blk_queue->desc[idx].addr = PHYSICAL(((uint64_t)&req));
+    virtio_blk_queue->desc[idx].len = 16;
+    virtio_blk_queue->desc[idx].flags = VIRTQ_DESC_F_NEXT;
+    idx = virtq_get_desc(virtio_blk_queue);
     assert(idx != 0xff);
-    virtio_blk_queue.desc[idx].addr = PHYSICAL(((uint64_t)request->buffer));
-    virtio_blk_queue.desc[idx].len = 512;
-    virtio_blk_queue.desc[idx].flags = VIRTQ_DESC_F_NEXT | (request->is_read ? VIRTQ_DESC_F_WRITE : 0);
-    idx = virtq_get_desc(&virtio_blk_queue);
+    virtio_blk_queue->desc[idx].addr = PHYSICAL(((uint64_t)request->buffer));
+    virtio_blk_queue->desc[idx].len = 512;
+    virtio_blk_queue->desc[idx].flags = VIRTQ_DESC_F_NEXT | (request->is_read ? VIRTQ_DESC_F_WRITE : 0);
+    idx = virtq_get_desc(virtio_blk_queue);
     assert(idx != 0xff);
-    virtio_blk_queue.desc[idx].addr = PHYSICAL(((uint64_t)&(req.status)));
-    virtio_blk_queue.desc[idx].len = sizeof(req.status);
-    virtio_blk_queue.desc[idx].flags = VIRTQ_DESC_F_WRITE;
-    virtio_blk_queue.desc[idx].next = 0;
+    virtio_blk_queue->desc[idx].addr = PHYSICAL(((uint64_t)&(req.status)));
+    virtio_blk_queue->desc[idx].len = sizeof(req.status);
+    virtio_blk_queue->desc[idx].flags = VIRTQ_DESC_F_WRITE;
+    virtio_blk_queue->desc[idx].next = 0;
     
-    virtq_put_avail(&virtio_blk_queue, head);
+    virtq_put_avail(virtio_blk_queue, head);
     device->queue_notify = 0;
 
     struct virtio_blk_qmap qmap = {
@@ -150,6 +150,7 @@ void virtio_block_init(struct device *dev, struct virtio_device *device, uint64_
     struct fdt_node_header * node = device_get_fdt_node(dev);
     struct fdt_property *prop = fdt_get_prop(fdt, node, "interrupts");
     uint32_t irq_id = fdt_get_prop_num_value(prop, 0);
+    virtio_block_irq.dev = dev;
     irq_add(0, irq_id, &virtio_block_irq);
 }
 

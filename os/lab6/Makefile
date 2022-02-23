@@ -32,7 +32,7 @@ build :
 	make -C mm build
 	make -C kernel build
 	make -C drivers build
-	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o drivers/libdrivers.a mm/libmm.a kernel/libkernel.a lib/libstd.a
+	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o kernel/libkernel.a drivers/libdrivers.a mm/libmm.a lib/libstd.a
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
 # bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。

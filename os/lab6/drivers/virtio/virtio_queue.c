@@ -28,9 +28,9 @@ void virtq_free_desc_chain(struct virtq *vq, uint16_t idx) {
 }
 
 void virtq_put_avail(struct virtq *vq, uint16_t idx) {
-    vq->avail->ring[vq->avail->idx] = idx;
+    vq->avail->ring[vq->avail->idx % VIRTQ_RING_NUM] = idx;
     synchronize();
-    vq->avail->idx = (vq->avail->idx + 1) % VIRTQ_RING_NUM;
+    vq->avail->idx += 1;
     synchronize();
 }
 
@@ -38,8 +38,8 @@ struct virtq_used_elem* virtq_get_used_elem(struct virtq *vq) {
     if(vq->used->idx == vq->last_used_idx) {
         return NULL;
     } else {
-        struct virtq_used_elem* used_elem = vq->used->ring + vq->last_used_idx;
-        vq->last_used_idx = (vq->last_used_idx + 1) % VIRTQ_RING_NUM;
+        struct virtq_used_elem* used_elem = vq->used->ring + (vq->last_used_idx % VIRTQ_RING_NUM);
+        vq->last_used_idx += 1;
         return used_elem;
     }
 }

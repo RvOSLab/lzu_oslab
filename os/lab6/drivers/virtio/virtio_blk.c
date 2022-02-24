@@ -29,6 +29,7 @@ struct hash_table virtio_blk_table = {
 void virtio_block_irq_handler(struct device *dev) {
     struct virtio_blk_data *data = device_get_data(dev);
     struct virtq *virtio_blk_queue = &data->virtio_blk_queue;
+    uint32_t interrupt_status = data->virtio_device->interrupt_status;
 
     struct virtq_used_elem *used_elem = virtq_get_used_elem(virtio_blk_queue);
     while (used_elem) {
@@ -42,6 +43,7 @@ void virtio_block_irq_handler(struct device *dev) {
         hash_table_del(&virtio_blk_table, &qmap->hash_node);
         used_elem = virtq_get_used_elem(virtio_blk_queue);
     }
+    data->virtio_device->interrupt_ack = interrupt_status;
 }
 
 struct irq_descriptor virtio_block_irq = {

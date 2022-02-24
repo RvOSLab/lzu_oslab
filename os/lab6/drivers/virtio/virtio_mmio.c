@@ -38,6 +38,7 @@ void virtio_set_queue(struct virtio_device *device, uint64_t is_legacy, uint32_t
     device->queue_num = VIRTQ_RING_NUM;
     // 6. set the queue address
     if(is_legacy) {
+        device->queue_align = PAGE_SIZE;
         device->guest_page_size = PAGE_SIZE;
         device->queue_pfn = virtq_phy_addr / PAGE_SIZE;
     } else {

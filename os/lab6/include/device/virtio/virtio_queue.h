@@ -92,6 +92,8 @@ struct virtq {
     uint64_t physical_addr;
 };
 
+#define VIRTQ_ALIGN(x) (((x) + PAGE_SIZE) & ~PAGE_SIZE)
+
 uint16_t virtq_get_desc(struct virtq *vq);
 void virtq_free_desc(struct virtq *vq, uint16_t idx);
 void virtq_free_desc_chain(struct virtq *vq, uint16_t idx);

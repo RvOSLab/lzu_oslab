@@ -128,7 +128,6 @@ void virtio_block_request(struct device *dev, struct block_request *request) {
     hash_table_set(&virtio_blk_table, &qmap.hash_node);
     
     virtq_put_avail(virtio_blk_queue, head);
-    kprintf("virtio_blk: avail desc head = 0x%u\n", head);
     device->queue_notify = 0;
 
     sleep_on(&request->wait_queue);

@@ -37,8 +37,8 @@ void virtio_net_init(struct virtio_device *device, uint64_t is_legacy) {
         }
     }
     // 7. perform device-specific setup
-    virtio_queue_init(&virtio_net_queue_rx);
-    virtio_queue_init(&virtio_net_queue_tx);
+    virtio_queue_init(&virtio_net_queue_rx, is_legacy);
+    virtio_queue_init(&virtio_net_queue_tx, is_legacy);
     virtio_set_queue(device, is_legacy, 0, virtio_net_queue_rx.physical_addr);
     virtio_set_queue(device, is_legacy, 1, virtio_net_queue_tx.physical_addr);
     net_config = (struct virtio_net_config *)((uint64_t)device + VIRTIO_NET_CONFIG_OFFSET);

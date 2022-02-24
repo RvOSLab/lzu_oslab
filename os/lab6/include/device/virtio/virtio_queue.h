@@ -98,6 +98,6 @@ void virtq_free_desc_chain(struct virtq *vq, uint16_t idx);
 void virtq_put_avail(struct virtq *vq, uint16_t idx);
 struct virtq_used_elem* virtq_get_used_elem(struct virtq *vq);
 
-void virtio_queue_init(struct virtq* virtio_queue);
+void virtio_queue_init(struct virtq* virtio_queue, uint64_t is_legacy);
 
 #endif /* VIRTQUEUE_H */

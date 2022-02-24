@@ -80,7 +80,7 @@ void virtio_blk_config(struct virtio_blk_data *data, uint64_t is_legacy) {
         }
     }
     // 7. perform device-specific setup
-    virtio_queue_init(virtio_blk_queue);
+    virtio_queue_init(virtio_blk_queue, is_legacy);
     virtio_set_queue(device, is_legacy, 0, virtio_blk_queue->physical_addr);
     blk_config = (struct virtio_blk_config *)((uint64_t)device + VIRTIO_BLK_CONFIG_OFFSET);
     kprintf("virtio_blk: capacity: 0x%x\n", blk_config->capacity);

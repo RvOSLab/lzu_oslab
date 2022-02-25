@@ -35,7 +35,15 @@ int main(const char* args, const struct fdt_header *fdt)
             for (char *cp = str; *cp; cp++) put_char(*cp); \
         } while (0)
 
-        char buffer[256];
+        int fd = syscall(NR_open, "/test.txt");
+        struct vfs_stat stat;
+        syscall(NR_stat, fd, &stat);
+        char file_buffer[64];
+        syscall(NR_read, fd, file_buffer, stat.size);
+        puts("/test.txt: "); puts(file_buffer);
+        syscall(NR_close, fd);
+        
+        char buffer[64];
         int buffer_p;
         while (1) {
             puts("\033[1;32mroot@lzuoslab\033[0m:");

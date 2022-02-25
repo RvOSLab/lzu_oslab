@@ -42,6 +42,7 @@
 #include <trap.h>
 #include <riscv.h>
 #include <kdebug.h>
+#include <fs/vfs.h>
 
 #define NR_TASKS             512                              /**< 系统最大进程数 */
 
@@ -79,6 +80,7 @@ struct task_struct {
     uint32_t state;               /**< 进程调度状态 */
     uint32_t counter;             /**< 时间片大小 */
     uint32_t priority;            /**< 进程优先级 */
+    struct vfs_inode *fd[4];
     struct task_struct *p_pptr;   /**< 父进程 */
     struct task_struct *p_cptr;   /**< 子进程 */
     struct task_struct *p_ysptr;  /**< 创建时间最晚的兄弟进程 */

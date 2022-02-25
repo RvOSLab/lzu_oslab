@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sched.h>
 #include <device.h>
+#include <fs/vfs.h>
 
 extern long sys_init(struct trapframe *);
 extern long sys_fork(struct trapframe *);
@@ -74,11 +75,69 @@ static long sys_block(struct trapframe *tf)
 }
 
 /**
+ * @brief open
+ */
+static long sys_open(struct trapframe *tf)
+{
+    uint64_t fd = 0;
+    while (fd < 4) {
+        if (!current->fd[fd]) {
+            struct vfs_inode *inode = vfs_get_inode(tf->gpr.a0, NULL);
+            current->fd[fd] = inode;
+            if (inode) {
+                vfs_ref_inode(inode);
+                return fd;
+            }
+            break;
+        }
+        fd += 1;
+    }
+    return -EAGAIN;
+}
+
+/**
+ * @brief close
+ */
+static long sys_close(struct trapframe *tf)
+{
+    uint64_t fd = tf->gpr.a0;
+    if (fd < 0 || fd > 4) return -EINVAL;
+    struct vfs_inode *inode = current->fd[fd];
+    current->fd[fd] = NULL;
+    vfs_free_inode(inode);
+}
+
+/**
+ * @brief stat
+ */
+static long sys_stat(struct trapframe *tf) {
+    uint64_t fd = tf->gpr.a0;
+    if (fd < 0 || fd > 4) return -EINVAL;
+    struct vfs_inode *inode = current->fd[fd];
+    if (!inode) return -EINVAL;
+    struct vfs_stat *stat= vfs_get_stat(inode);
+    memcpy(tf->gpr.a1, stat, sizeof(struct vfs_stat));
+    return 0;
+}
+
+/**
+ * @brief read
+ */
+static long sys_read(struct trapframe *tf) {
+    uint64_t fd = tf->gpr.a0;
+    if (fd < 0 || fd > 4) return -EINVAL;
+    struct vfs_inode *inode = current->fd[fd];
+    if (!inode) return -EINVAL;
+    vfs_inode_request(inode, tf->gpr.a1, tf->gpr.a2, 0, 1);
+    return 0;
+}
+
+/**
  * @brief 系统调用表
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block};
+fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read};
 
 /**
  * @brief 通过系统调用号调用对应的系统调用

@@ -10,10 +10,6 @@ void vfs_init() {
     ramfs_interface.init_fs(&ramfs_interface);
     vfs_root = ramfs_interface.root;
     vfs_ref_inode(vfs_root);
-    struct vfs_inode *test = vfs_get_inode("./////..///test.txt", NULL);
-    char buffer[100];
-    vfs_inode_request(test, buffer, vfs_get_stat(test)->size, 0, 1);
-    kprintf(buffer);
 }
 
 struct vfs_inode *vfs_new_inode(struct vfs_interface *fs, uint64_t inode_idx) {

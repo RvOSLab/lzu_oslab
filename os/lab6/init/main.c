@@ -6,6 +6,7 @@
 #include <clock.h>
 #include <syscall.h>
 #include <device/loader.h>
+#include <fs/vfs.h>
 
 int main(const char* args, const struct fdt_header *fdt)
 {
@@ -17,6 +18,7 @@ int main(const char* args, const struct fdt_header *fdt)
     init_device_table();
     fdt_loader(fdt, driver_list);
     set_stvec();
+    vfs_init();
     sched_init();
     clock_init();
     kputs("Hello LZU OS");

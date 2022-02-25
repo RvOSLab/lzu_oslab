@@ -66,6 +66,10 @@ int main(const char* args, const struct fdt_header *fdt)
                 puts("char dev test\n");
             } else if (buffer[0] == 'b' && !buffer[1]) {
                 syscall(NR_block);
+            } else if (buffer[0] == 'q' && !buffer[1]) {
+                syscall(NR_reset, 0);   // #define SHUTDOWN_FUNCTION 0
+            } else if (buffer[0] == 'r' && !buffer[1]) {
+                syscall(NR_reset, 1);   // #define REBOOT_FUNCTION 1
             } else {
                 if (buffer[0]) {
                     puts(buffer); puts(": command not found\n");

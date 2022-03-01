@@ -78,6 +78,7 @@ void active_mapping()
  */
 void mem_init()
 {
+    memset(bss_start, 0, kernel_end - bss_start);
     size_t i = MAP_NR(HIGH_MEM);
     /** 设用户内存空间[LOW_MEM, HIGH_MEM)为可用 */
     while (i > MAP_NR(LOW_MEM))

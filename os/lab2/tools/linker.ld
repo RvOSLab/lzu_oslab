@@ -3,9 +3,6 @@
 /* 目标架构 */
 OUTPUT_ARCH(riscv)
 
-/* 执行入口 */
-ENTRY(_start)
-
 /* 起始地址 */
 BASE_ADDRESS = 0x80200000;
 

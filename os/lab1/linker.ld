@@ -3,9 +3,6 @@
 /* 目标架构 */
 OUTPUT_ARCH(riscv)
 
-/* 执行入口 */
-ENTRY(_start)
-
 /* 起始地址 */
 BASE_ADDRESS = 0x80200000;
 
@@ -57,6 +54,5 @@ SECTIONS
 
     . = ALIGN(4K);
     /* 结束地址 */
-    . = ALIGN(4K);
     kernel_end = .;
 }

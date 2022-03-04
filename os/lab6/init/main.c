@@ -34,14 +34,6 @@ int main(const char* args, const struct fdt_header *fdt)
         #define puts(str) do { \
             for (char *cp = str; *cp; cp++) put_char(*cp); \
         } while (0)
-
-        int fd = syscall(NR_open, "/test.txt");
-        struct vfs_stat stat;
-        syscall(NR_stat, fd, &stat);
-        char file_buffer[64];
-        syscall(NR_read, fd, file_buffer, stat.size);
-        puts("/test.txt: "); puts(file_buffer);
-        syscall(NR_close, fd);
         
         char buffer[64];
         int buffer_p;
@@ -52,25 +44,59 @@ int main(const char* args, const struct fdt_header *fdt)
             buffer_p = 0;                       
             while (1) {
                 buffer[buffer_p] = get_char();
-                put_char(buffer[buffer_p]);
-                if (buffer[buffer_p] == '\r') {
-                    buffer[buffer_p] = '\n';
+                if (buffer[buffer_p] == '\e') {
+                    buffer[buffer_p] = '^';
                     put_char(buffer[buffer_p]);
+                    buffer_p += 1;
+                    buffer[buffer_p] = '[';
+                }
+                if (buffer[buffer_p] == '\x7f') {
+                    if (buffer_p) {
+                        buffer_p -= 1;
+                        puts("\b\e[K");
+                    }
+                    continue;
+                }
+                if (buffer[buffer_p] == '\r') {
                     buffer[buffer_p] = '\0';
-                    buffer_p = 0;
+                    put_char('\n');
                     break;
                 }
+                put_char(buffer[buffer_p]);
                 buffer_p++;
             }
-            if (buffer[0] == 't' && !buffer[1]) {
+            if (!strcmp(buffer, "t")) {
                 puts("char dev test\n");
-            } else if (buffer[0] == 'b' && !buffer[1]) {
+            } else if (!strcmp(buffer, "b")) {
                 syscall(NR_block);
-            } else if (buffer[0] == 'q' && !buffer[1]) {
+            } else if (!strcmp(buffer, "q")) {
                 syscall(NR_reset, 0);   // #define SHUTDOWN_FUNCTION 0
-            } else if (buffer[0] == 'r' && !buffer[1]) {
+            } else if (!strcmp(buffer, "r")) {
                 syscall(NR_reset, 1);   // #define REBOOT_FUNCTION 1
             } else {
+                char *arg1 = strchr(buffer, ' ');
+                if (arg1) {
+                    *arg1 = '\0';
+                    arg1 += 1;
+                }
+                if (!strcmp(buffer, "cat")) {
+                    if (!arg1 || !strlen(arg1)) {
+                        puts("Usage: cat [FILE]\n");
+                        continue;
+                    }
+                    int fd = syscall(NR_open, arg1);
+                    if (fd == -1) {
+                        puts("cat: "); puts(arg1); puts(": No such file or directory\n");
+                        continue;
+                    }
+                    struct vfs_stat stat;
+                    syscall(NR_stat, fd, &stat);
+                    char file_buffer[64];
+                    syscall(NR_read, fd, file_buffer, stat.size);
+                    puts(arg1); puts(": "); puts(file_buffer);
+                    syscall(NR_close, fd);
+                    continue;
+                }
                 if (buffer[0]) {
                     puts(buffer); puts(": command not found\n");
                 }

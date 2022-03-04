@@ -66,10 +66,10 @@ void sched_init()
         .start_stack = START_STACK,
         .start_kernel = START_KERNEL,
         .start_time = ticks /* 0 */,
-        .start_rodata = (uint64_t)&rodata_start - (0xC0000000 - 0x00010000),
-        .start_data = (uint64_t)&data_start - (0xC0000000 - 0x00010000),
-        .end_data = (uint64_t)&kernel_end - (0xC0000000 - 0x00010000),
-        .brk = (uint64_t)kernel_end - (0xC0000000 - 0x00010000),
+        .start_rodata = (uint64_t)&rodata_start - (0xC0200000 - 0x00010000),
+        .start_data = (uint64_t)&data_start - (0xC0200000 - 0x00010000),
+        .end_data = (uint64_t)&kernel_end - (0xC0200000 - 0x00010000),
+        .brk = (uint64_t)kernel_end - (0xC0200000 - 0x00010000),
         .pg_dir = pg_dir,
     };
 

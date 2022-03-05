@@ -74,7 +74,7 @@ int main(const char* args, const struct fdt_header *fdt)
             } else if (!strcmp(buffer, "r")) {
                 syscall(NR_reset, 1);   // #define REBOOT_FUNCTION 1
             } else {
-                char *arg1 = strchr(buffer, ' ');
+                char *arg1 = (char *)strchr(buffer, ' ');
                 if (arg1) {
                     *arg1 = '\0';
                     arg1 += 1;

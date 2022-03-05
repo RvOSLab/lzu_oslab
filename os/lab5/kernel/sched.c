@@ -175,7 +175,7 @@ size_t schedule()
  * @param end 虚拟地址结束
  * @param flag 权限位
  */
-static void map_segment(uint64_t start, uint64_t end, uint8_t flag)
+static void map_segment(uint64_t start, uint64_t end, uint16_t flag)
 {
     uint64_t physical = PHYSICAL(start);
     start -= VIRTUAL(SBI_END) - START_CODE;

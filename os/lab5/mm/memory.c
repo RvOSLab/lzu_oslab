@@ -32,7 +32,7 @@ unsigned char mem_map[PAGING_PAGES] = { 0 };
  *      - 地址必须按页对齐
  *      - 仅建立映射，不修改物理页引用计数
  */
-static inline void map_pages(uint64_t paddr_start, uint64_t paddr_end, uint64_t vaddr, uint8_t flag)
+static inline void map_pages(uint64_t paddr_start, uint64_t paddr_end, uint64_t vaddr, uint16_t flag)
 {
     while (paddr_start < paddr_end) {
         put_page(paddr_start, vaddr, flag);
@@ -165,7 +165,7 @@ uint64_t get_free_page(void)
  * @see panic(), map_kernel()
  * @note 地址需要按页对齐
  */
-uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
+uint64_t put_page(uint64_t page, uint64_t addr, uint16_t flag)
 {
     assert((page & (PAGE_SIZE - 1)) == 0,
            "put_page(): Try to put unaligned page %p to %p", page, addr);
@@ -193,7 +193,7 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint8_t flag)
  * @param flag 标志位
  * @note 请确保该虚拟地址没有映射到物理页,否则本函数会覆盖原来的映射，导致内存泄漏。
  */
-void get_empty_page(uint64_t addr, uint8_t flag)
+void get_empty_page(uint64_t addr, uint16_t flag)
 {
     uint64_t tmp;
     assert(tmp = get_free_page(), "get_empty_page(): Memory exhausts");
@@ -338,7 +338,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
         if (!to_pg_dir[dest_dir_idx]) {
             uint64_t tmp = get_free_page();
             assert(tmp, "copy_page_tables(): memory exhausts");
-            to_pg_dir[dest_dir_idx] = (tmp >> 2) | 0x01;
+            to_pg_dir[dest_dir_idx] = (tmp >> 2) | PAGE_VALID;
         }
 
         uint64_t cnt;
@@ -378,7 +378,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
                 uint64_t tmp = get_free_page();
                 assert(tmp,
                        "copy_page_tables(): Memory exhausts");
-                *dest_pg_tb1 = (tmp >> 2) | 0x01;
+                *dest_pg_tb1 = (tmp >> 2) | PAGE_VALID;
             } else {
                 panic("copy_page_tables(): page table %p already exist",
                       GET_PAGE_ADDR(*dest_pg_tb1));
@@ -689,6 +689,7 @@ void mem_test()
     }
 
     pg_dir = old_pg_dir;
+    free_page_tables(0x200000, 1000 * PAGE_SIZE);
     kputs("mem_test(): Passed");
 }
 

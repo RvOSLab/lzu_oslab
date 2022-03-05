@@ -12,10 +12,24 @@
 .endm
 
 # 定义宏：保存上下文（所有通用寄存器及额外的CSR寄存器）
+# 我们规定：当 CPU 处于 U-Mode 时，sscratch 保存内核栈地址；处于 S-Mode 时，sscratch 为 0 。
 .macro SAVE_ALL
-    # 借用无用的寄存器 sscratch 保存原 sp
-    csrw sscratch,sp
 
+    # 交换 sp 和 sscratch 寄存器
+    csrrw sp, sscratch, sp
+
+    # 可以通过sp是否为0判断原先是否为内核态
+    # 如果中断来自用户态，此时 sp 已经指向内核栈，直接跳转到 trap_from_user 保存寄存器
+    bnez sp, trap_from_user
+
+# 否则为0，原本就是内核态，再次交换，继续往下执行，保存上下文
+trap_from_kernel:
+
+    # 将sscratch中的值读到sp中，此时 sscratch = 发生中断前的 sp（内核栈）
+    csrr sp, sscratch
+
+# 不为0，原本是用户态，不做交换，直接保存上下文
+trap_from_user:
     # 将栈指针下移为TrapFrame预留足够的空间用于将所有通用寄存器值存入栈中（36个寄存器的空间）
     addi sp, sp, -36*XLENB
     # 保存所有通用寄存器，除了 x2 (x2就是sp，sp 本应保存的是发生中断前的值，这个值目前被交换到了 sscratch 中，因此留到后面处理。)
@@ -51,8 +65,8 @@
     STORE x31, 31
 
     # 保存完x0-x31之后这些寄存器就可以随意使用了，下面马上用到：
-    # 读取sscratch到s0，借s0中转后将原sp存入内存
-    csrr s0, sscratch
+    # 读取sscratch到s0，赋 sscratch = 0（在内核态中，时刻保持sscratch为0，让s0存原有的sp）
+    csrrw s0, sscratch, x0
 
     # 读取 sstatus, sepc, stval, scause寄存器的值到s0-s4（x1-x31中的特定几个）寄存器
     csrr s1, sstatus
@@ -73,6 +87,14 @@
 .macro RESTORE_ALL
     LOAD s1, 32             # s1 = sstatus
     LOAD s2, 33             # s2 = sepc
+    andi s0, s1, 1 << 8     # 根据 sstatus.SPP 是否为 1 来判断中断前的特权级，1为内核态，0为用户态
+    bnez s0, _to_kernel     # s0 = 是否会到内核态
+# 若回到用户态
+_to_user:
+    addi s0, sp, 36*XLENB      # 计算出中断前的内核态sp，先存放在s0中
+    csrw sscratch, s0         # 将s0中的内核态sp存入sscratch。根据规定，回到用户态后sscratch = 内核态sp
+# 若回到内核态，跳过回到用户态的sscratch修改
+_to_kernel:
     # 恢复 sstatus, sepc
     csrw sstatus, s1
     csrw sepc, s2
@@ -122,10 +144,11 @@ __alltraps:
     # 将sp存入a0作为trap函数的第一个参数
     mv a0, sp
     # 跳转到trap函数执行（PC+4的值存入了x1寄存器），执行结束后会返回到这里继续向下执行恢复上下文
-    jal trap
+    call trap
 .globl __trapret
 __trapret:
     # 恢复上下文
+    move sp, a0
     RESTORE_ALL
     # 从内核态中断中返回
     sret

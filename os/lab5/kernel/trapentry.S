@@ -66,7 +66,7 @@ trap_from_user:
 
     # 保存完x0-x31之后这些寄存器就可以随意使用了，下面马上用到：
     # 读取sscratch到s0，赋 sscratch = 0（在内核态中，时刻保持sscratch为0，让s0存原有的sp）
-    csrr s0, sscratch
+    csrrw s0, sscratch, x0
 
     # 读取 sstatus, sepc, stval, scause寄存器的值到s0-s4（x1-x31中的特定几个）寄存器
     csrr s1, sstatus
@@ -137,13 +137,14 @@ _to_kernel:
 # 代码段开始
 .section .text
 .globl __alltraps
+.align 4
 __alltraps:
     # 保存上下文
     SAVE_ALL
     # 将sp存入a0作为trap函数的第一个参数
     mv a0, sp
     # 跳转到trap函数执行（PC+4的值存入了x1寄存器），执行结束后会返回到这里继续向下执行恢复上下文
-    jal trap
+    call trap
 .globl __trapret
 __trapret:
     # 恢复上下文

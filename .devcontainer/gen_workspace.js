@@ -4,6 +4,7 @@ let workspaceTemplate = {
     "extensions": {
         "recommendations": [
             "ms-vscode.cpptools",
+            "ms-vscode.hexeditor",
             "zhwu95.riscv"
         ],
         "unwantedRecommendations": ["ms-vscode.cpptools-extension-pack"]
@@ -140,7 +141,7 @@ let workspaceTemplate = {
                 },
                 "MIMode": "gdb",
                 "externalConsole": false,
-                "miDebuggerPath": "gdb-multiarch",
+                "miDebuggerPath": "riscv64-unknown-elf-gdb",
                 "internalConsoleOptions": "openOnSessionStart",
                 "preLaunchTask": "{{oslab}}-qemu-debug",
                 "cwd": "${workspaceFolder:{{oslab}}}",
@@ -153,6 +154,16 @@ let workspaceTemplate = {
                     {
                         "text": "set architecture riscv:rv64",
                         "description": "Set target architecture",
+                        "ignoreFailures": true
+                    },
+                    {
+                        "text": "-enable-frame-filters",
+                        "description": "Enable frame filters in python",
+                        "ignoreFailures": true
+                    },
+                    {
+                        "text": "source ${workspaceFolder:{{oslab}}}/../../lzuoslab.gdbinit.py",
+                        "description": "Load LZUOSLab gdb helper",
                         "ignoreFailures": true
                     }
                 ],
@@ -202,6 +213,11 @@ workspaceTemplate = replaceAll(
     workspaceTemplate,
     "${workspaceFolder:lab1}/tools/fw_jump.bin",
     "${workspaceFolder:lab1}/fw_jump.bin"
+)
+workspaceTemplate = replaceAll(
+    workspaceTemplate,
+    "echo starting qemu... 1>&2 && qemu-system-riscv64 -machine virt -s -S -nographic -bios ${workspaceFolder:lab6}/tools/fw_jump.bin -device loader,file=kernel.img,addr=0x80200000",
+    "echo starting qemu... 1>&2 && qemu-system-riscv64 -machine virt -s -S -nographic -bios ${workspaceFolder:lab6}/tools/fw_jump.bin -device loader,file=kernel.img,addr=0x80200000 -global virtio-mmio.force-legacy=off -drive if=none,format=raw,file=kernel.img,id=hd0 -device virtio-blk-device,drive=hd0,bus=virtio-mmio-bus.1"
 )
 
 /* vsc_diag_suppress.h */

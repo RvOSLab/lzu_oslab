@@ -17,8 +17,7 @@ void virtio_mmio_probe(struct device *dev) {
                 virtio_block_device_probe(dev, device, is_legacy);
             }
             if(device->device_id == VIRTIO_DEVICE_ID_NETWORK) {
-                virtio_net_init(device, is_legacy);
-                virtio_net_test(device);
+                virtio_net_device_probe(dev, device, is_legacy);
             }
         }
     } 

@@ -2,6 +2,7 @@
 #define VIRTIO_NET_H
 
 #include <device/virtio/virtio_mmio.h>
+#include <device/net.h>
 
 #define VIRTIO_NET_F_MAC (1 << 5)
 
@@ -23,6 +24,12 @@ struct virtio_net_config {
 #define VIRTIO_NET_HDR_GSO_TCPV6 4
 #define VIRTIO_NET_HDR_GSO_ECN 0x80
 
+struct virtio_net_data {
+    struct virtio_device *virtio_device;
+    struct virtq virtio_net_tx_queue;
+    struct virtq virtio_net_rx_queue;
+};
+
 struct virtio_net_header {
     uint8_t flags;
     uint8_t gso_type;
@@ -32,7 +39,6 @@ struct virtio_net_header {
     uint16_t csum_offset;
 };
 
-void virtio_net_init(struct virtio_device *device, uint64_t is_legacy);
-void virtio_net_test(struct virtio_device *device);
+uint64_t virtio_net_device_probe(struct device *dev, struct virtio_device *device, uint64_t is_legacy);
 
 #endif /* VIRTIO_NET_H */

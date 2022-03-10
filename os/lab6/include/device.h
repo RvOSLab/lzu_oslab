@@ -56,6 +56,7 @@ struct device *get_dev_by_major_minor(uint32_t major, uint32_t minor);
 uint64_t char_dev_test(uint64_t c);
 uint64_t reset_dev_test(uint64_t function);
 uint64_t block_dev_test();
+uint64_t net_dev_test();
 
 void mem_resource_map(struct driver_resource *res);
 

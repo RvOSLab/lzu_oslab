@@ -66,7 +66,7 @@ int main(const char* args, const struct fdt_header *fdt)
                 buffer_p++;
             }
             if (!strcmp(buffer, "t")) {
-                puts("char dev test\n");
+                syscall(NR_test_net);
             } else if (!strcmp(buffer, "b")) {
                 syscall(NR_block);
             } else if (!strcmp(buffer, "q")) {

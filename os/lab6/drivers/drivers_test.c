@@ -52,7 +52,7 @@ uint64_t reset_dev_test(uint64_t function) {
 }
 
 uint64_t block_dev_test() {
-    struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 1);
+    struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 2);
     struct block_device *block_test = dev->get_interface(dev, BLOCK_INTERFACE_BIT);
     char buffer[512];
     struct block_request req = {

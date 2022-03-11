@@ -6,16 +6,53 @@
 #include <sched.h>
 #include <mm.h>
 
+
+struct virtio_net_header rx_packet_header;
+uint8_t rx_buffer[1500];
+
+void virtio_net_recv(struct device *dev) {
+    struct virtio_net_data *data = device_get_data(dev);
+    struct virtio_device *device = data->virtio_device;
+    struct virtq *virtio_net_queue = &data->virtio_net_rx_queue;
+
+    uint16_t idx, head;
+    head = idx = virtq_get_desc(virtio_net_queue);
+    assert(idx != 0xff);
+    virtio_net_queue->desc[idx].addr = PHYSICAL(((uint64_t)&rx_packet_header));
+    virtio_net_queue->desc[idx].len = sizeof(struct virtio_net_header);
+    virtio_net_queue->desc[idx].flags = VIRTQ_DESC_F_NEXT | VIRTQ_DESC_F_WRITE;
+    idx = virtq_get_desc(virtio_net_queue);
+    assert(idx != 0xff);
+    virtio_net_queue->desc[idx].addr = PHYSICAL(((uint64_t)rx_buffer));
+    virtio_net_queue->desc[idx].len = 1500;
+    virtio_net_queue->desc[idx].flags = VIRTQ_DESC_F_WRITE;
+    virtio_net_queue->desc[idx].next = 0;
+    
+    virtq_put_avail(virtio_net_queue, head);
+    device->queue_notify = 0;
+};
+
 void virtio_net_irq_handler(struct device *dev) {
     struct virtio_net_data *data = device_get_data(dev);
-    struct virtq *virtio_net_queue = &data->virtio_net_tx_queue;
     uint32_t interrupt_status = data->virtio_device->interrupt_status;
-
+    struct virtq *virtio_net_queue = &data->virtio_net_rx_queue;
     struct virtq_used_elem *used_elem = virtq_get_used_elem(virtio_net_queue);
+    
     while (used_elem) {
+        virtio_net_recv(dev);
+        uint64_t used_len = used_elem->len - sizeof(struct virtio_net_header);
+        kprintf("virtio-net: recv %u bits\n    ", used_len);
+        for (uint64_t i = 0; i < used_len; i += 1) {
+            if(rx_buffer[i] < 0x10) kprintf("0");
+            kprintf("%x ", rx_buffer[i]);
+            if(i%8 == 7) kprintf(" ");
+            if(i%16 == 15) kprintf("\n    ");
+        }
+        kprintf("\n");
         virtq_free_desc_chain(virtio_net_queue, used_elem->id);
         used_elem = virtq_get_used_elem(virtio_net_queue);
     }
+
     data->virtio_device->interrupt_ack = interrupt_status;
 }
 
@@ -58,6 +95,7 @@ void virtio_net_config(struct virtio_net_data *data, uint64_t is_legacy) {
     // 7. perform device-specific setup
     virtio_queue_init(virtio_net_rx_queue, is_legacy);
     virtio_queue_init(virtio_net_tx_queue, is_legacy);
+    virtio_net_tx_queue->used->flags |= VIRTQ_USED_F_NO_NOTIFY;
     virtio_set_queue(device, is_legacy, 0, virtio_net_rx_queue->physical_addr);
     virtio_set_queue(device, is_legacy, 1, virtio_net_tx_queue->physical_addr);
     
@@ -100,6 +138,11 @@ void virtio_net_send(struct device *dev, void *buffer, uint64_t length) {
     
     virtq_put_avail(virtio_net_queue, head);
     device->queue_notify = 1;
+    struct virtq_used_elem *used_elem = NULL;
+    while(!used_elem) {
+        used_elem = virtq_get_used_elem(virtio_net_queue);
+    }
+    virtq_free_desc_chain(virtio_net_queue, used_elem->id);
 }
 
 struct net_device virtio_net_device = {
@@ -124,6 +167,8 @@ void virtio_net_init(struct device *dev, struct virtio_device *device, uint64_t 
     uint32_t irq_id = fdt_get_prop_num_value(prop, 0);
     virtio_net_irq.dev = dev;
     irq_add(0, irq_id, &virtio_net_irq);
+
+    virtio_net_recv(dev);
 }
 
 uint64_t virtio_net_device_probe(struct device *dev, struct virtio_device *device, uint64_t is_legacy) {

@@ -44,6 +44,12 @@ int main(const char* args, const struct fdt_header *fdt)
             buffer_p = 0;                       
             while (1) {
                 buffer[buffer_p] = get_char();
+                if (buffer[buffer_p] == '\x03') {
+                    puts("^C");
+                    put_char('\n');
+                    buffer[0] = '\0';
+                    break;
+                }
                 if (buffer[buffer_p] == '\e') {
                     buffer[buffer_p] = '^';
                     put_char(buffer[buffer_p]);
@@ -65,21 +71,25 @@ int main(const char* args, const struct fdt_header *fdt)
                 put_char(buffer[buffer_p]);
                 buffer_p++;
             }
-            if (!strcmp(buffer, "t")) {
+            char *buffer_nospace = buffer;
+            while(*buffer_nospace && (*buffer_nospace == ' ' || *buffer_nospace == '\t')) {
+                buffer_nospace += 1;
+            }
+            char *arg1 = (char *)strchr(buffer_nospace, ' ');
+            if (arg1) {
+                *arg1 = '\0';
+                arg1 += 1;
+            }
+            if (!strcmp(buffer_nospace, "t")) {
                 syscall(NR_test_net);
-            } else if (!strcmp(buffer, "b")) {
+            } else if (!strcmp(buffer_nospace, "b")) {
                 syscall(NR_block);
-            } else if (!strcmp(buffer, "q")) {
+            } else if (!strcmp(buffer_nospace, "q")) {
                 syscall(NR_reset, 0);   // #define SHUTDOWN_FUNCTION 0
-            } else if (!strcmp(buffer, "r")) {
+            } else if (!strcmp(buffer_nospace, "r")) {
                 syscall(NR_reset, 1);   // #define REBOOT_FUNCTION 1
             } else {
-                char *arg1 = (char *)strchr(buffer, ' ');
-                if (arg1) {
-                    *arg1 = '\0';
-                    arg1 += 1;
-                }
-                if (!strcmp(buffer, "cat")) {
+                if (!strcmp(buffer_nospace, "cat")) {
                     if (!arg1 || !strlen(arg1)) {
                         puts("Usage: cat [FILE]\n");
                         continue;
@@ -97,8 +107,8 @@ int main(const char* args, const struct fdt_header *fdt)
                     syscall(NR_close, fd);
                     continue;
                 }
-                if (buffer[0]) {
-                    puts(buffer); puts(": command not found\n");
+                if (buffer_nospace[0]) {
+                    puts(buffer_nospace); puts(": command not found\n");
                 }
             }
         }

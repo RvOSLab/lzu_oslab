@@ -75,7 +75,7 @@ struct task_struct {
     uint64_t start_data;          /**< 数据段起始地址 */
     uint64_t end_data;            /**< 数据段结束地址 */
     uint64_t brk;                 /**< 堆结束地址 */
-    uint64_t start_stack;         /**< 堆起始地址 */
+    uint64_t start_stack;         /**< 栈起始地址 */
     uint64_t start_kernel;        /**< 内核区起始地址 */
     uint32_t state;               /**< 进程调度状态 */
     uint32_t counter;             /**< 时间片大小 */
@@ -129,6 +129,7 @@ union task_union {
 extern struct task_struct *current;
 extern struct task_struct *tasks[NR_TASKS];
 extern union task_union init_task;
+extern uint64_t stack_size;
 
 void sched_init();
 void schedule();

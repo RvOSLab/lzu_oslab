@@ -33,7 +33,8 @@ build :
 	make -C kernel build
 	make -C drivers build
 	make -C fs build
-	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o kernel/libkernel.a fs/libfs.a drivers/libdrivers.a mm/libmm.a lib/libstd.a
+	make -C net build
+	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o  kernel/libkernel.a fs/libfs.a net/libnet.a drivers/libdrivers.a mm/libmm.a lib/libstd.a
 	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
 # bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
@@ -46,7 +47,7 @@ run : build
 			-global virtio-mmio.force-legacy=off \
 			-drive if=none,format=raw,file=kernel.img,id=hd0 \
 			-device virtio-blk-device,drive=hd0,bus=virtio-mmio-bus.1 \
-			-netdev user,id=net0 \
+			-netdev tap,id=net0,ifname=tap0,script=no,downscript=no \
 			-device virtio-net-device,netdev=net0,bus=virtio-mmio-bus.2
 
 # run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
@@ -89,4 +90,5 @@ clean :
 	-make -C mm/ clean
 	-make -C drivers/ clean
 	-make -C fs/ clean
+	-make -C net/ clean
 	-rm -f $(KERN_BIN) $(KERN_IMG) $(KERN_SYM) $(KERN_ASM) $(KERN_MAP)

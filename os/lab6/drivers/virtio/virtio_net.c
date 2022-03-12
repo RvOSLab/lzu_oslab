@@ -6,6 +6,8 @@
 #include <sched.h>
 #include <mm.h>
 
+#include <net/netdev.h>
+
 
 struct virtio_net_header rx_packet_header;
 uint8_t rx_buffer[1500];
@@ -41,14 +43,16 @@ void virtio_net_irq_handler(struct device *dev) {
     while (used_elem) {
         virtio_net_recv(dev);
         uint64_t used_len = used_elem->len - sizeof(struct virtio_net_header);
-        kprintf("virtio-net: recv %u bits\n    ", used_len);
-        for (uint64_t i = 0; i < used_len; i += 1) {
-            if(rx_buffer[i] < 0x10) kprintf("0");
-            kprintf("%x ", rx_buffer[i]);
-            if(i%8 == 7) kprintf(" ");
-            if(i%16 == 15) kprintf("\n    ");
-        }
-        kprintf("\n");
+        // kprintf("virtio-net: recv %u bits\n    ", used_len);
+        // for (uint64_t i = 0; i < used_len; i += 1) {
+        //     if(rx_buffer[i] < 0x10) kprintf("0");
+        //     kprintf("%x ", rx_buffer[i]);
+        //     if(i%8 == 7) kprintf(" ");
+        //     if(i%16 == 15) kprintf("\n    ");
+        // }
+        // kprintf("\n");
+        netdev_recv(rx_buffer, used_len);
+        
         virtq_free_desc_chain(virtio_net_queue, used_elem->id);
         used_elem = virtq_get_used_elem(virtio_net_queue);
     }

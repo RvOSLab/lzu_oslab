@@ -16,6 +16,7 @@
 #include <sched.h>
 #include <device.h>
 #include <fs/vfs.h>
+#include <net/netdev.h>
 
 extern long sys_init(struct trapframe *);
 extern long sys_fork(struct trapframe *);
@@ -143,7 +144,7 @@ static long sys_reset(struct trapframe *tf)
 
 static long sys_test_net(struct trapframe *tf)
 {
-    return net_dev_test();
+    return net_test();   
 }
 
 /**

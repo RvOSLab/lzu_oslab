@@ -141,6 +141,12 @@ static inline void * kmalloc(uint64_t size) {
     enable_interrupt();
     return ptr;
 }
+static inline void * kcalloc(uint64_t size, uint64_t n) {
+    void *ptr = kmalloc(size * n);
+    memset(ptr, 0, size * n);
+    return ptr;
+}
+
 static inline uint64_t kfree_s(void * obj, uint64_t size) {
     disable_interrupt();
     uint64_t real_size = kfree_s_i(obj, size);

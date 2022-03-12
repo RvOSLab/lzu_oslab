@@ -59,6 +59,17 @@ static long sys_getppid(struct trapframe *tf)
 }
 
 /**
+ * @brief 调整当前进程的内存堆空间
+ */
+static uint64_t sys_brk(struct trapframe *tf)
+{
+    uint64_t new_brk = tf->gpr.a0;
+    if (new_brk >= current->end_data && new_brk < current->start_stack - stack_size)
+        current->brk = new_brk;
+    return current->brk;
+}
+
+/**
  * @brief 获取一个字符或输出一个字符
  */
 static long sys_char(struct trapframe *tf)
@@ -146,7 +157,7 @@ static long sys_reset(struct trapframe *tf)
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_reset};
+fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_reset, sys_brk};
 
 /**
  * @brief 通过系统调用号调用对应的系统调用

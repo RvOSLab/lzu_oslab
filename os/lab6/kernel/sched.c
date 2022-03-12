@@ -22,6 +22,9 @@ struct task_struct* current = NULL;
 /** 系统所有进程的进程控制块指针数组 */
 struct task_struct* tasks[NR_TASKS];
 
+/** 用户栈最大 20M */
+uint64_t stack_size = 20 * (1 << 20); 
+
 /**
  * @brief 将进程处理器状态 context 压入进程内核堆栈
  *

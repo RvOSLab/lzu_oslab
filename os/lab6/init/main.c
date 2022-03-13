@@ -7,6 +7,7 @@
 #include <syscall.h>
 #include <device/loader.h>
 #include <fs/vfs.h>
+#include <net/netdev.h>
 
 int main(const char* args, const struct fdt_header *fdt)
 {
@@ -21,6 +22,7 @@ int main(const char* args, const struct fdt_header *fdt)
     vfs_init();
     sched_init();
     clock_init();
+    netdev_init();
     kputs("Hello LZU OS");
     enable_interrupt();
     init_task0();

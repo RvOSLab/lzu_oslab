@@ -1,5 +1,48 @@
 #include <net/netdev.h>
 
+
+struct netdev *loop;
+struct netdev *netdev; /* 用于记录本机地址,包括ip和mac地址 */
+
+//
+// addr表示ip地址, hwadddr表示mac地址, mtu表示最大传输单元的大小
+static struct netdev *netdev_alloc(uint32_t *addr, uint8_t* hwaddr, uint32_t mtu) {
+	/* hwaddr表示硬件地址 */
+	struct netdev *dev = kmalloc(sizeof(struct netdev));
+	dev->addr = addr[0] << 24 + addr[1] << 16 + addr[2] << 8 + addr[3];		/* 记录下ip地址 */
+
+	for(int i = 0; i < 6; ++i) {      /* 记录下mac地址 */
+        dev->hwaddr[i] = hwaddr[i];
+    }				
+
+	dev->addr_len = 6;					/* 地址长度 */
+	dev->mtu = mtu;						/* 最大传输单元 */
+	return dev;
+}
+
+
+void netdev_init() {
+	/* 本地环回地址 */
+    uint32_t loop_ip[] = {127, 0, 0, 1};
+    uint8_t loop_mac[] = {0, 0, 0, 0, 0, 0};
+	loop = netdev_alloc(loop_ip, loop_mac, 1500);
+	
+    uint32_t netdev_ip[] = {10, 0, 0, 15};
+    uint8_t netdev_mac[] = {0x52, 0x54, 0x00, 0x12, 0x34, 0x56};
+	netdev = netdev_alloc(netdev_ip, netdev_mac, 1500);
+
+    kprintf("netdev_init():\n");
+    kprintf("\tIP  : %u.%u.%u.%u\n", netdev_ip[0], netdev_ip[1], netdev_ip[2],netdev_ip[3]);
+    kprintf("\tMAC : ");
+    for(int i = 0; i < 5; ++i) {
+        if(netdev_mac[i] < 0x10) kprintf("0");
+        kprintf("%x:", netdev_mac[i]);
+    }
+    if(netdev_mac[5] < 0x10) kprintf("0");
+    kprintf("%x\n", netdev_mac[5]);
+    
+}
+
 int netdev_send(void *buffer, uint64_t length) {
     int ret = 0;
     
@@ -42,5 +85,33 @@ int netdev_recv(uint8_t *rx_buffer, uint64_t used_len) {
 		// free_s_i(buffer, sizeof(buffer));  
 		break;
 	}
+	return 0;
+}
+
+
+void netdev_free() {
+    kfree(loop);
+    kfree(netdev);
+}
+
+
+struct netdev *netdev_get(uint32_t sip) {
+    if (netdev->addr == sip) {
+		return netdev; /* 将static local variable的地址传递出去, netdev包含mac地址信息 */
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+int local_ipaddress(uint32_t addr) {
+    /* 传入的addr是本机字节序表示的ip地址 */
+	struct netdev *dev;
+	if (!addr) /* INADDR_ANY */
+		return 1;
+	/* netdev的addr域记录的是本机字节序的ip地址 */
+	if (addr == netdev->addr) return 1;
+	if (addr == loop->addr) return 1;
 	return 0;
 }

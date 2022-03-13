@@ -67,6 +67,16 @@ typedef struct trapframe context;                             /**< 处理器上�
 
 /** 进程控制块 PCB(Process Control Block) */
 struct task_struct {
+    uint32_t signal;                /* 信号位图 */
+    struct sigaction sigaction[32]; /* 信号执行属性结构,对应信号将要执行的操作和标志信息 */
+
+    uint32_t uid;  /* 用户ID */
+    uint32_t euid; /* 有效用户ID */
+    uint32_t suid; /* 保存的设置用户id */
+    uint32_t gid;  /* 组id */
+    uint32_t egid; /* 有效组id */
+    uint32_t sgid; /* 保存的设置组id */
+
     uint32_t exit_code;           /**< 返回码 */
     uint32_t pid;                 /**< 进程 ID */
     uint32_t pgid;                /**< 进程组 */

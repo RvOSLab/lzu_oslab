@@ -10,7 +10,11 @@ int netdev_send(void *buffer, uint64_t length) {
 }
 
 
-int netdev_recv(uint8_t *buffer, uint64_t used_len) {
+int netdev_recv(uint8_t *rx_buffer, uint64_t used_len) {
+    // 创建一个新的buffer，将rx_buffer的内容复制一份
+    uint8_t *buffer = kmalloc(used_len);
+    memcpy(buffer, rx_buffer, used_len);
+
     struct eth_hdr *hdr = eth_hdr(buffer);  /* 获得以太网头部信息,以太网头部包括
 										 目的mac地址,源mac地址,以及类型信息 */
 

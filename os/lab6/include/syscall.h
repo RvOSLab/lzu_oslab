@@ -9,7 +9,7 @@ typedef long (*fn_ptr)(struct trapframe *);                 /**< 系统调用指
 extern fn_ptr syscall_table[];
 extern long test_fork;
 /// @{ @name 系统调用号
-#define NR_syscalls  13                                     /**< 系统调用数量 */
+#define NR_syscalls  15                                     /**< 系统调用数量 */
 #define NR_fork      1
 #define NR_test_fork 2
 #define NR_getpid    3
@@ -22,6 +22,8 @@ extern long test_fork;
 #define NR_read  10
 #define NR_reset 11
 #define NR_brk 12
+#define NR_sigaction 13
+#define NR_kill 14
 /// @}
 
 long syscall(long number, ...);

@@ -60,7 +60,7 @@ uint32_t kill_pg(uint32_t pgid, uint32_t signal, uint32_t priv)
 }
 
 // 系统调用：各类的发送信号
-uint32_t sys_kill(uint32_t pid, uint32_t signal)
+uint32_t kill(uint32_t pid, uint32_t signal)
 {
     if (signal < 1 || signal > NR_SIGNALS) // 提前检测信号是否合法
         return -EINVAL;
@@ -81,7 +81,7 @@ uint32_t sys_kill(uint32_t pid, uint32_t signal)
 }
 
 // 设置信号处理函数
-uint32_t sys_sigaction(uint32_t signum, const struct sigaction *action, struct sigaction *oldaction)
+uint32_t set_sigaction(uint32_t signum, const struct sigaction *action, struct sigaction *oldaction)
 {
     if (signum < 1 || signum > NR_SIGNALS || signum == SIGKILL || signum == SIGSTOP) // SIGKILL 与 SIGSTOP 不能被修改
         return -EINVAL;

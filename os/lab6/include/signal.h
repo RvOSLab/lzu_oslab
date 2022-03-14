@@ -42,10 +42,10 @@ struct sigaction
     void (*sa_restorer)(void);    /* 恢复函数指针，由函数库Libc提供，用于清理用户态堆栈 */
 };
 
-uint32_t sys_kill(uint32_t pid, uint32_t signal);
+uint32_t kill(uint32_t pid, uint32_t signal);
 uint32_t kill_pg(uint32_t pgid, uint32_t signal, uint32_t priv);
 uint32_t kill_proc(uint32_t pid, uint32_t signal, uint32_t priv);
-uint32_t sys_sigaction(uint32_t signum, const struct sigaction *action, struct sigaction *oldaction);
+uint32_t set_sigaction(uint32_t signum, const struct sigaction *action, struct sigaction *oldaction);
 
 // 使用不可能被调用的地址来充当特殊信号处理程序
 #define SIG_DFL ((void (*)(int))0) /* default signal handling */     /* 默认信号处理程序（信号句柄） */

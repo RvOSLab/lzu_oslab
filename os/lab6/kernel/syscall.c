@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sched.h>
 #include <device.h>
+#include <signal.h>
 #include <fs/vfs.h>
 
 extern long sys_init(struct trapframe *);
@@ -153,11 +154,27 @@ static long sys_reset(struct trapframe *tf)
 }
 
 /**
+ * @brief 设置信号处理函数
+ */
+static long sys_sigaction(struct trapframe *tf)
+{
+    return set_sigaction(tf->gpr.a0, tf->gpr.a1, tf->gpr.a2);
+}
+
+/**
+ * @brief 系统调用：各类的发送信号
+ */
+static long sys_kill(struct trapframe *tf)
+{
+    return kill(tf->gpr.a0, tf->gpr.a1);
+}
+
+/**
  * @brief 系统调用表
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_reset, sys_brk};
+fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_reset, sys_brk, sys_sigaction, sys_kill};
 
 /**
  * @brief 通过系统调用号调用对应的系统调用

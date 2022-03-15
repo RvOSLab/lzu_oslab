@@ -2,6 +2,8 @@
 #define ETHERNET_H_
 #include <stddef.h>
 #include <mm.h>
+#include <net/netdev.h>
+#include <net/ntoh.h>
 
 #define ETH_HDR_LEN sizeof(struct eth_hdr)
 
@@ -19,7 +21,7 @@ static inline struct eth_hdr *
 eth_hdr(uint8_t buffer[])
 {
 	struct eth_hdr *hdr = (struct eth_hdr*)buffer;
-	hdr->ethertype = (hdr->ethertype << 8) + (hdr->ethertype >> 8);
+	hdr->ethertype = ntohs(hdr->ethertype);
 	return hdr;
 }
 

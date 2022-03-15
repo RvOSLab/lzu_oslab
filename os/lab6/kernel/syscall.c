@@ -170,11 +170,19 @@ static long sys_kill(struct trapframe *tf)
 }
 
 /**
+ * @brief 系统调用：进程退出
+ */
+static void sys_exit(struct trapframe *tf)
+{
+    do_exit(tf->gpr.a0);
+}
+
+/**
  * @brief 系统调用表
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_reset, sys_brk, sys_sigaction, sys_kill};
+fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_reset, sys_brk, sys_sigaction, sys_kill, sys_exit};
 
 /**
  * @brief 通过系统调用号调用对应的系统调用

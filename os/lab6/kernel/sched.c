@@ -284,3 +284,58 @@ long sys_init(struct trapframe* tf)
     save_context(tf);
     return 0;
 }
+
+/**
+ * 释放指定进程 PCB 所占用的内存空间与进程列表对应项
+ * 进程销毁，由父进程释放
+ */
+void release(size_t task)
+{
+    if (task == current->pid)
+    {
+        kprintf("task releasing itself\n\r");
+        return;
+    }
+    for (uint32_t i = NR_TASKS; i > 0; i--)
+        if (tasks[i]->pid == task)
+        {
+            tasks[i] = NULL;     // 清除进程列表对应项
+            free_page(tasks[i]); // 释放 PCB 内存
+            schedule();          // 立即进行进程调度
+            return;
+        }
+    panic("trying to release non-existent task");
+}
+
+/**
+ * @brief 进程退出
+ *
+ * 退出进程号为 task 的进程
+ * @see kill()
+ */
+
+void exit_process(size_t task, uint32_t exit_code)
+{
+    for (uint32_t i = NR_TASKS - 1; i > -1; i--)
+        if (tasks[i]->pid == task)
+        {
+            // 它首先会释放当前进程的代码段和数据段所占用的内存页面。
+            // （检查是否因此产生孤儿进程组，如果有，并且有处于停止状态(TASK_STOPPED)的组员，则向它们发送一个 SIGHUP 信号和一个 SIGCONT 信号）
+            //      检查情况 1. 我们的父进程在另外一个与我们不同的进程组中，而本进程是该组与外界的唯一联系。所以该进程组将变成一个孤儿进程组。
+            // 通知父进程，发送子进程终止信号 SIGCHLD
+            // 如果当前进程有子进程，就将子进程的 father 字段置为 1，即把子进程的父进程改为进程 1(init 进程)
+            // 如果该子进程已经处于僵死状态，则向进程 1 发送子进程终止信号 SIGCHLD。
+            //      检查情况 2. 我们的子进程在另外一个与我们不同的进程组中，而子进程是该组与外界的唯一联系。所以该子进程组将变成一个孤儿进程组。
+            // 接着关闭当前进程打开的所有文件、释放使用的设备。
+            // 若当前进程是进程组的首进程，则还需要终止所有相关进程。
+            tasks[i]->state = TASK_ZOMBIE;
+            tasks[i]->exit_code = exit_code;
+            
+            schedule(); // 最后让内核重新调度任务运行。
+        }
+}
+
+void do_exit(uint32_t exit_code)
+{
+    exit_process(current->pid, exit_code);
+}

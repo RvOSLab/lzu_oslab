@@ -146,6 +146,9 @@ void schedule()
     int i, next, c;
     struct task_struct** p;
 
+    // TODO：对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
+
+
     while (1) {
         c = -1;
         next = 0;
@@ -305,6 +308,18 @@ void release(size_t task)
             return;
         }
     panic("trying to release non-existent task");
+}
+
+/**
+ * @brief 暂停进程
+ *
+ * 暂停当前进程，直到收到一个（除被阻塞的信号外的）信号
+ * @see kill()
+ */
+uint32_t sys_pause(){
+    // TODO：将当前进程状态设置为 TASK_INTERRUPTIBLE
+    // TODO：立即进行调度
+    // TODO：返回 -EINTR
 }
 
 /**

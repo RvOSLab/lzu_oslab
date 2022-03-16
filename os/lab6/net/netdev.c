@@ -95,7 +95,7 @@ uint32_t netdev_recv(uint8_t *rx_buffer, uint64_t used_len) {
 	case ETH_P_IPV6: /* IPv6 0x86dd -- not supported! */
 	default:
 		kprintf("Unsupported ethertype %x\n", hdr->ethertype);
-		// free_s_i(buffer, sizeof(buffer));  
+		kfree_s_i(buffer, used_len);  
 		break;
 	}
 	return 0;

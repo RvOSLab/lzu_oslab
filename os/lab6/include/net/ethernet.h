@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <mm.h>
 #include <net/netdev.h>
-#include <net/ntoh.h>
+#include <net/net_utils.h>
 
 #define ETH_HDR_LEN sizeof(struct eth_hdr)
 

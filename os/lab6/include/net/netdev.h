@@ -9,6 +9,7 @@
 #include <mm.h>
 #include <string.h>
 #include <net/arp.h>
+#include <net/net_utils.h>
 
 struct netdev {
 	uint32_t addr;			/* ip地址,主机字节序 */
@@ -25,7 +26,7 @@ uint32_t netdev_recv(uint8_t *rx_buffer, uint64_t used_len);
 struct netdev *netdev_get(uint32_t sip);
 int local_ipaddress(uint32_t addr);
 
-void printbuf(uint8_t *buffer, uint32_t length);
+
 
 uint64_t net_test();
 

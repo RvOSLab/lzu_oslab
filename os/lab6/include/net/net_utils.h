@@ -1,5 +1,5 @@
-#ifndef NTOH_H
-#define NTOH_H
+#ifndef NET_UTILS_H
+#define NET_UTILS_H
 
 #include <stddef.h>
 
@@ -15,5 +15,8 @@ inline static uint32_t ntohl(uint32_t netlong) {		//把uint32_t类型从网络�
 inline static uint16_t ntohs(uint16_t netshort) {		//把uint16_t类型从网络序转换到主机序
 	return (netshort << 8) + (netshort >> 8);
 }
+
+void printbuf(uint8_t *buffer, uint32_t length);
+
 
 #endif

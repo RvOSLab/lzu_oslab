@@ -59,10 +59,16 @@ uint64_t length, struct netdev *netdev) {
 	hdr->ethertype = htons(ethertype);	/* 帧类型 */
 	/* 回复,直接写即可 */
 	struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 1);
+	struct net_device *net_device = dev->get_interface(dev, NET_INTERFACE_BIT);
+
 	kprintf("transmit a arp packet!\n");
 	kprintf("virtio-net: transmit %u bits\n    ", length);
 	printbuf(buffer, length);
-    virtio_net_send(dev, buffer, length);
+
+    // virtio_net_send(dev, buffer, length);
+	net_device->send(dev, buffer, length);
+
+	return ret;
 }
 
 
@@ -120,7 +126,6 @@ struct netdev *netdev_get(uint32_t sip) {
 
 int local_ipaddress(uint32_t addr) {
     /* 传入的addr是本机字节序表示的ip地址 */
-	struct netdev *dev;
 	if (!addr) /* INADDR_ANY */
 		return 1;
 	/* netdev的addr域记录的是本机字节序的ip地址 */

@@ -47,7 +47,7 @@ struct arp_ipv4
 // arp_cache_entry 用于表示arp缓存
 struct arp_cache_entry
 {
-	struct list_head list;
+	struct list_head list;    
 	uint16_t hwtype;
 	uint32_t sip;
 	uint8_t smac[6];
@@ -63,10 +63,5 @@ int arp_request(uint32_t sip, uint32_t dip, struct netdev *netdev);
 
 
 // arp_hdr用于获取从以太网帧中获取arp头部,以太网头部之后立马就是arp协议的头部
-static inline struct arp_hdr *
-arp_hdr(uint8_t *buffer)
-{
-	return (struct arp_hdr *)(buffer + ETH_HDR_LEN);
-}
-
+struct arp_hdr * arp_hdr(uint8_t *buffer);
 #endif // !ARP_H_

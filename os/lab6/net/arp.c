@@ -168,7 +168,7 @@ void arp_reply(uint8_t *buffer, struct netdev* netdev){
 	arpdata->dip = htonl(arpdata->dip);
 
 	// arp协议完成自己的部分,然后接下来让链路层去操心
-	netdev_transmit(buffer, arpdata->dmac, ETH_P_ARP, netdev, size);
+	netdev_transmit(buffer, arpdata->dmac, ETH_P_ARP, size, netdev);
 	kfree(buffer);
 }
 
@@ -197,4 +197,9 @@ void free_arp(){
 		list_del(item);
 		kfree(entry);
 	}
+}
+
+struct arp_hdr * arp_hdr(uint8_t *buffer)
+{
+	return (struct arp_hdr *)(buffer + ETH_HDR_LEN);
 }

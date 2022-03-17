@@ -17,16 +17,16 @@ static inline uint32_t send_sig(uint32_t signal, struct task_struct *p, uint32_t
         if (p->state == TASK_STOPPED)
             p->state = TASK_RUNNING;
         p->exit_code = 0;
-        p->signal &= ~((1 << (SIGSTOP - 1)) | (1 << (SIGTSTP - 1)) |
-                       (1 << (SIGTTIN - 1)) | (1 << (SIGTTOU - 1)));
+        p->signal &= ~((1 << SIGSTOP) | (1 << SIGTSTP) |
+                       (1 << SIGTTIN) | (1 << SIGTTOU));
     }
-    if (p->sigaction[signal - 1].sa_handler == SIG_IGN) // 如果信号处理函数是 SIG_IGN，则直接忽略
+    if (p->sigaction[signal].sa_handler == SIG_IGN) // 如果信号处理函数是 SIG_IGN，则直接忽略
         return 0;
     if ((signal >= SIGSTOP) && (signal <= SIGTTOU)) // 如果是 SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU 信号，需要停止进程，将 SIGCONT 信号取消防止进程继续
-        p->signal &= ~(1 << (SIGCONT - 1));
+        p->signal &= ~(1 << (SIGCONT));
     if (signal == 0)
         return 0;
-    p->signal |= (1 << (signal - 1)); // 设置信号位
+    p->signal |= (1 << signal); // 设置信号位
     return 0;
 }
 
@@ -87,13 +87,13 @@ uint32_t set_sigaction(uint32_t signum, const struct sigaction *action, struct s
         return -EINVAL;
 
     if (oldaction) // 在改动前先返回旧的结构体
-        memcpy(oldaction, &(current->sigaction[signum - 1]), sizeof(struct sigaction));
+        memcpy(oldaction, &(current->sigaction[signum]), sizeof(struct sigaction));
 
-    memcpy(&(current->sigaction[signum - 1]), action, sizeof(struct sigaction)); // 用新的结构体覆盖
+    memcpy(&(current->sigaction[signum]), action, sizeof(struct sigaction)); // 用新的结构体覆盖
 
-    if (current->sigaction[signum - 1].sa_flags & SA_NOMASK) // 如果设置了 SA_NOMASK，则清空信号屏蔽列表
-        current->sigaction[signum - 1].sa_mask = 0;
+    if (current->sigaction[signum].sa_flags & SA_NOMASK) // 如果设置了 SA_NOMASK，则清空信号屏蔽列表
+        current->sigaction[signum].sa_mask = 0;
     else
-        current->sigaction[signum - 1].sa_mask |= (1 << (signum - 1)); // 默认将当前信号加入到屏蔽列表中
+        current->sigaction[signum].sa_mask |= (1 << signum); // 默认将当前信号加入到屏蔽列表中
     return 0;
 }

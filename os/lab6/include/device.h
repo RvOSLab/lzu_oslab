@@ -16,7 +16,6 @@ struct device {
     void *match_data;
     struct fdt_header *fdt;
     struct fdt_node_header *fdt_node;
-    struct linked_list_node resource_list;
 
     void *driver_data;
 
@@ -99,7 +98,6 @@ static inline void device_init(struct device *dev) {
     dev->driver_data = NULL;
     dev->interface_flag = 0;
     dev->get_interface = NULL;
-    linked_list_init(&dev->resource_list);
 }
 static inline void device_register(struct device *dev, const char *name, uint32_t major, struct device *parent) {
     uint32_t minor = device_table_get_next_minor(major, 1);

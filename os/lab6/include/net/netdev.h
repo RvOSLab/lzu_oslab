@@ -9,6 +9,7 @@
 #include <mm.h>
 #include <string.h>
 #include <net/arp.h>
+#include <net/ip.h>
 #include <net/net_utils.h>
 
 struct netdev {

@@ -2,6 +2,7 @@
 #define NET_UTILS_H
 
 #include <stddef.h>
+#include <kdebug.h>
 
 inline static uint32_t htonl(uint32_t hostlong) {		//把uint32_t类型从主机序转换到网络序
 	return (hostlong << 24) + (hostlong << 8 & 0xff0000) + (hostlong >> 8 & 0xff00) + (hostlong >> 24);
@@ -17,6 +18,9 @@ inline static uint16_t ntohs(uint16_t netshort) {		//把uint16_t类型从网络�
 }
 
 void printbuf(uint8_t *buffer, uint32_t length);
+
+uint32_t sum_every_16bits(void *addr, int count);
+uint16_t checksum(void *addr, int count, int start_sum);
 
 
 #endif

@@ -84,19 +84,10 @@ uint32_t netdev_recv(uint8_t *rx_buffer, uint64_t used_len) {
 	0x0806表示ARP */
 	switch (hdr->ethertype) {
 	case ETH_P_ARP:	/* ARP  0x0806 */
-        // kprintf("recv a arp packet!\n");
-        // kprintf("virtio-net: recv %u bits\n    ", used_len);
-        // for (uint64_t i = 0; i < used_len; i += 1) {
-        //     if(buffer[i] < 0x10) kprintf("0");
-        //     kprintf("%x ", buffer[i]);
-        //     if(i%8 == 7) kprintf(" ");
-        //     if(i%16 == 15) kprintf("\n    ");
-        // }
-        // kprintf("\n");
 		arp_rcv(buffer);
 		break;
 	case ETH_P_IP:  /* IPv4 0x0800 */
-		// todo
+		ip_rcv(buffer);
 		break;
 	case ETH_P_IPV6: /* IPv6 0x86dd -- not supported! */
 	default:

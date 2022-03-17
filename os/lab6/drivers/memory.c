@@ -40,3 +40,8 @@ void mem_resource_map(struct driver_resource *res) {
 
     linked_list_insert_before(node, &res->list_node);
 }
+
+void mem_resource_unmap(struct driver_resource *res) {
+    // TODO: release pte
+    linked_list_remove(&res->list_node);
+}

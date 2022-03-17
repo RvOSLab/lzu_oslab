@@ -60,6 +60,7 @@ uint64_t net_dev_test();
 
 void init_mem_resource();
 void mem_resource_map(struct driver_resource *res);
+void mem_resource_unmap(struct driver_resource *res);
 
 static inline void device_set_data(struct device *dev, void *data) {
     dev->driver_data = data;
@@ -113,6 +114,16 @@ static inline void device_add_resource(struct device *dev, struct driver_resourc
     switch(res->resource_type) {
         case DRIVER_RESOURCE_MEM:
             mem_resource_map(res);
+            break;
+        default:
+            // Do nothing
+            break;
+    }
+}
+static inline void device_del_resource(struct device *dev, struct driver_resource *res) {
+    switch(res->resource_type) {
+        case DRIVER_RESOURCE_MEM:
+            mem_resource_unmap(res);
             break;
         default:
             // Do nothing

@@ -1,7 +1,6 @@
 #ifndef ETHERNET_H_
 #define ETHERNET_H_
 #include <stddef.h>
-#include <mm.h>
 #include <net/netdev.h>
 #include <net/net_utils.h>
 

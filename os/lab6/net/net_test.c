@@ -1,9 +1,7 @@
-#include <net/netdev.h>
 #include <net/arp.h>
+#include <net/netdev.h>
+#include <net/net_utils.h>
 
-int32_t iptoi(uint32_t *ip) {
-    return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
-}
 
 static void arp_test() {
     uint32_t dip[] = {10, 0, 0, 2};

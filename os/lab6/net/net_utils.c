@@ -1,4 +1,9 @@
 #include <net/net_utils.h>
+#include <kdebug.h>
+
+int32_t iptoi(uint32_t *ip) {
+    return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
+}
 
 void printbuf(uint8_t *buffer, uint32_t length) {
 	kprintf("\t");

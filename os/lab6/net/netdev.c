@@ -1,5 +1,13 @@
 #include <net/netdev.h>
-
+#include <net/arp.h>
+#include <net/ip.h>
+#include <device/virtio/virtio_net.h>
+#include <net/netdef.h>
+#include <net/ethernet.h>
+#include <kdebug.h>
+#include <mm.h>
+#include <string.h>
+#include <net/net_utils.h>
 
 struct netdev *loop;
 struct netdev *netdev; /* 用于记录本机地址,包括ip和mac地址 */

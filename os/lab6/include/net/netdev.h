@@ -2,15 +2,6 @@
 #define NETDEV_H
 
 #include <stddef.h>
-#include <device/virtio/virtio_net.h>
-#include <net/netdef.h>
-#include <net/ethernet.h>
-#include <kdebug.h>
-#include <mm.h>
-#include <string.h>
-#include <net/arp.h>
-#include <net/ip.h>
-#include <net/net_utils.h>
 
 struct netdev {
 	uint32_t addr;			/* ip地址,主机字节序 */

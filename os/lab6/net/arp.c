@@ -1,4 +1,10 @@
 #include <net/arp.h>
+#include <net/net_utils.h>
+#include <net/netdef.h>
+#include <net/ethernet.h>
+#include <mm.h>
+#include <kdebug.h>
+#include <string.h>
 
 static uint8_t broadcast_hw[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}; /* 广播地址 */
 

@@ -3,7 +3,6 @@
 #include <net/ethernet.h>
 #include <net/netdev.h>
 #include <net/list.h>
-#include <net/net_utils.h>
 
 #define ARP_ETHERNET	0x0001
 #define ARP_IPV4		0x0800

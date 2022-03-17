@@ -2,6 +2,7 @@
 #define __SIGNAL_H__
 #include <stddef.h>
 #include <trap.h>
+#include <sched.h>
 
 #define NR_SIGNALS 22 /* 信号总数 */
 #define SIGHUP 1      /* Hang Up	-- 挂起控制终端或进程 */
@@ -46,10 +47,11 @@ uint32_t kill(uint32_t pid, uint32_t signal);
 uint32_t kill_pg(uint32_t pgid, uint32_t signal, uint32_t priv);
 uint32_t kill_proc(uint32_t pid, uint32_t signal, uint32_t priv);
 uint32_t set_sigaction(uint32_t signum, const struct sigaction *action, struct sigaction *oldaction);
+uint32_t do_signal(struct task_struct *dest, uint32_t signr, struct trapframe *tf);
 
 // 使用不可能被调用的地址来充当特殊信号处理程序
-#define SIG_DFL ((void (*)(int))0) /* default signal handling */     /* 默认信号处理程序（信号句柄） */
-#define SIG_IGN ((void (*)(int))1) /* ignore signal */               /* 忽略信号的处理程序 */
-#define SIG_ERR ((void (*)(int)) - 1) /* error return from signal */ /* 信号处理返回错误 */
+#define SIG_DFL ((void (*)(uint32_t))0) /* default signal handling */     /* 默认信号处理程序（信号句柄） */
+#define SIG_IGN ((void (*)(uint32_t))1) /* ignore signal */               /* 忽略信号的处理程序 */
+#define SIG_ERR ((void (*)(uint32_t)) - 1) /* error return from signal */ /* 信号处理返回错误 */
 
 #endif

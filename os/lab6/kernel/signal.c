@@ -27,6 +27,8 @@ static inline uint32_t send_sig(uint32_t signal, struct task_struct *p, uint32_t
     if (signal == 0)
         return 0;
     p->signal |= (1 << signal); // 设置信号位
+
+    do_signal(p, signal, NULL);
     return 0;
 }
 
@@ -95,5 +97,57 @@ uint32_t set_sigaction(uint32_t signum, const struct sigaction *action, struct s
         current->sigaction[signum].sa_mask = 0;
     else
         current->sigaction[signum].sa_mask |= (1 << signum); // 默认将当前信号加入到屏蔽列表中
+    return 0;
+}
+
+uint32_t do_signal(struct task_struct *dest, uint32_t signr, struct trapframe *tf)
+{
+    struct sigaction sa = current->sigaction[signr];
+    uint64_t sa_handler_old = (uint64_t)sa.sa_handler;
+
+    if (sa_handler_old == (uint64_t)SIG_IGN) // 处理方法是忽略信号
+    {
+        /*  还没实现 sys_waitpid()，所以这里不能用
+        if (signr == SIGCHLD) // 检查是否为 SIGCHLD
+            while (sys_waitpid(-1, NULL, WNOHANG) > 0)
+                ;
+        */
+        return 1; // 否则直接忽略
+    }
+
+    if (sa_handler_old == (uint64_t)SIG_DFL) // 若选择默认处理方法
+    {
+        switch (signr)
+        {
+        case SIGCONT:
+        case SIGCHLD:
+            return 1; // 直接忽略
+        case SIGSTOP:
+        case SIGTSTP:
+        case SIGTTIN:
+        case SIGTTOU:
+            current->state = TASK_STOPPED;
+            current->exit_code = signr;
+            if (!(current->p_pptr->sigaction[SIGCHLD].sa_flags & SA_NOCLDSTOP))
+                send_sig(SIGCHLD, current->p_pptr, 1);
+            return 1;
+        case SIGQUIT:
+        case SIGILL:
+        case SIGTRAP:
+        case SIGIOT:
+        case SIGFPE:
+        case SIGSEGV:
+        default:
+            do_exit(signr);
+        }
+    }
+
+    // 若为自定义处理函数
+    if (sa.sa_flags & SA_ONESHOT) // 若为一次性的处理函数，执行后恢复默认处理
+        sa.sa_handler = SIG_DFL;
+
+    memcpy(&(dest->signal_tf), tf, sizeof(struct trapframe)); // 复制信号处理之前目标进程的用户栈
+
+    tf->epc = sa_handler_old;
     return 0;
 }

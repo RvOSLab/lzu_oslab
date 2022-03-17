@@ -101,6 +101,7 @@ struct task_struct {
     size_t start_time;            /**< 进程创建的时间 */
     uint64_t *pg_dir;             /**< 页目录地址 */
     context context;              /**< 处理器状态 */
+    struct trapframe signal_tf;   /**< 处理器状态，用于信号触发 */
 };
 
 /**

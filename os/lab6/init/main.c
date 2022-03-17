@@ -16,6 +16,7 @@ int main(const char* args, const struct fdt_header *fdt)
     mem_test();
     malloc_test();
     init_device_table();
+    init_mem_resource();
     fdt_loader(fdt, driver_list);
     set_stvec();
     vfs_init();

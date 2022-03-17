@@ -58,6 +58,7 @@ uint64_t reset_dev_test(uint64_t function);
 uint64_t block_dev_test();
 uint64_t net_dev_test();
 
+void init_mem_resource();
 void mem_resource_map(struct driver_resource *res);
 
 static inline void device_set_data(struct device *dev, void *data) {
@@ -117,6 +118,5 @@ static inline void device_add_resource(struct device *dev, struct driver_resourc
             // Do nothing
             break;
     }
-    linked_list_push(&dev->resource_list, &res->list_node);
 }
 #endif

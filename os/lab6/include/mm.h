@@ -135,15 +135,17 @@ void active_mapping();
 void * kmalloc_i(uint64_t size);       /* 通用内核内存分配函数 */
 uint64_t kfree_s_i(void * obj, uint64_t size);      /* 释放指定对象占用的内存 */
 static inline void * kmalloc(uint64_t size) {
+    uint64_t is_disable = read_csr(sstatus) & SSTATUS_SIE;
     disable_interrupt();
     void *ptr = kmalloc_i(size);
-    enable_interrupt();
+    set_csr(sstatus, is_disable);
     return ptr;
 }
 static inline uint64_t kfree_s(void * obj, uint64_t size) {
+    uint64_t is_disable = read_csr(sstatus) & SSTATUS_SIE;
     disable_interrupt();
     uint64_t real_size = kfree_s_i(obj, size);
-    enable_interrupt();
+    set_csr(sstatus, is_disable);
     return real_size;
 }
 #define kfree(ptr) kfree_s((ptr), 0)

@@ -43,6 +43,7 @@
 #include <riscv.h>
 #include <kdebug.h>
 #include <fs/vfs.h>
+#include <signal.h>
 
 #define NR_TASKS             512                              /**< 系统最大进程数 */
 

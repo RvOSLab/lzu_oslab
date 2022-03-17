@@ -99,7 +99,7 @@ static inline void device_init(struct device *dev) {
     dev->interface_flag = 0;
     dev->get_interface = NULL;
 }
-static inline void device_register(struct device *dev, const char *name, uint32_t major, struct device *parent) {
+static inline int64_t device_register(struct device *dev, const char *name, uint32_t major, struct device *parent) {
     uint32_t minor = device_table_get_next_minor(major, 1);
     device_set_major(dev, major);
     device_set_minor(dev, minor);
@@ -107,6 +107,12 @@ static inline void device_register(struct device *dev, const char *name, uint32_
     dev->parent = parent;
     if (parent) dev->parent->ref_count += 1;
     hash_table_set(&device_table, &dev->hash_node);
+    return 0;
+}
+static inline int64_t device_unregister(struct device *dev) {
+    if (dev->ref_count) return -1;
+    if (dev->parent) dev->parent->ref_count -= 1;
+    hash_table_del(&device_table, &dev->hash_node);
 }
 static inline void device_add_resource(struct device *dev, struct driver_resource *res) {
     switch(res->resource_type) {

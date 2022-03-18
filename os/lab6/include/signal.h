@@ -40,6 +40,7 @@ uint32_t kill_pg(uint32_t pgid, uint32_t signal, uint32_t priv);
 uint32_t kill_proc(uint32_t pid, uint32_t signal, uint32_t priv);
 uint32_t set_sigaction(uint32_t signum, const struct sigaction *action, struct sigaction *oldaction);
 uint32_t do_signal(struct task_struct *dest, uint32_t signr, struct trapframe *tf);
+uint64_t sys_sigreturn(struct trapframe *tf);
 
 // 使用不可能被调用的地址来充当特殊信号处理程序
 #define SIG_DFL ((void (*)(uint32_t))0) /* default signal handling */     /* 默认信号处理程序（信号句柄） */

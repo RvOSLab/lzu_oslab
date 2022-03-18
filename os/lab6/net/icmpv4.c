@@ -62,7 +62,7 @@ void icmpv4_reply(uint8_t *buffer) {
 }
 
 void icmpv4_echo_request(uint32_t daddr, uint32_t seq, char* txt) {
-    uint32_t icmp_len = sizeof(struct icmp_v4) +  sizeof(struct icmp_v4_echo) + sizeof(txt);
+    uint32_t icmp_len = sizeof(struct icmp_v4) +  sizeof(struct icmp_v4_echo) + strlen(txt);
     uint8_t *buffer = kmalloc(ETH_HDR_LEN + IP_HDR_LEN + icmp_len);
 
     struct icmp_v4 *icmp = (struct icmp_v4 *)(buffer + ETH_HDR_LEN + IP_HDR_LEN);
@@ -78,6 +78,7 @@ void icmpv4_echo_request(uint32_t daddr, uint32_t seq, char* txt) {
     echo->id = htons(echo->id);
     echo->seq = htons(echo->seq);
 
+    icmp->csum = 0;
     icmp->csum = checksum(icmp, icmp_len, 0);
 
     extern struct netdev* netdev;

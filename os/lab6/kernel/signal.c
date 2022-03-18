@@ -72,7 +72,7 @@ uint32_t kill(uint32_t pid, uint32_t signal)
     {
         uint32_t err, retval = 0;
         for (uint32_t i = NR_TASKS - 1; i > -1; i--)
-            if (err = send_sig(signal, tasks[i], 0))
+            if ((err = send_sig(signal, tasks[i], 0)) != 0)
                 retval = err;
         return retval;
     }

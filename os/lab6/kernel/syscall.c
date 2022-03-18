@@ -18,8 +18,9 @@
 #include <signal.h>
 #include <fs/vfs.h>
 
-extern long sys_init(struct trapframe *);
-extern long sys_fork(struct trapframe *);
+extern int64_t sys_init(struct trapframe *);
+extern int64_t sys_fork(struct trapframe *);
+extern int64_t sys_sigreturn(struct trapframe *tf);
 
 /**
  * @brief 测试 fork() 是否正常工作
@@ -31,7 +32,7 @@ extern long sys_fork(struct trapframe *);
  *
  * @param 参数1 - 局部变量（8 字节）
  */
-static long sys_test_fork(struct trapframe *tf)
+static int64_t sys_test_fork(struct trapframe *tf)
 {
     kprintf("process %u: local - %u\n",
             (uint64_t)current->pid,
@@ -42,7 +43,7 @@ static long sys_test_fork(struct trapframe *tf)
 /**
  * @brief 获取当前进程 PID
  */
-static long sys_getpid(struct trapframe *tf)
+static int64_t sys_getpid(struct trapframe *tf)
 {
     return current->pid;
 }
@@ -50,7 +51,7 @@ static long sys_getpid(struct trapframe *tf)
 /**
  * @brief 获取当前进程父进程 ID
  */
-static long sys_getppid(struct trapframe *tf)
+static int64_t sys_getppid(struct trapframe *tf)
 {
     if (current == tasks[0]) {
         return 0;
@@ -62,7 +63,7 @@ static long sys_getppid(struct trapframe *tf)
 /**
  * @brief 调整当前进程的内存堆空间
  */
-static uint64_t sys_brk(struct trapframe *tf)
+static int64_t sys_brk(struct trapframe *tf)
 {
     uint64_t new_brk = tf->gpr.a0;
     if (new_brk >= current->end_data && new_brk < current->start_stack - stack_size)
@@ -73,7 +74,7 @@ static uint64_t sys_brk(struct trapframe *tf)
 /**
  * @brief 获取一个字符或输出一个字符
  */
-static long sys_char(struct trapframe *tf)
+static int64_t sys_char(struct trapframe *tf)
 {
     return char_dev_test(tf->gpr.a0);
 }
@@ -81,7 +82,7 @@ static long sys_char(struct trapframe *tf)
 /**
  * @brief 块设备测试
  */
-static long sys_block(struct trapframe *tf)
+static int64_t sys_block(struct trapframe *tf)
 {
     return block_dev_test();
 }
@@ -89,7 +90,7 @@ static long sys_block(struct trapframe *tf)
 /**
  * @brief open
  */
-static long sys_open(struct trapframe *tf)
+static int64_t sys_open(struct trapframe *tf)
 {
     uint64_t fd = 0;
     while (fd < 4) {
@@ -110,7 +111,7 @@ static long sys_open(struct trapframe *tf)
 /**
  * @brief close
  */
-static long sys_close(struct trapframe *tf)
+static int64_t sys_close(struct trapframe *tf)
 {
     uint64_t fd = tf->gpr.a0;
     if (fd < 0 || fd > 4) return -EINVAL;
@@ -123,7 +124,7 @@ static long sys_close(struct trapframe *tf)
 /**
  * @brief stat
  */
-static long sys_stat(struct trapframe *tf) {
+static int64_t sys_stat(struct trapframe *tf) {
     uint64_t fd = tf->gpr.a0;
     if (fd < 0 || fd > 4) return -EINVAL;
     struct vfs_inode *inode = current->fd[fd];
@@ -136,7 +137,7 @@ static long sys_stat(struct trapframe *tf) {
 /**
  * @brief read
  */
-static long sys_read(struct trapframe *tf) {
+static int64_t sys_read(struct trapframe *tf) {
     uint64_t fd = tf->gpr.a0;
     if (fd < 0 || fd > 4) return -EINVAL;
     struct vfs_inode *inode = current->fd[fd];
@@ -148,7 +149,7 @@ static long sys_read(struct trapframe *tf) {
 /**
  * @brief 关机、重启
  */
-static long sys_reset(struct trapframe *tf)
+static int64_t sys_reset(struct trapframe *tf)
 {
     return reset_dev_test(tf->gpr.a0);
 }
@@ -156,15 +157,15 @@ static long sys_reset(struct trapframe *tf)
 /**
  * @brief 设置信号处理函数
  */
-static long sys_sigaction(struct trapframe *tf)
+static int64_t sys_sigaction(struct trapframe *tf)
 {
-    return set_sigaction(tf->gpr.a0, tf->gpr.a1, tf->gpr.a2);
+    return set_sigaction(tf->gpr.a0, (const struct sigaction *)tf->gpr.a1, (struct sigaction *)tf->gpr.a2);
 }
 
 /**
  * @brief 系统调用：各类的发送信号
  */
-static long sys_kill(struct trapframe *tf)
+static int64_t sys_kill(struct trapframe *tf)
 {
     return kill(tf->gpr.a0, tf->gpr.a1);
 }
@@ -172,9 +173,10 @@ static long sys_kill(struct trapframe *tf)
 /**
  * @brief 系统调用：进程退出
  */
-static void sys_exit(struct trapframe *tf)
+static int64_t sys_exit(struct trapframe *tf)
 {
     do_exit(tf->gpr.a0);
+    return 0;
 }
 
 /**
@@ -192,27 +194,27 @@ fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_get
  * @note 本实现中所有系统调用都仅在失败时返回负数，但实际上极小一部分 UNIX 系统调用（如
  *       `getpriority()`的正常返回值可能是负数的）。
  */
-long syscall(long number, ...)
+int64_t syscall(int64_t number, ...)
 {
     va_list ap;
     va_start(ap, number);
-    long arg1 = va_arg(ap, long);
-    long arg2 = va_arg(ap, long);
-    long arg3 = va_arg(ap, long);
-    long arg4 = va_arg(ap, long);
-    long arg5 = va_arg(ap, long);
-    long arg6 = va_arg(ap, long);
-    long ret = 0;
+    int64_t arg1 = va_arg(ap, int64_t);
+    int64_t arg2 = va_arg(ap, int64_t);
+    int64_t arg3 = va_arg(ap, int64_t);
+    int64_t arg4 = va_arg(ap, int64_t);
+    int64_t arg5 = va_arg(ap, int64_t);
+    int64_t arg6 = va_arg(ap, int64_t);
+    int64_t ret = 0;
     va_end(ap);
     if (number > 0 && number < NR_TASKS) {
         /* 小心寄存器变量被覆盖 */
-        register long a0 asm("a0") = arg1;
-        register long a1 asm("a1") = arg2;
-        register long a2 asm("a2") = arg3;
-        register long a3 asm("a3") = arg4;
-        register long a4 asm("a4") = arg5;
-        register long a5 asm("a5") = arg6;
-        register long a7 asm("a7") = number;
+        register int64_t a0 asm("a0") = arg1;
+        register int64_t a1 asm("a1") = arg2;
+        register int64_t a2 asm("a2") = arg3;
+        register int64_t a3 asm("a3") = arg4;
+        register int64_t a4 asm("a4") = arg5;
+        register int64_t a5 asm("a5") = arg6;
+        register int64_t a7 asm("a7") = number;
         __asm__ __volatile__ ("ecall\n\t"
                 :"=r"(a0)
                 :"r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (a5), "r" (a7)

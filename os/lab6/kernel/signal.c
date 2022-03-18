@@ -152,6 +152,7 @@ uint32_t do_signal(struct task_struct *dest, uint32_t signr, struct trapframe *t
     return 0;
 }
 
-uint64_t sys_sigreturn(struct trapframe *tf){
+int64_t sys_sigreturn(struct trapframe *tf){
     current->context.epc = current->sig_epc;
+    return 0;
 }

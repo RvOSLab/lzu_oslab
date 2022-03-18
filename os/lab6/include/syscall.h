@@ -5,9 +5,9 @@
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
 #include <trap.h>
-typedef long (*fn_ptr)(struct trapframe *);                 /**< 系统调用指针类型 */
+typedef int64_t (*fn_ptr)(struct trapframe *);                 /**< 系统调用指针类型 */
 extern fn_ptr syscall_table[];
-extern long test_fork;
+// extern long test_fork;
 /// @{ @name 系统调用号
 #define NR_syscalls  17                                     /**< 系统调用数量 */
 #define NR_fork      1
@@ -28,6 +28,6 @@ extern long test_fork;
 #define NR_sigreturn 16
 /// @}
 
-long syscall(long number, ...);
+int64_t syscall(int64_t number, ...);
 
 #endif /* end of include guard: __SYSCALL_H__ */

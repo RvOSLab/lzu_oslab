@@ -264,7 +264,7 @@ static void map_segment(uint64_t start, uint64_t end, uint16_t flag)
  *       但是实际上 sys_init() 被内核调用，并
  *       不是系统调用。
  */
-long sys_init(struct trapframe* tf)
+int64_t sys_init(struct trapframe* tf)
 {
     /* 创建指向内核代码/数据的用户态映射 */
     map_segment((uint64_t)text_start, (uint64_t)rodata_start, USER_RX | PAGE_VALID);

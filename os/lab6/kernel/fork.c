@@ -67,7 +67,7 @@ static uint32_t find_empty_process()
 /**
  * @brief 实现系统调用 fork()
  */
-long sys_fork(struct trapframe *tf)
+int64_t sys_fork(struct trapframe *tf)
 {
     uint32_t nr = find_empty_process();
     if (nr == NR_TASKS) {

@@ -69,9 +69,9 @@ uint64_t length, struct netdev *netdev) {
 	struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 1);
 	struct net_device *net_device = dev->get_interface(dev, NET_INTERFACE_BIT);
 
-	kprintf("transmit a arp packet!\n");
-	kprintf("virtio-net: transmit %u bits\n    ", length);
-	printbuf(buffer, length);
+	// kprintf("transmit a  packet!\n");
+	// kprintf("virtio-net: transmit %u bytes\n    ", length);
+	// printbuf(buffer, length);
 
     // virtio_net_send(dev, buffer, length);
 	net_device->send(dev, buffer, length);

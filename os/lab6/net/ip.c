@@ -4,6 +4,7 @@
 #include <net/netdef.h>
 #include <mm.h>
 #include <kdebug.h>
+#include <net/icmpv4.h>
 
 struct iphdr *ip_hdr(uint8_t *buffer) {
 	// 以太网帧中以太网头部之后跟的就是ip头部
@@ -71,8 +72,7 @@ int ip_rcv(uint8_t *buffer) {
 	if (!ip_pkt_for_us(ih)) goto drop_pkt;
     switch (ih->proto) {
     case ICMPV4:
-		kprintf("recv a ICMPV4 packet.");
-        // todo
+		icmpv4_incoming(buffer);
         return 0;
     case IP_TCP:
 		kprintf("recv a TCP packet.");

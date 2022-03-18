@@ -5,6 +5,8 @@
 
 int32_t iptoi(uint32_t *ip);
 
+void itoip(uint32_t *ip, uint32_t i);
+
 inline static uint32_t htonl(uint32_t hostlong) {		//把uint32_t类型从主机序转换到网络序
 	return (hostlong << 24) + (hostlong << 8 & 0xff0000) + (hostlong >> 8 & 0xff00) + (hostlong >> 24);
 }

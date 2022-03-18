@@ -1,10 +1,12 @@
 #include <net/arp.h>
 #include <net/ip.h>
+#include <net/icmpv4.h>
 #include <net/netdev.h>
 #include <net/net_utils.h>
 #include <mm.h>
 #include <net/netdef.h>
 #include <string.h>
+#include <kdebug.h>
 
 static void arp_test() {
     uint32_t dip[] = {10, 0, 0, 2};
@@ -31,9 +33,21 @@ static void ip_test() {
     ip_output(buffer, iptoi(dip), IP_UDP, netdev, len);
 }
 
+void ping(uint32_t daddr, uint32_t count) {
+    for(int i = 1; i <= count; ++i)
+        icmpv4_echo_request(daddr, i, "hello");
+}
+
+static void icmp_test() {
+    kprintf("ping -c4 10.0.0.2\n");
+    uint32_t dip[] = {10,0,0,2};
+    ping(iptoi(dip), 4);
+}
+
 uint64_t net_test() {
     // arp_test();
-    ip_test();
+    // ip_test();
+    icmp_test();
     return 0;
 }
 

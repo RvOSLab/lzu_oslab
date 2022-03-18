@@ -5,6 +5,13 @@ int32_t iptoi(uint32_t *ip) {
     return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
 }
 
+void itoip(uint32_t *ip, uint32_t i) {
+	ip[0] = i >> 24;
+	ip[1] = i >> 16 & 0xff0000;
+	ip[2] = i >> 8 & 0xff00;
+	ip[3] = i & 0xff;
+}
+
 void printbuf(uint8_t *buffer, uint32_t length) {
 	kprintf("\t");
 	for (uint64_t i = 0; i < length; i += 1) {

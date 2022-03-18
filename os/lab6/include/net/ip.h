@@ -1,8 +1,8 @@
 #ifndef IP_H
 #define IP_H
 
+#include <net/netdev.h>
 #include <net/ethernet.h>
-#include <net/net_utils.h>
 
 #define IPV4	 0x04
 #define IP_TCP	 0x06
@@ -41,8 +41,9 @@ struct iphdr *ip_hdr(uint8_t *buffer);
 
 
 
-uint32_t ip_rcv(uint8_t *buffer);
-uint32_t ip_output();
-uint32_t dst_neigh_output();
+int ip_rcv(uint8_t *buffer);
+int ip_output(uint8_t *buffer, uint32_t daddr, uint8_t proto, 
+	struct netdev *netdev, uint32_t len);
+int dst_neigh_output();
 
 #endif // IP_H

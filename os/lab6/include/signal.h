@@ -35,6 +35,9 @@
 #define SA_NOMASK		0x40000000	/* 不阻止在指定的信号处理程序中再收到该信号 */
 #define SA_ONESHOT		0x80000000 /* 信号句柄一旦被调用过就恢复到默认处理句柄 */
 
+struct sigaction;
+struct task_struct;
+
 uint32_t kill(uint32_t pid, uint32_t signal);
 uint32_t kill_pg(uint32_t pgid, uint32_t signal, uint32_t priv);
 uint32_t kill_proc(uint32_t pid, uint32_t signal, uint32_t priv);

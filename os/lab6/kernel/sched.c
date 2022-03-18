@@ -303,7 +303,7 @@ void release(size_t task)
         if (tasks[i]->pid == task)
         {
             tasks[i] = NULL;     // 清除进程列表对应项
-            free_page(tasks[i]); // 释放 PCB 内存
+            free_page((uint64_t)tasks[i]); // 释放 PCB 内存
             schedule();          // 立即进行进程调度
             return;
         }

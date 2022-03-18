@@ -146,8 +146,8 @@ uint32_t do_signal(struct task_struct *dest, uint32_t signr, struct trapframe *t
     if (sa.sa_flags & SA_ONESHOT) // 若为一次性的处理函数，执行后恢复默认处理
         sa.sa_handler = SIG_DFL;
 
-    memcpy(&(dest->signal_tf), tf, sizeof(struct trapframe)); // 复制信号处理之前目标进程的用户栈
+    dest->sig_epc = dest->context.epc; // 复制信号处理之前目标进程的用户栈
 
-    tf->epc = sa_handler_old;
+    dest->context.epc = sa_handler_old;
     return 0;
 }

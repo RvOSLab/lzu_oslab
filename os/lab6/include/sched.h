@@ -66,6 +66,15 @@
 
 typedef struct trapframe context;                             /**< 处理器上下文 */
 
+/** 信号处理函数 */
+struct sigaction
+{
+    void (*sa_handler)(uint32_t); /* 对应某信号指定要采取的行动 */
+    uint32_t sa_mask;             /* 对信号的屏蔽码，在信号程序执行时将阻塞对这些信号的处理 */
+    uint32_t sa_flags;            /* 改变信号处理过程的信号集 */
+    void (*sa_restorer)(void);    /* 恢复函数指针，由函数库Libc提供，用于清理用户态堆栈 */
+};
+
 /** 进程控制块 PCB(Process Control Block) */
 struct task_struct {
     uint32_t signal;                /* 信号位图 */

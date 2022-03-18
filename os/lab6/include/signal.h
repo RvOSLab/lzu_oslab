@@ -35,14 +35,6 @@
 #define SA_NOMASK		0x40000000	/* 不阻止在指定的信号处理程序中再收到该信号 */
 #define SA_ONESHOT		0x80000000 /* 信号句柄一旦被调用过就恢复到默认处理句柄 */
 
-struct sigaction
-{
-    void (*sa_handler)(uint32_t); /* 对应某信号指定要采取的行动 */
-    uint32_t sa_mask;             /* 对信号的屏蔽码，在信号程序执行时将阻塞对这些信号的处理 */
-    uint32_t sa_flags;            /* 改变信号处理过程的信号集 */
-    void (*sa_restorer)(void);    /* 恢复函数指针，由函数库Libc提供，用于清理用户态堆栈 */
-};
-
 uint32_t kill(uint32_t pid, uint32_t signal);
 uint32_t kill_pg(uint32_t pgid, uint32_t signal, uint32_t priv);
 uint32_t kill_proc(uint32_t pid, uint32_t signal, uint32_t priv);

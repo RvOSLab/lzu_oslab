@@ -68,7 +68,7 @@ void icmpv4_echo_request(uint32_t daddr, uint32_t seq, char* txt) {
     struct icmp_v4 *icmp = (struct icmp_v4 *)(buffer + ETH_HDR_LEN + IP_HDR_LEN);
     struct icmp_v4_echo *echo = (struct icmp_v4_echo *)(icmp->data);
 
-    memcpy(echo->data, txt, sizeof(txt));
+    memcpy(echo->data, txt, strlen(txt));
     icmp->type = ICMP_V4_ECHO;
     icmp->code = 0;
 

@@ -18,6 +18,7 @@ void mem_resource_map(struct driver_resource *res) {
     struct linked_list_node *node;
     for_each_linked_list_node(node, &mem_resource_list) {
         struct driver_resource *res_using = container_of(node, struct driver_resource, list_node);
+        if (res_using == res) panic("重复使用资源描述符");
         if (res_using->map_address >= mem_resource_ptr) {
             uint64_t space = res_using->map_address - mem_resource_ptr;
             if (space >= map_length) break;

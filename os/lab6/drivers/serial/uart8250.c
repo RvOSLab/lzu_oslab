@@ -99,7 +99,6 @@ uint64_t uart8250_device_probe(struct device *dev) {
     uart8250_serial_device.dev = dev;
     device_set_interface(dev, SERIAL_INTERFACE_BIT, uart8250_get_interface);
     device_register(dev, "uart8250", UART8250_MAJOR, NULL);
-    device_add_resource(dev, &uart8250_mmio_res);
     return 0;
 }
 

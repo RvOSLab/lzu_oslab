@@ -65,7 +65,7 @@ int64_t ramfs_init_fs(struct vfs_instance *fs) {
     ramfs_set_inode(fs, ramfs_dir, sizeof(ramfs_dir), 0, RAMFS_INODE_DIR);
     const char *ramfs_test_txt = "hello ramfs\n";
     ramfs_set_inode(fs, (void *)ramfs_test_txt, strlen(ramfs_test_txt), 1, RAMFS_INODE_FILE);
-    fs->root = vfs_new_inode(fs, 0);
+    fs->root_inode_idx = 0;
     return 0;
 }
 

@@ -82,7 +82,7 @@ static long sys_open(struct trapframe *tf)
     uint64_t fd = 0;
     while (fd < 4) {
         if (!current->fd[fd]) {
-            struct vfs_inode *inode = vfs_get_inode((const char *)tf->gpr.a0, NULL);
+            struct vfs_inode *inode = vfs_get_inode_by_path((const char *)tf->gpr.a0, NULL);
             current->fd[fd] = inode;
             if (inode) {
                 vfs_ref_inode(inode);

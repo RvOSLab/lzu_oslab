@@ -9,10 +9,11 @@ struct vfs_instance root_fs;
 void vfs_init() {
     int64_t ret = ramfs_interface.init_fs(&root_fs);
     if (ret < 0) panic("root fs init failed");
-    vfs_ref_inode(root_fs.root);
+    struct vfs_inode *root_inode = vfs_get_inode(&root_fs, root_fs.root_inode_idx);
+    vfs_ref_inode(root_inode);
 }
 
-struct vfs_inode *vfs_new_inode(struct vfs_instance *fs, uint64_t inode_idx) {
+struct vfs_inode *vfs_get_inode(struct vfs_instance *fs, uint64_t inode_idx) {
     struct vfs_inode *new_inode = kmalloc(sizeof(struct vfs_inode));
     new_inode->fs = fs;
     new_inode->inode_data = NULL;
@@ -67,7 +68,7 @@ struct vfs_inode *vfs_search_inode_in_dir(struct vfs_inode *inode, const char *n
         struct vfs_dir_entry *dir_entry = vfs_inode_dir_entry(inode, dir_idx);
         if (!dir_entry) break;
         if (!vfs_pathcmp(name, dir_entry->name)) {
-            struct vfs_inode *new_inode = vfs_new_inode(inode->fs, dir_entry->inode_idx);
+            struct vfs_inode *new_inode = vfs_get_inode(inode->fs, dir_entry->inode_idx);
             return new_inode;
         }
         dir_idx += 1;
@@ -75,8 +76,9 @@ struct vfs_inode *vfs_search_inode_in_dir(struct vfs_inode *inode, const char *n
     return NULL;
 }
 
-struct vfs_inode *vfs_get_inode(const char *path, struct vfs_inode *cwd) {
-    struct vfs_inode *now_inode = cwd ? cwd : root_fs.root;
+struct vfs_inode *vfs_get_inode_by_path(const char *path, struct vfs_inode *cwd) {
+    struct vfs_inode *root_inode = vfs_get_inode(&root_fs, root_fs.root_inode_idx);
+    struct vfs_inode *now_inode = cwd ? cwd : root_inode;
     uint64_t char_p = 0;
     uint64_t is_first_name = 1;
     struct vfs_inode *next_inode = NULL;
@@ -89,7 +91,7 @@ struct vfs_inode *vfs_get_inode(const char *path, struct vfs_inode *cwd) {
         is_last_name = !path[char_p];
         if (is_first_name) {
             if (name_start_p == char_p) { // path = /<...>
-                now_inode = root_fs.root;
+                now_inode = root_inode;
             }
             is_first_name = 0;
         }
@@ -98,7 +100,6 @@ struct vfs_inode *vfs_get_inode(const char *path, struct vfs_inode *cwd) {
             if (!is_last_name && now_inode->stat.type != VFS_INODE_DIR) return NULL;
             if (next_inode) { // previous next_inode
                 next_inode = vfs_search_inode_in_dir(now_inode, path + name_start_p);
-                vfs_free_inode(now_inode); // now_inode == (previous) next_inode
             } else {
                 next_inode = vfs_search_inode_in_dir(now_inode, path + name_start_p);
             }
@@ -108,7 +109,6 @@ struct vfs_inode *vfs_get_inode(const char *path, struct vfs_inode *cwd) {
         if (is_last_name) {
             if (name_start_p == char_p) { // path = <...>/
                 if (now_inode->stat.type != VFS_INODE_DIR) {
-                    // (previous) next_inode != NULL == now_inode
                     return NULL;
                 }
             }

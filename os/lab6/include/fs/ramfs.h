@@ -3,13 +3,14 @@
 
 #include <fs/vfs.h>
 
+#define RAMFS_ID 0xB32862ADD0428978
+
 enum ramfs_inode_type {
-    RAMFS_INODE_DIR = 0,
-    RAMFS_INODE_FILE = 1
+    RAMFS_INODE_FILE = VFS_INODE_FILE,
+    RAMFS_INODE_DIR = VFS_INODE_DIR
 };
 
 struct ramfs_inode {
-    uint64_t type;
     struct vfs_stat stat;
     void *data;
     uint64_t length;

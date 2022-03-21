@@ -4,26 +4,27 @@
 #include <assert.h>
 #include <mm.h>
 
-struct vfs_inode *vfs_root;
+struct vfs_instance root_fs;
 
 void vfs_init() {
-    ramfs_interface.init_fs(&ramfs_interface);
-    vfs_root = ramfs_interface.root;
-    vfs_ref_inode(vfs_root);
+    int64_t ret = ramfs_interface.init_fs(&root_fs);
+    if (ret < 0) panic("root fs init failed");
+    vfs_ref_inode(root_fs.root);
 }
 
-struct vfs_inode *vfs_new_inode(struct vfs_interface *fs, uint64_t inode_idx) {
+struct vfs_inode *vfs_new_inode(struct vfs_instance *fs, uint64_t inode_idx) {
     struct vfs_inode *new_inode = kmalloc(sizeof(struct vfs_inode));
     new_inode->fs = fs;
-    new_inode->fs->ref_cnt += 1;
     new_inode->inode_data = NULL;
     new_inode->inode_idx = inode_idx;
     new_inode->ref_cnt = 0;
-    struct vfs_inode *opened_inode = new_inode->fs->open_inode(new_inode);
-    if (!opened_inode) {
-        vfs_free_inode(new_inode);
+    int64_t ret = new_inode->fs->interface->open_inode(new_inode);
+    if (ret < 0) {
+        kfree(new_inode);
+        return NULL;
     }
-    return opened_inode;
+    new_inode->fs->ref_cnt += 1;
+    return new_inode;
 }
 
 void vfs_ref_inode(struct vfs_inode *inode) {
@@ -33,26 +34,23 @@ void vfs_ref_inode(struct vfs_inode *inode) {
 void vfs_free_inode(struct vfs_inode *inode) {
     inode->ref_cnt -= 1;
     if (!inode->ref_cnt) {
-        inode->fs->close_inode(inode);
+        int64_t ret = inode->fs->interface->close_inode(inode);
+        if (ret < 0) kputs("warn: inode close failed");
         inode->fs->ref_cnt -= 1;
         kfree(inode);
     }
 }
 
-struct vfs_stat *vfs_get_stat(struct vfs_inode *inode) {
-    return inode->fs->get_stat(inode);
-}
-
-uint64_t vfs_is_dir(struct vfs_inode *inode) {
-    return inode->fs->is_dir(inode);
-}
-
-void vfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
-    inode->fs->inode_request(inode, buffer, length, offset, is_read);
+int64_t vfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
+    return inode->fs->interface->inode_request(inode, buffer, length, offset, is_read);
 }
 
 struct vfs_dir_entry *vfs_inode_dir_entry(struct vfs_inode *inode, uint64_t dir_idx) {
-    return inode->fs->dir_inode(inode, dir_idx);
+    struct vfs_dir_entry *entry = kmalloc(sizeof(struct vfs_dir_entry));
+    int64_t ret = inode->fs->interface->dir_inode(inode, dir_idx, entry);
+    if (ret > 0) return entry;
+    kfree(entry);
+    return NULL;
 }
 
 static inline int64_t vfs_pathcmp(const char *path, const char *first_name) {
@@ -78,7 +76,7 @@ struct vfs_inode *vfs_search_inode_in_dir(struct vfs_inode *inode, const char *n
 }
 
 struct vfs_inode *vfs_get_inode(const char *path, struct vfs_inode *cwd) {
-    struct vfs_inode *now_inode = cwd ? cwd : vfs_root;
+    struct vfs_inode *now_inode = cwd ? cwd : root_fs.root;
     uint64_t char_p = 0;
     uint64_t is_first_name = 1;
     struct vfs_inode *next_inode = NULL;
@@ -91,13 +89,13 @@ struct vfs_inode *vfs_get_inode(const char *path, struct vfs_inode *cwd) {
         is_last_name = !path[char_p];
         if (is_first_name) {
             if (name_start_p == char_p) { // path = /<...>
-                now_inode = vfs_root;
+                now_inode = root_fs.root;
             }
             is_first_name = 0;
         }
         if (name_start_p != char_p) { // path = <...>/<name>
             /* TODO: stat check */
-            if (!is_last_name && !now_inode->fs->is_dir(now_inode)) return NULL;
+            if (!is_last_name && now_inode->stat.type != VFS_INODE_DIR) return NULL;
             if (next_inode) { // previous next_inode
                 next_inode = vfs_search_inode_in_dir(now_inode, path + name_start_p);
                 vfs_free_inode(now_inode); // now_inode == (previous) next_inode
@@ -109,9 +107,8 @@ struct vfs_inode *vfs_get_inode(const char *path, struct vfs_inode *cwd) {
         }
         if (is_last_name) {
             if (name_start_p == char_p) { // path = <...>/
-                if (!now_inode->fs->is_dir(now_inode)) {
+                if (now_inode->stat.type != VFS_INODE_DIR) {
                     // (previous) next_inode != NULL == now_inode
-                    if (next_inode) vfs_free_inode(now_inode);
                     return NULL;
                 }
             }

@@ -116,7 +116,7 @@ static long sys_stat(struct trapframe *tf) {
     if (fd < 0 || fd > 4) return -EINVAL;
     struct vfs_inode *inode = current->fd[fd];
     if (!inode) return -EINVAL;
-    struct vfs_stat *stat= vfs_get_stat(inode);
+    struct vfs_stat *stat= &inode->stat;
     memcpy((void *)tf->gpr.a1, stat, sizeof(struct vfs_stat));
     return 0;
 }
@@ -129,8 +129,7 @@ static long sys_read(struct trapframe *tf) {
     if (fd < 0 || fd > 4) return -EINVAL;
     struct vfs_inode *inode = current->fd[fd];
     if (!inode) return -EINVAL;
-    vfs_inode_request(inode, (void *)tf->gpr.a1, tf->gpr.a2, 0, 1);
-    return 0;
+    return vfs_inode_request(inode, (void *)tf->gpr.a1, tf->gpr.a2, 0, 1);
 }
 
 /**

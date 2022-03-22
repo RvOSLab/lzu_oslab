@@ -10,6 +10,15 @@ static uint8_t broadcast_hw[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}; /* 广播�
 
 static LIST_HEAD(arp_cache);
 
+static struct sk_buff *
+arp_alloc_skb()
+{
+	struct sk_buff *skb = alloc_skb(ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN);
+	skb_reserve(skb, ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN);
+	skb->protocol = htons(ETH_P_ARP);
+	return skb;
+}
+
 static struct arp_cache_entry *
 arp_entry_alloc(struct arp_hdr *hdr, struct arp_ipv4 *data)
 {
@@ -48,12 +57,12 @@ void arp_init() {
 	
 }
 
-void arp_rcv(uint8_t *buffer) {
-    struct arp_hdr *arphdr;
-    struct arp_ipv4 *arpdata;
-    struct netdev *netdev;
-    int32_t merge = 0;
-    arphdr = arp_hdr(buffer);
+void arp_rcv(struct sk_buff *skb) {
+	struct arp_hdr *arphdr;
+	struct arp_ipv4 *arpdata;
+	struct netdev *netdev;
+	int merge = 0;
+	arphdr = arp_hdr(skb);
     arphdr->hwtype = ntohs(arphdr->hwtype);
     arphdr->protype = ntohs(arphdr->protype);
     arphdr->opcode = ntohs(arphdr->opcode);
@@ -90,7 +99,7 @@ void arp_rcv(uint8_t *buffer) {
 		kprintf("recv a arp request!");
 		kprintf("from %u.%u.%u.%u\n", arpdata->sip >> 24, arpdata->sip >> 16 & 0xff, 
 			arpdata->sip >> 8 & 0xff, arpdata->sip & 0xff);
-		arp_reply(buffer, netdev);
+		arp_reply(skb, netdev);
 		return;
 	case ARP_REPLY:			// 0x0002 -- arp回复,这里实际上在上面已经处理了,更新了arp缓存
 		kprintf("recv a arp reply!");
@@ -103,20 +112,22 @@ void arp_rcv(uint8_t *buffer) {
 	}
 
 drop_pkt:
-	kfree(buffer);
+	free_skb(skb);
 	return;
 }
 
 int arp_request(uint32_t sip, uint32_t dip, struct netdev *netdev) {
-	uint8_t *buffer;
+	struct sk_buff *skb;
 	struct arp_hdr *arp;
 	struct arp_ipv4 *payload;
 	int rc = 0;
-	int size = ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN;
 
-	buffer = kmalloc(size); // 分配arp回复的数据
+	skb = arp_alloc_skb(); // 分配arp回复的数据
+	
+	if (!skb) return -1;
 
-	payload = (struct arp_ipv4 *)(buffer + (size - ARP_DATA_LEN));
+	skb->dev = netdev;
+	payload = (struct arp_ipv4 *)skb_push(skb, ARP_DATA_LEN);
 	
 	/* 发送端填入的是本机的地址信息,但是ip是主机字节序 */
 	memcpy(payload->smac, netdev->hwaddr, netdev->addr_len); // 拷贝硬件地址
@@ -127,7 +138,7 @@ int arp_request(uint32_t sip, uint32_t dip, struct netdev *netdev) {
 	payload->dip = dip;
 
 
-	arp = arp_hdr(buffer);
+	arp = (struct arp_hdr *)skb_push(skb, ARP_HDR_LEN);
 
 	arp->opcode = htons(ARP_REQUEST);
 	arp->hwtype = htons(ARP_ETHERNET);
@@ -138,20 +149,24 @@ int arp_request(uint32_t sip, uint32_t dip, struct netdev *netdev) {
 	payload->sip = htonl(payload->sip);
 	payload->dip = htonl(payload->dip);
 
-	rc = netdev_transmit(buffer, broadcast_hw, ETH_P_ARP, size, netdev);
+	rc = netdev_transmit(skb, broadcast_hw, ETH_P_ARP);
 
-	kfree(buffer);
+	free_skb(skb);
 	return rc;
 }
 
-void arp_reply(uint8_t *buffer, struct netdev* netdev){
+void arp_reply(struct sk_buff *skb, struct netdev *netdev)
+{
 	/* netdev中包含了本机的地址信息,包括ip地址和mac地址 */
 	struct arp_hdr *arphdr;
 	struct arp_ipv4 *arpdata;
 
-	int size = ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN;
+	arphdr = arp_hdr(skb);
 
-	arphdr = arp_hdr(buffer);
+	// skb_reserve函数会将skb的data指针向后移动ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN个字节.
+	skb_reserve(skb, ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN);	
+	// skb_push函数将skb的data指针向前移动ARP_HDR_LEN个字节
+	skb_push(skb, ARP_HDR_LEN + ARP_DATA_LEN);
 
 	arpdata = (struct arp_ipv4 *)arphdr->data;
 
@@ -173,9 +188,10 @@ void arp_reply(uint8_t *buffer, struct netdev* netdev){
 	arpdata->sip = htonl(arpdata->sip);
 	arpdata->dip = htonl(arpdata->dip);
 
+	skb->dev = netdev;
 	// arp协议完成自己的部分,然后接下来让链路层去操心
-	netdev_transmit(buffer, arpdata->dmac, ETH_P_ARP, size, netdev);
-	kfree(buffer);
+	netdev_transmit(skb, arpdata->dmac, ETH_P_ARP);
+	free_skb(skb);
 }
 
 // arp_get_hwaddr 根据ip得到mac地址,找不到则返回NULL
@@ -205,7 +221,3 @@ void free_arp(){
 	}
 }
 
-struct arp_hdr * arp_hdr(uint8_t *buffer)
-{
-	return (struct arp_hdr *)(buffer + ETH_HDR_LEN);
-}

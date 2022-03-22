@@ -3,6 +3,7 @@
 
 #include <net/netdev.h>
 #include <net/ethernet.h>
+#include <net/skbuff.h>
 
 #define IPV4	 0x04
 #define IP_TCP	 0x06
@@ -37,13 +38,16 @@ struct iphdr {
 	uint8_t data[];
 } __attribute__((packed));
 
-struct iphdr *ip_hdr(uint8_t *buffer);
+static inline struct iphdr *
+ip_hdr(const struct sk_buff *skb)
+{
+	// 以太网帧中以太网头部之后跟的就是ip头部
+	return (struct iphdr *)(skb->head + ETH_HDR_LEN);
+}
 
 
-
-int ip_rcv(uint8_t *buffer);
-int ip_output(uint8_t *buffer, uint32_t daddr, uint8_t proto, 
-	struct netdev *netdev, uint32_t len);
+int ip_rcv(struct sk_buff *skb);
+int ip_output(struct sk_buff *skb, uint32_t daddr);
 int dst_neigh_output();
 
 #endif // IP_H

@@ -8,6 +8,7 @@
 #include <mm.h>
 #include <string.h>
 #include <net/net_utils.h>
+#include <net/skbuff.h>
 
 struct netdev *loop;
 struct netdev *netdev; /* 用于记录本机地址,包括ip和mac地址 */
@@ -52,55 +53,52 @@ void netdev_init() {
 }
 
 
-uint32_t netdev_transmit(uint8_t *buffer, uint8_t *dst_hw, uint16_t ethertype, 
-uint64_t length, struct netdev *netdev) {
+uint32_t netdev_transmit(struct sk_buff *skb, uint8_t *dst_hw, uint16_t ethertype) {
 
+	struct netdev *netdev;
 	struct eth_hdr *hdr;
 	int ret = 0;
 
-	hdr = (struct eth_hdr *)(buffer);
+	netdev = skb->dev;
+	skb_push(skb, ETH_HDR_LEN);
+	hdr = (struct eth_hdr *)skb->data;
 
 	/* 拷贝硬件地址 */
 	memcpy(hdr->dmac, dst_hw, netdev->addr_len); /* 对端的mac地址 */
 	memcpy(hdr->smac, netdev->hwaddr, netdev->addr_len); /* 本端的mac地址 */
 	
 	hdr->ethertype = htons(ethertype);	/* 帧类型 */
-	/* 回复,直接写即可 */
+	
 	struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 1);
 	struct net_device *net_device = dev->get_interface(dev, NET_INTERFACE_BIT);
 
-	// kprintf("transmit a  packet!\n");
-	// kprintf("virtio-net: transmit %u bytes\n    ", length);
-	// printbuf(buffer, length);
-
-    // virtio_net_send(dev, buffer, length);
-	net_device->send(dev, buffer, length);
+	net_device->send(dev, skb->data, skb->len);
 
 	return ret;
 }
 
 
 uint32_t netdev_recv(uint8_t *rx_buffer, uint64_t used_len) {
-    // 创建一个新的buffer，将rx_buffer的内容复制一份
-    uint8_t *buffer = kmalloc(used_len);
-    memcpy(buffer, rx_buffer, used_len);
 
-    struct eth_hdr *hdr = eth_hdr(buffer);  /* 获得以太网头部信息,以太网头部包括
+	struct sk_buff *skb = alloc_skb(used_len);
+    memcpy(skb->data, rx_buffer, used_len);
+
+    struct eth_hdr *hdr = eth_hdr(skb);  /* 获得以太网头部信息,以太网头部包括
 										 目的mac地址,源mac地址,以及类型信息 */
 
 	/* 以太网头部的Type(类型)字段 0x86dd表示IPv6 0x0800表示IPv4
 	0x0806表示ARP */
 	switch (hdr->ethertype) {
 	case ETH_P_ARP:	/* ARP  0x0806 */
-		arp_rcv(buffer);
+		arp_rcv(skb);
 		break;
 	case ETH_P_IP:  /* IPv4 0x0800 */
-		ip_rcv(buffer);
+		ip_rcv(skb);
 		break;
 	case ETH_P_IPV6: /* IPv6 0x86dd -- not supported! */
 	default:
 		kprintf("Unsupported ethertype %x\n", hdr->ethertype);
-		kfree_s_i(buffer, used_len);  
+		free_skb(skb);
 		break;
 	}
 	return 0;

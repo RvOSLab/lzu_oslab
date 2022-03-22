@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+struct sk_buff;
+
 struct netdev {
 	uint32_t addr;			/* ip地址,主机字节序 */
 	uint8_t addr_len;		
@@ -13,7 +15,7 @@ struct netdev {
 
 void netdev_init();
 void netdev_free();
-uint32_t netdev_transmit(uint8_t *buffer, uint8_t *dst_hw, uint16_t ethertype, uint64_t length, struct netdev *netdev);
+uint32_t netdev_transmit(struct sk_buff *skb, uint8_t *dst, uint16_t ethertype);
 uint32_t netdev_recv(uint8_t *rx_buffer, uint64_t used_len);
 struct netdev *netdev_get(uint32_t sip);
 int local_ipaddress(uint32_t addr);

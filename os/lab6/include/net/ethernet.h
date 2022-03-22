@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <net/netdev.h>
 #include <net/net_utils.h>
+#include <net/skbuff.h>
 
 #define ETH_HDR_LEN sizeof(struct eth_hdr)
 
@@ -17,10 +18,10 @@ struct eth_hdr
 } __attribute__((packed));
 
 static inline struct eth_hdr *
-eth_hdr(uint8_t buffer[])
+eth_hdr(struct sk_buff *skb)
 {
-	struct eth_hdr *hdr = (struct eth_hdr*)buffer;
-	hdr->ethertype = ntohs(hdr->ethertype);
+	struct eth_hdr *hdr = (struct eth_hdr *)skb_head(skb);
+	hdr->ethertype = ntohs(hdr->ethertype);			// 将网络字节序转换为本地字节序
 	return hdr;
 }
 

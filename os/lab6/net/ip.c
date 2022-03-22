@@ -6,11 +6,6 @@
 #include <kdebug.h>
 #include <net/icmpv4.h>
 
-struct iphdr *ip_hdr(uint8_t *buffer) {
-	// 以太网帧中以太网头部之后跟的就是ip头部
-	return (struct iphdr *)(buffer + ETH_HDR_LEN);
-}
-
 // ip_init_pkt对于接收到的ip数据报进行一定程度的解码,也就是将网络字节序转换为主机字节序
 // 方便后面的操作.
 static void
@@ -32,8 +27,8 @@ ip_pkt_for_us(struct iphdr *ih) {
 /**\
  * ip_rcv 处理接收到的ip数据报
 \**/
-int ip_rcv(uint8_t *buffer) {
-	struct iphdr *ih = ip_hdr(buffer);
+int ip_rcv(struct sk_buff *skb) {
+	struct iphdr *ih = ip_hdr(skb);
 	uint16_t csum = -1;
 
 
@@ -72,7 +67,7 @@ int ip_rcv(uint8_t *buffer) {
 	if (!ip_pkt_for_us(ih)) goto drop_pkt;
     switch (ih->proto) {
     case ICMPV4:
-		icmpv4_incoming(buffer);
+		icmpv4_incoming(skb);
         return 0;
     case IP_TCP:
 		kprintf("recv a TCP packet.");
@@ -88,25 +83,28 @@ int ip_rcv(uint8_t *buffer) {
     }
 
 drop_pkt:
-	kfree(buffer);
+	free_skb(skb);
 	return 0;
 }
 
-int ip_output(uint8_t *buffer, uint32_t daddr, uint8_t proto, 
-	struct netdev *netdev, uint32_t len) {
+int ip_output(struct sk_buff *skb, uint32_t daddr) {
 	
-	struct iphdr *ihdr = ip_hdr(buffer);
+	struct iphdr *ihdr = ip_hdr(skb);
 
-	ihdr->version = IPV4;			/* ip的版本是IPv4 */
-	ihdr->ihl = 0x05;				/* ip头部20字节,也就是说不附带任何选项 */
-	ihdr->tos = 0;					/* tos选项不被大多数TCP/IP实现所支持  */
-	ihdr->len = len;				/* 整个ip数据报的大小 */
-	ihdr->id = ihdr->id;			/* id不变 */
+	extern struct netdev* netdev;
+    skb->dev = netdev;
+	skb_push(skb, IP_HDR_LEN);			/* ip头部 */
+
+	ihdr->version = IPV4;				/* ip的版本是IPv4 */
+	ihdr->ihl = 0x05;					/* ip头部20字节,也就是说不附带任何选项 */
+	ihdr->tos = 0;						/* tos选项不被大多数TCP/IP实现所支持  */
+	ihdr->len = skb->len;				/* 整个ip数据报的大小 */
+	ihdr->id = ihdr->id;				/* id不变 */
 	ihdr->flags = 0;
 	ihdr->frag_offset = 0;
 	ihdr->ttl = 64;
-	ihdr->proto = proto;
-	ihdr->saddr = netdev->addr;
+	ihdr->proto = skb->protocol;
+	ihdr->saddr = skb->dev->addr;
 	ihdr->daddr = daddr;
 	ihdr->csum = 0;
 
@@ -133,7 +131,7 @@ try_agin:
 	// dmac = broadcast_hw;
 
 	if (dmac) {
-		return netdev_transmit(buffer, dmac, ETH_P_IP, len + ETH_HDR_LEN, netdev);
+		return netdev_transmit(skb, dmac, ETH_P_IP);
 	}
 	else {
 		count += 1;

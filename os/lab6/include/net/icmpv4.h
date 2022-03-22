@@ -45,8 +45,8 @@ struct icmp_v4_dst_unreachable {
 	uint8_t data[];
 } __attribute__((packed));
 
-void icmpv4_incoming(uint8_t *buffer);
-void icmpv4_reply(uint8_t *buffer);
+void icmpv4_incoming(struct sk_buff *skb);
+void icmpv4_reply(struct sk_buff *skb);
 void icmpv4_echo_request(uint32_t daddr, uint32_t seq, char* txt);
 // void icmpv4_timestamp(uint8_t *buffer);
 #endif // !ICMPV4_H

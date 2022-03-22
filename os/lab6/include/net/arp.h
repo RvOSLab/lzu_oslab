@@ -3,6 +3,7 @@
 #include <net/ethernet.h>
 #include <net/netdev.h>
 #include <net/list.h>
+#include <net/skbuff.h>
 
 #define ARP_ETHERNET	0x0001
 #define ARP_IPV4		0x0800
@@ -56,11 +57,15 @@ struct arp_cache_entry
 uint8_t* arp_get_hwaddr(uint32_t sip);
 void arp_init();
 void free_arp();
-void arp_rcv(uint8_t *buffer);
-void arp_reply(uint8_t *buffer, struct netdev* netdev);
+void arp_rcv(struct sk_buff *skb);
+void arp_reply(struct sk_buff *skb, struct netdev *netdev);
 int arp_request(uint32_t sip, uint32_t dip, struct netdev *netdev);
 
 
 // arp_hdr用于获取从以太网帧中获取arp头部,以太网头部之后立马就是arp协议的头部
-struct arp_hdr * arp_hdr(uint8_t *buffer);
+static inline struct arp_hdr *
+arp_hdr(struct sk_buff *skb)
+{
+	return (struct arp_hdr *)(skb->head + ETH_HDR_LEN);
+}
 #endif // !ARP_H_

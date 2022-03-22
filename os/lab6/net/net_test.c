@@ -7,6 +7,7 @@
 #include <net/netdef.h>
 #include <string.h>
 #include <kdebug.h>
+#include <net/skbuff.h>
 
 static void arp_test() {
     uint32_t dip[] = {10, 0, 0, 2};
@@ -21,16 +22,19 @@ static void ip_test() {
         0x00, 0x0c, 0x1e, 0x6c, // UDP length 12(8 + 4)
         0x74, 0x65, 0x73, 0x74  // payload "test"
     };
-    uint32_t len = IP_HDR_LEN + sizeof(udp_packet); // 20 + 
-    uint8_t *buffer = kmalloc(len);
-    struct iphdr *ihdr = ip_hdr(buffer);
+    uint32_t len = ETH_HDR_LEN + IP_HDR_LEN + sizeof(udp_packet); // 20 + 
+    struct sk_buff *skb = alloc_skb(len);
+    skb_reserve(skb, len);
+    skb->protocol = IP_UDP;
+    struct iphdr *ihdr = ip_hdr(skb);
+    skb_push(skb, sizeof(udp_packet));
     memcpy(ihdr->data, udp_packet, sizeof(udp_packet));
-    printbuf(buffer, ETH_HDR_LEN + len);
+    printbuf(skb_head(skb), len);
     // uint32_t dip[] = {172, 25, 16, 1}; 
     // uint32_t dip[] = {220, 181, 38, 148}; 
     uint32_t dip[] = {1, 1, 1, 1};
     extern struct netdev* netdev;
-    ip_output(buffer, iptoi(dip), IP_UDP, netdev, len);
+    ip_output(skb, iptoi(dip));
 }
 
 void ping(uint32_t daddr, uint32_t count) {
@@ -39,14 +43,21 @@ void ping(uint32_t daddr, uint32_t count) {
 }
 
 static void icmp_test() {
-    kprintf("ping -c4 10.0.0.2\n");
-    uint32_t dip[] = {10,0,0,2};
+    kprintf("ping -c4 220.181.38.148\n");
+    uint32_t dip[] = {220, 181, 38, 148};
+    // kprintf("ping -c4 10.0.0.2\n");
+    // uint32_t dip[] = {10, 0, 0, 2};
+    // kprintf("ping -c4 172.26.0.1\n");
+    // uint32_t dip[] = {172, 26, 0, 1};
     ping(iptoi(dip), 4);
 }
 
 uint64_t net_test() {
+    // kprintf("--------arp_test--------\n");
     // arp_test();
+    // kprintf("---------ip_test--------\n");
     // ip_test();
+    kprintf("-------icmp_test--------\n");
     icmp_test();
     return 0;
 }

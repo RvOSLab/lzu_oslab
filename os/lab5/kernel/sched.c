@@ -248,4 +248,3 @@ void release(size_t task)
         }
     panic("trying to release non-existent task");
 }
-

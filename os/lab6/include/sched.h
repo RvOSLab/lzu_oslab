@@ -160,7 +160,6 @@ void switch_to(size_t task);
 void interruptible_sleep_on(struct task_struct **p);
 void sleep_on(struct task_struct **p);
 void wake_up(struct task_struct **p);
-uint32_t sys_pause();
 void exit_process(size_t task, uint32_t exit_code);
 void do_exit(uint32_t exit_code);
 

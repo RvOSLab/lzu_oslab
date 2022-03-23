@@ -179,7 +179,15 @@ void schedule()
     switch_to(next);
 }
 
-static inline void __sleep_on(struct task_struct **p, int state)
+/**
+ * 把current任务置为可中断/不可中断的睡眠状态，并让睡眠队列头指针指向当前任务。
+ * 
+ * @param p 等待任务队列头指针
+ * @param state 睡眠状态，TASK_UNINTERRUPTIBLE 或 TASK_INTERRUPTIBLE
+ * TASK_UNINTERRUPTIBLE状态的进程需要内核程序利用 wake_up()函数明确唤醒
+ * TASK_INTERRUPTIBLE的任务可以通过信号、任务超时等唤醒（置为TASK_RUNNING）
+*/
+static inline void __sleep_on(struct task_struct **p, uint32_t state)
 {
 	struct task_struct *tmp;
 
@@ -314,15 +322,15 @@ void release(size_t task)
  * @brief 暂停进程
  *
  * 暂停当前进程，直到收到一个（除被阻塞的信号外的）信号
- * @return EINTR
+ * @return -EINTR
  */
-uint32_t sys_pause(){
+uint32_t sys_pause(void){
     // 将当前进程状态设置为 TASK_INTERRUPTIBLE(可中断阻塞)
     current->state = TASK_INTERRUPTIBLE;
     // 立即进行调度, 调入下一个进程运行
     schedule();
-    // 返回 EINTR, 该返回表示信号中断不可用,即"Interrupted system call"
-    return EINTR;
+    // 返回 -EINTR（系统调用被信号中断,即"Interrupted system call"）
+    return -EINTR;
 }
 
 /**

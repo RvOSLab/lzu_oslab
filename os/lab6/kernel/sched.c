@@ -314,12 +314,15 @@ void release(size_t task)
  * @brief 暂停进程
  *
  * 暂停当前进程，直到收到一个（除被阻塞的信号外的）信号
- * @see kill()
+ * @return EINTR
  */
 uint32_t sys_pause(){
-    // TODO：将当前进程状态设置为 TASK_INTERRUPTIBLE
-    // TODO：立即进行调度
-    // TODO：返回 -EINTR
+    // 将当前进程状态设置为 TASK_INTERRUPTIBLE(可中断阻塞)
+    current->state = TASK_INTERRUPTIBLE;
+    // 立即进行调度, 调入下一个进程运行
+    schedule();
+    // 返回 EINTR, 该返回表示信号中断不可用,即"Interrupted system call"
+    return EINTR;
 }
 
 /**

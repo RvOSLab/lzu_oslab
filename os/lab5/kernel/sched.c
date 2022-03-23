@@ -225,3 +225,27 @@ long sys_init(struct trapframe* tf)
     save_context(tf);
     return 0;
 }
+
+
+/**
+ * 释放指定进程 PCB 所占用的内存空间与进程列表对应项
+ * 进程销毁，由父进程释放
+ */
+void release(size_t task)
+{
+    if (task == current->pid)
+    {
+        kprintf("task releasing itself\n\r");
+        return;
+    }
+    for (uint32_t i = NR_TASKS; i > 0; i--)
+        if (tasks[i]->pid == task)
+        {
+            tasks[i] = NULL;     // 清除进程列表对应项
+            free_page((uint64_t)tasks[i]); // 释放 PCB 内存
+            schedule();          // 立即进行进程调度
+            return;
+        }
+    panic("trying to release non-existent task");
+}
+

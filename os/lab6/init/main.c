@@ -25,6 +25,7 @@ int main(const char* args, const struct fdt_header *fdt)
     enable_interrupt();
     init_task0();
 
+    
     syscall(NR_fork);    /* task 0 creates task 1 */
     long local = syscall(NR_getpid);
     syscall(NR_test_fork, local);

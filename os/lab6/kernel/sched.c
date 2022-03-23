@@ -146,8 +146,14 @@ void schedule()
     int i, next, c;
     struct task_struct** p;
 
-    // TODO：对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
-
+    // 对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
+    for(p = &LAST_TASK ; p > &FIRST_TASK ; --p){
+        if(*p){
+            if((*p)->state == TASK_INTERRUPTIBLE){
+                (*p)->state = TASK_RUNNING;
+            }
+        }
+    }
 
     while (1) {
         c = -1;
@@ -180,7 +186,7 @@ void schedule()
 }
 
 /**
- * 把current任务置为可中断/不可中断的睡眠状态，并让睡眠队列头指针指向当前任务。
+ * @brief 把current任务置为可中断/不可中断的睡眠状态，并让睡眠队列头指针指向当前任务。
  * 
  * @param p 等待任务队列头指针
  * @param state 睡眠状态，TASK_UNINTERRUPTIBLE 或 TASK_INTERRUPTIBLE

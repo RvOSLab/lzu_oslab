@@ -49,9 +49,7 @@
 /// @}
 
 /// @{ @name SSTATUS 寄存器标志位
-#define SSTATUS_UIE          0x00000001
 #define SSTATUS_SIE          0x00000002
-#define SSTATUS_UPIE         0x00000010
 #define SSTATUS_SPIE         0x00000020
 #define SSTATUS_SPP          0x00000100
 #define SSTATUS_FS           0x00006000

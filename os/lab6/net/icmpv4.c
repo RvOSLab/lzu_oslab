@@ -75,7 +75,7 @@ void icmpv4_echo_request(uint32_t daddr, uint32_t seq, char* txt) {
     uint32_t icmp_len = sizeof(struct icmp_v4) +  sizeof(struct icmp_v4_echo) + strlen(txt);
     struct sk_buff *skb = icmpv4_alloc_skb(icmp_len);
     // 填入ICMP数据
-    struct icmp_v4 *icmp = skb_push(skb, icmp_len);
+    struct icmp_v4 *icmp = (struct icmp_v4 *)skb_push(skb, icmp_len);
     struct icmp_v4_echo *echo = (struct icmp_v4_echo *)(icmp->data);
 
     memcpy(echo->data, txt, strlen(txt));

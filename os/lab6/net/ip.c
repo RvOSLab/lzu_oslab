@@ -5,6 +5,7 @@
 #include <mm.h>
 #include <kdebug.h>
 #include <net/icmpv4.h>
+#include <net/udp.h>
 
 // ip_init_pkt对于接收到的ip数据报进行一定程度的解码,也就是将网络字节序转换为主机字节序
 // 方便后面的操作.
@@ -75,7 +76,7 @@ int ip_rcv(struct sk_buff *skb) {
         return 0;
 	case IP_UDP:
 		kprintf("recv a UDP packet.");
-		// todo;
+		udp_in(skb);
 		return 0;
     default:
         kprintf("Unknown IP header proto\n");
@@ -87,7 +88,7 @@ drop_pkt:
 	return 0;
 }
 
-int ip_output(struct sk_buff *skb, uint32_t daddr) {
+int ip_output(struct sock *sk, struct sk_buff *skb) {
 	
 	struct iphdr *ihdr = ip_hdr(skb);
 
@@ -105,7 +106,7 @@ int ip_output(struct sk_buff *skb, uint32_t daddr) {
 	ihdr->ttl = 64;
 	ihdr->proto = skb->protocol;
 	ihdr->saddr = skb->dev->addr;
-	ihdr->daddr = daddr;
+	ihdr->daddr = sk->daddr;
 	ihdr->csum = 0;
 
 	ihdr->len = htons(ihdr->len);

@@ -4,6 +4,7 @@
 #include <net/netdev.h>
 #include <net/ethernet.h>
 #include <net/skbuff.h>
+#include <net/sock.h>
 
 #define IPV4	 0x04
 #define IP_TCP	 0x06
@@ -47,7 +48,7 @@ ip_hdr(const struct sk_buff *skb)
 
 
 int ip_rcv(struct sk_buff *skb);
-int ip_output(struct sk_buff *skb, uint32_t daddr);
+int ip_output(struct sock *sk, struct sk_buff *skb);
 int dst_neigh_output();
 
 #endif // IP_H

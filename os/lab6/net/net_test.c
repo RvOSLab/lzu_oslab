@@ -8,6 +8,7 @@
 #include <string.h>
 #include <kdebug.h>
 #include <net/skbuff.h>
+#include <net/socket.h>
 
 static void arp_test() {
     uint32_t dip[] = {10, 0, 0, 2};
@@ -52,13 +53,47 @@ static void icmp_test() {
     ping(iptoi(dip), 4);
 }
 
+
+static void udp_recv_test() {
+    pid_t pid = 111;
+    int sktfd = _socket(pid, AF_INET, SOCK_DGRAM, IP_UDP);
+    struct sockaddr_in *addr = kmalloc(sizeof(struct sockaddr_in));
+    int32_t dip[] = {10, 0, 0, 15};
+    addr->sin_addr = htonl(iptoi(dip));
+    addr->sin_port = htons(1234);
+    addr->sin_family = AF_INET;
+    _bind(pid, sktfd, addr);
+    char buf[1024];
+
+    kprintf("Waiting to receive data on port 1234...\n");
+    _read(pid, sktfd, buf, 1024);
+    kprintf("recv data : %s", buf);
+    
+}
+
+static void udp_send_test() {
+    pid_t pid = 111;
+    int sktfd = _socket(pid, AF_INET, SOCK_DGRAM, IP_UDP);
+    char *txt = "hello, world!";
+    struct sockaddr_in *addr = kmalloc(sizeof(struct sockaddr_in));
+    int32_t dip[] = {10, 0, 0, 2};
+    addr->sin_addr = htonl(iptoi(dip));
+    addr->sin_port = htons(1234);
+    addr->sin_family = AF_INET;
+    _sendto(pid, sktfd, txt, strlen(txt), addr);
+}
+
 uint64_t net_test() {
-    // kprintf("--------arp_test--------\n");
+    // kprintf("----------arp_test----------\n");
     // arp_test();
-    // kprintf("---------ip_test--------\n");
+    // kprintf("-----------ip_test----------\n");
     // ip_test();
-    kprintf("-------icmp_test--------\n");
-    icmp_test();
+    // kprintf("---------icmp_test----------\n");
+    // icmp_test();
+    // kprintf("--------udp_recv_test-------\n");
+    // udp_recv_test();
+    kprintf("--------udp_send_test-------\n");
+    udp_send_test();
     return 0;
 }
 

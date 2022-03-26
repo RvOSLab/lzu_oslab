@@ -128,7 +128,7 @@ struct task_struct {
     write_csr(scause, CAUSE_USER_ECALL);                                    \
     clear_csr(sstatus, SSTATUS_SPP);                                        \
     set_csr(sstatus, SSTATUS_SPIE);                                         \
-    set_csr(sstatus, SSTATUS_UPIE);                                         \
+    clear_csr(sstatus, SSTATUS_SIE);                                        \
     write_csr(sepc, &&ret - 4 - (SBI_END + LINEAR_OFFSET - START_CODE));    \
     write_csr(sscratch, (char*)&init_task + PAGE_SIZE);                     \
     register uint64_t a7 asm("a7") = 0;                                     \

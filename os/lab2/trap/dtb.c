@@ -4,7 +4,7 @@
 #include <string.h>
 
 struct device_node node[100];
-struct property prop[100];
+struct property prop[150];
 int64_t node_used = -1;
 int64_t prop_used = -1;
 

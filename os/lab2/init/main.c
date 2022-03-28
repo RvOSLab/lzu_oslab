@@ -17,7 +17,7 @@ int main(void *nothing, const void *dtb_start)
     set_stvec();
     clock_init();
     kprintf("complete timer init\n");
-    dtb_start = (const void *)0x82200000;
+    //dtb_start = (const void *)0x82200000;
     unflatten_device_tree(dtb_start);
 
     plic_init();
@@ -26,8 +26,6 @@ int main(void *nothing, const void *dtb_start)
     kprintf("complete uart init\n");
 
     rtc_init();
-    kprintf("timestamp now: %u\n", read_time());
-    set_time(0);
     kprintf("timestamp now: %u\n", read_time());
     set_alarm(read_time() + 1000000000);
     kprintf("alarm time: %u\n", read_alarm());

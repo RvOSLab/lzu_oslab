@@ -79,6 +79,7 @@ struct sigaction
 struct task_struct {
     uint32_t signal;                /* 信号位图 */
     struct sigaction sigaction[32]; /* 信号执行属性结构,对应信号将要执行的操作和标志信息 */
+    long blocked;                   /* 进程信号屏蔽码（对应信号位图）*/
 
     uint32_t uid;  /* 用户ID */
     uint32_t euid; /* 有效用户ID */

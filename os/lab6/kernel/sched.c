@@ -25,6 +25,9 @@ struct task_struct* tasks[NR_TASKS];
 /** 用户栈最大 20M */
 uint64_t stack_size = 20 * (1 << 20); 
 
+/** 生成信号"掩码", SIGKILL和SIGSTOP信号禁止屏蔽 */
+#define _BLOCKABLE (~( (1 << (SIGKILL)) | (1 << (SIGSTOP)) ))
+
 /**
  * @brief 将进程处理器状态 context 压入进程内核堆栈
  *
@@ -149,7 +152,7 @@ void schedule()
     // 对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
     for(p = &LAST_TASK ; p > &FIRST_TASK ; --p){
         if(*p){
-            if((*p)->state == TASK_INTERRUPTIBLE){
+            if(((*p)->state == TASK_INTERRUPTIBLE) && (~( _BLOCKABLE & (*p)->blocked ))){
                 (*p)->state = TASK_RUNNING;
             }
         }

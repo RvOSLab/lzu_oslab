@@ -37,7 +37,7 @@ uint32_t kill_proc(uint32_t pid, uint32_t signal, uint32_t priv)
 {
     if (signal < 1 || signal > NR_SIGNALS)
         return -EINVAL;
-    for (uint32_t i = NR_TASKS - 1; i > -1; i--)
+    for (int32_t i = NR_TASKS - 1; i >= 0; i--)
         if (tasks[i] && tasks[i]->pid == pid)
             return send_sig(signal, tasks[i], priv);
     return (-ESRCH);
@@ -49,7 +49,7 @@ uint32_t kill_pg(uint32_t pgid, uint32_t signal, uint32_t priv)
     uint32_t err, retval = -ESRCH;
     uint32_t found = 0;
 
-    for (uint32_t i = NR_TASKS - 1; i > -1; i--)
+    for (int32_t i = NR_TASKS - 1; i >= 0; i--)
         if (tasks[i] && tasks[i]->pgid == pgid)
         {
             err = send_sig(signal, tasks[i], priv);
@@ -71,7 +71,7 @@ uint32_t kill(uint32_t pid, uint32_t signal)
     if (pid == -1) // 如果 pid 为 -1，则向所有可送达信号的进程发送信号（普通用户是同 euid 进程，root 用户是所有进程）
     {
         uint32_t err, retval = 0;
-        for (uint32_t i = NR_TASKS - 1; i > -1; i--)
+        for (int32_t i = NR_TASKS - 1; i >= 0; i--)
             if ((err = send_sig(signal, tasks[i], 0)) != 0)
                 retval = err;
         return retval;

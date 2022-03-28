@@ -331,7 +331,7 @@ uint32_t sys_pause(){
 
 void exit_process(size_t task, uint32_t exit_code)
 {
-    for (uint32_t i = NR_TASKS - 1; i > -1; i--)
+    for (int32_t i = NR_TASKS - 1; i >= 0; i--)
         if (tasks[i]->pid == task)
         {
             // 它首先会释放当前进程的代码段和数据段所占用的内存页面。

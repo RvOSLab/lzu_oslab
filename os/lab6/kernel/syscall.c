@@ -175,7 +175,7 @@ static int64_t sys_kill(struct trapframe *tf)
  */
 static int64_t sys_exit(struct trapframe *tf)
 {
-    do_exit(tf->gpr.a0);
+    exit_process(current->pid, tf->gpr.a0);
     return 0;
 }
 

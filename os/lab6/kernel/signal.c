@@ -138,7 +138,7 @@ uint32_t do_signal(struct task_struct *dest, uint32_t signr, struct trapframe *t
         case SIGFPE:
         case SIGSEGV:
         default:
-            do_exit(signr);
+            exit_process(dest->pid, 0);
         }
     }
 

@@ -349,8 +349,3 @@ void exit_process(size_t task, uint32_t exit_code)
             schedule(); // 最后让内核重新调度任务运行。
         }
 }
-
-void do_exit(uint32_t exit_code)
-{
-    exit_process(current->pid, exit_code);
-}

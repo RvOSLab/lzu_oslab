@@ -90,10 +90,10 @@ uint64_t net_test() {
     // ip_test();
     // kprintf("---------icmp_test----------\n");
     // icmp_test();
-    // kprintf("--------udp_recv_test-------\n");
-    // udp_recv_test();
-    kprintf("--------udp_send_test-------\n");
-    udp_send_test();
+    kprintf("--------udp_recv_test-------\n");
+    udp_recv_test();
+    // kprintf("--------udp_send_test-------\n");
+    // udp_send_test();
     return 0;
 }
 

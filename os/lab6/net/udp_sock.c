@@ -5,19 +5,27 @@
 
 static int udp_sock_amount = 0;
 static LIST_HEAD(udp_socks);
+struct spinlock slock;
+
+__attribute((constructor)) init_udp_sock_lock()  
+{  
+    init_lock(&slock, "socket_lock");  
+} 
 
 void udp_free_sock(struct sock *sk);
 
 static void udp_socks_enqueue(struct sock *sk) {
-    // todo : 为udp_socks加锁
+    acquire_lock(&slock);
 	list_add_tail(&sk->link, &udp_socks);
 	udp_sock_amount++;
+	release_lock(&slock);
 }
 
 static void udp_socks_remove(struct sock *sk) {
-	// todo : 为udp_socks加锁
+	acquire_lock(&slock);
 	udp_sock_amount--;
 	list_del_init(&sk->link);
+	release_lock(&slock);
 }
 
 /**\
@@ -31,14 +39,15 @@ struct sock *udp_lookup_sock(uint16_t dport) {
 	struct sock *sk;
 	struct list_head *item;
 
-	// todo : 为udp_socks加锁
+	acquire_lock(&slock);
 	list_for_each(item, &udp_socks) {
 		sk = list_entry(item, struct sock, link);
 		if (sk->sport == dport) {
-			// 返回前释放锁
+			release_lock(&slock);
 			return sk;
 		}
 	}
+	release_lock(&slock);
 	return NULL;
 }
 
@@ -112,13 +121,14 @@ int udp_recvfrom(struct sock *sk, void *buf, const uint32_t len,
 static int udp_clean_up_receive_queue(struct sock *sk) {
 	struct sk_buff *skb;
 
-	// 为接收队列加锁
+	acquire_lock(&sk->receive_queue.lock);
 	while ((skb = skb_peek(&sk->receive_queue)) != NULL) {
 		/* 释放掉已经接收到了确认的数据 */
 		skb_dequeue(&sk->receive_queue);
 		skb->refcnt--;
 		free_skb(skb);
 	}
+	release_lock(&sk->receive_queue.lock);
 	return 0;
 }
 
@@ -185,14 +195,14 @@ int udp_sendto(struct sock *sk, const void *buf, const uint32_t size,
 	}
 	/* 如果没有调用过bind函数,并且skaddr不为空 */
 	else if ((sk->state == UDP_UNCONNECTED) && (skaddr != NULL)) {
-		// todo : 为udp_socks加锁
+		acquire_lock(&slock);
 		sk->daddr = ntohl(skaddr->sin_addr);
 		sk->dport = ntohs(skaddr->sin_port);
 		sk->sport = udp_generate_port();	/* 随机产生一个端口 */
 		sk->saddr = netdev->addr;
 		if (!udp_sk_in_socks(sk))
 			list_add_tail(&sk->link, &udp_socks);
-		// 此处需要释放锁
+		release_lock(&slock);
 		rc = udp_send(sk, buf, size);
 	}
 	return rc;

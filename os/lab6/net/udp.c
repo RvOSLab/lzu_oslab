@@ -61,7 +61,7 @@ int udp_data_dequeue(struct udp_sock *usk, void *user_buf,
 	uint32_t rlen = 0;
 	/* udp可不是什么流式协议,而且,有一点需要注意,一旦userlen比实际的udp数据包长度要小,
 	  那么多的部分会被丢弃掉. */
-	// todo : 给接受队列加锁
+	acquire_lock(&sk->receive_queue.lock);
 	if (!skb_queue_empty(&sk->receive_queue))
 	{
 		skb = skb_peek(&sk->receive_queue);
@@ -79,7 +79,7 @@ int udp_data_dequeue(struct udp_sock *usk, void *user_buf,
 		skb->refcnt--;
 		free_skb(skb);
 	}
-	// 
+	release_lock(&sk->receive_queue.lock);
 	return rlen == 0 ? -1 : (int)rlen;
 }
 

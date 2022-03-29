@@ -4,6 +4,7 @@
 #include <net/netdev.h>
 #include <net/list.h>
 #include <stddef.h>
+#include <utils/atomic.h>
 
 
 struct sk_buff {
@@ -24,7 +25,7 @@ struct sk_buff {
 struct sk_buff_head {
 	struct list_head head;
 	uint32_t qlen;				/* 记录链表的长度 */
-	// 锁,避免争用  todo
+	struct spinlock lock;		// 锁,避免争用
 };
 
 struct sk_buff *alloc_skb(uint32_t size);
@@ -45,7 +46,7 @@ skb_queue_init(struct sk_buff_head *list)
 {
 	list_init(&list->head);
 	list->qlen = 0;
-	
+	init_lock(&list->lock, "skbuff_list_lock");
 }
 
 static inline void

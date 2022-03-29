@@ -3,21 +3,29 @@
 #include <net/netdef.h>
 #include <kdebug.h>
 #include <mm.h>
+#include <utils/atomic.h>
 
 static LIST_HEAD(sockets);
 static int socket_count = 0;
-// todo : 锁
+struct spinlock slock;
 
+__attribute((constructor)) init_socket_lock()  
+{  
+    init_lock(&slock, "socket_lock");  
+}  
+ 
 static inline void socket_sockets_enqueue(struct socket *sk) {
-    // todo ：加锁
+    acquire_lock(&slock);
 	list_add_tail(&sk->list, &sockets);
 	socket_count++;
+	release_lock(&slock);
 }
 
 static inline void socket_sockets_remove(struct socket *sk) {
-	// todo ：加锁
+	acquire_lock(&slock);
 	list_del_init(&sk->list);
 	socket_count--;
+	release_lock(&slock);
 }
 
 extern struct net_family inet;
@@ -49,14 +57,14 @@ int free_socket(struct socket *sock) {
 	if (sock->ops) {
 		sock->ops->free(sock);
 	}
-	// todo : 加锁
+	acquire_lock(&slock);
 	list_del(&sock->list);
 	/* 需要注意的是,这里并不删除struct socket中的struct sock,因为这个socket
 	对应的sock可能还需要处理一些事情. */
 	if (sock->sk) sock->sk->sock = NULL;
 	kfree(sock);
 	sock == NULL;
-
+	release_lock(&slock);
 	return 0;
 }
 
@@ -65,15 +73,15 @@ get_socket(pid_t pid, int fd)
 {
 	struct list_head *item;
 	struct socket *sock = NULL;
-	// todo : 加锁
+	acquire_lock(&slock);
 	list_for_each(item, &sockets) {
 		sock = list_entry(item, struct socket, list);
 		if (sock->pid == pid && sock->fd == fd) {
-			// 返回前释放锁
+			release_lock(&slock);
 			return sock;
 		}
 	}
-	
+	release_lock(&slock);
 	return NULL;
 }
 

@@ -3,6 +3,7 @@
 
 #include <net/socket.h>
 #include <net/skbuff.h>
+#include <utils/atomic.h>
 
 struct sock;
 
@@ -31,11 +32,10 @@ struct sock {
 	struct list_head link;				/* link域方便将sock拉成一张链表 */
 	struct socket *sock;				/* socket和sock是相互包含的,更确切的说,是一体两面 */ 
 	struct net_ops *ops;				/* 操纵网络的方法 */
-	// struct wait_lock recv_wait;
     struct task_struct *recv_wait;
 	struct sk_buff_head receive_queue;	/* 接收队列  */
 	struct sk_buff_head write_queue;	/* 发送队列  */
- 	// pthread_mutex_t lock;				/* 多线程下需要加锁 */
+ 	struct spinlock lock;				/* 多线程下需要加锁 */
 	int protocol;						/* 协议 */
 	int state;							/* 记录下sock当前所在状态 */
 	int err;		

@@ -10,7 +10,7 @@ struct usleep_queue_node {
 };
 
 void usleep_queue_init();
-void usleep_set(int64_t time);
+int64_t usleep_set(int64_t time);
 void usleep_handler();
 
 #endif

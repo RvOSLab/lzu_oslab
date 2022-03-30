@@ -7,6 +7,7 @@
 #include <syscall.h>
 #include <device/loader.h>
 #include <fs/vfs.h>
+#include <lib/sleep.h>
 
 int main(const char* args, const struct fdt_header *fdt)
 {
@@ -22,6 +23,8 @@ int main(const char* args, const struct fdt_header *fdt)
     sched_init();
     clock_init();
     kputs("Hello LZU OS");
+    usleep_queue_init();
+
     enable_interrupt();
     init_task0();
 

@@ -13,6 +13,9 @@ void usleep_queue_init() {
 
 int64_t usleep_set(int64_t utime)
 {
+    uint64_t is_disable = read_csr(sstatus) & SSTATUS_SIE;
+    disable_interrupt();
+
     struct linked_list_node *node;
     for_each_linked_list_node(node, &usleep_queue.list_node)    // 找一个合适的队列插入位置
     {
@@ -39,6 +42,7 @@ int64_t usleep_set(int64_t utime)
         linked_list_remove(&new_node.list_node);
     }
 
+    set_csr(sstatus, is_disable);
     return new_node.remaining_time;
 }
 

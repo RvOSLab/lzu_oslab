@@ -188,6 +188,41 @@ void schedule()
     switch_to(next);
 }
 
+
+void priority_schedule(){
+    int i, next, prio;
+    struct task_struct** p;
+
+    while (1) {
+        prio = -1;
+        next = 0;
+        i = NR_TASKS;
+        p = &tasks[NR_TASKS];
+        while (--i) {
+            if (!*--p)
+                continue;
+            /* 小心混用无符号数和有符号数！ */
+            if ((*p)->state == TASK_RUNNING && (int32_t)(*p)->priority > prio) {
+                prio = (*p)->priority;
+                next = i;
+            }
+        }
+
+        /* 没有用户进程 */
+        if (prio)
+            break;
+
+        /* 所有可运行的进程都耗尽了时间片 */
+        for (p = &LAST_TASK; p > &FIRST_TASK; --p) {
+            if (*p) {
+                (*p)->counter = ((*p)->counter >> 1) + (*p)->priority;
+            }
+        }
+    }
+    // kprintf("switch to %u\n", next);
+    switch_to(next);
+}
+
 /**
  * @brief 把current任务置为可中断/不可中断的睡眠状态，并让睡眠队列头指针指向当前任务。
  * 

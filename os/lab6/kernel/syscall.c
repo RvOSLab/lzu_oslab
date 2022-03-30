@@ -147,7 +147,7 @@ static long sys_reset(struct trapframe *tf)
  */
 static int64_t sys_usleep(struct trapframe *tf)
 {
-    return usleep_set(tf->gpr.a0);
+    return usleep_set((int64_t)tf->gpr.a0);
 }
 
 /**

@@ -104,8 +104,8 @@ struct trapframe* interrupt_handler(struct trapframe* tf)
         break;
     case IRQ_U_TIMER:
     case IRQ_S_TIMER:
-        usleep_handler();
         clock_set_next_event();
+        usleep_handler();
         // enable_interrupt(); /* 允许嵌套中断 */
         if (trap_in_kernel(tf)) {
             ++current->cstime;

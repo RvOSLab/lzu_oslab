@@ -9,6 +9,8 @@
 #include <kdebug.h>
 #include <net/skbuff.h>
 #include <net/socket.h>
+#include <net/timer.h>
+#include <lib/sleep.h>
 
 static void arp_test() {
     uint32_t dip[] = {10, 0, 0, 2};
@@ -83,6 +85,13 @@ static void udp_send_test() {
     _sendto(pid, sktfd, txt, strlen(txt), addr);
 }
 
+
+static void time_test(uint32_t x, void *arg) {
+    static int i = 0;
+    kprintf("timer%u\n", i++);
+    timer_add(300, &time_test, 0);
+}
+
 uint64_t net_test() {
     // kprintf("----------arp_test----------\n");
     // arp_test();
@@ -90,10 +99,13 @@ uint64_t net_test() {
     // ip_test();
     // kprintf("---------icmp_test----------\n");
     // icmp_test();
-    kprintf("--------udp_recv_test-------\n");
-    udp_recv_test();
+    // kprintf("--------udp_recv_test-------\n");
+    // udp_recv_test();
     // kprintf("--------udp_send_test-------\n");
     // udp_send_test();
+    kprintf("---------timer_test---------\n");
+    timer_add(300, &time_test, 0);
+
     return 0;
 }
 

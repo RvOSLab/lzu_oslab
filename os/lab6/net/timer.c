@@ -4,9 +4,12 @@
 #include <utils/atomic.h>
 #include <kdebug.h>
 #include <mm.h>
+#include <lib/sleep.h>
 
 static LIST_HEAD(timers);
 struct spinlock lock;
+static int tick = 0;
+
 
 __attribute((constructor)) init_timer_lock()  {  
     init_lock(&lock, "timer_lock");  
@@ -29,7 +32,7 @@ static struct timer *timer_alloc() {
 }
 
 static void timers_tick() {
-    kprintf("timer_tick");
+    // kprintf("timer_tick");
 	struct list_head *item, *tmp = NULL;
 	struct timer *t = NULL;
 
@@ -37,9 +40,9 @@ static void timers_tick() {
 												到期,则执行,过期或者取消,则释放.*/
         t = list_entry(item, struct timer, list);
 
-        if (!t->cancelled && t->expires < ticks) {
+        if (!t->cancelled && t->expires < tick) {
             t->cancelled = 1;
-            t->handler(ticks, t->arg);
+            t->handler(tick, t->arg);
         }
 
         if (t->cancelled && t->refcnt == 0) {
@@ -51,10 +54,10 @@ static void timers_tick() {
 struct timer *timer_add(uint32_t expire, void (*handler)(uint32_t, void*), void *arg) {
 	struct timer *t = timer_alloc();
 	t->refcnt = 1;
-	t->expires = ticks + expire;
+	t->expires = tick + expire;
 	t->cancelled = 0;
 	// 这种现象应该出现得不多吧.
-	if (t->expires < ticks) {
+	if (t->expires < tick) {
 		kprintf("ERR: Timer expiry integer wrap aroud\n");
 	}
 
@@ -96,14 +99,14 @@ void timer_cancel(struct timer *t) {
 
 void *timers_start() {
 	while (1) {
-        int t = ticks;
-        // while(t == ticks);
+        usleep_set(10000);
+		tick++;
 		timers_tick();
 	}
 }
 
 int timer_get_tick() {
-	return ticks;
+	return tick;
 }
 
 

@@ -21,7 +21,7 @@ extern long test_fork;
 #define NR_stat   9
 #define NR_read  10
 #define NR_reset 11
-#define NR_test_net 12
+#define NR_usleep 12
 /// @}
 
 long syscall(long number, ...);

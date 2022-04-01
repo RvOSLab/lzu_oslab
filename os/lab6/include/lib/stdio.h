@@ -10,5 +10,6 @@
 } while (0)
 
 int printf(const char* fmt, ...);
+int scanf(const char *format_str, ...);
 
 #endif

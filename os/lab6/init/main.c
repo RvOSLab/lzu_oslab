@@ -8,6 +8,7 @@
 #include <device/loader.h>
 #include <fs/vfs.h>
 #include <lib/sleep.h>
+#include <lib/stdio.h>
 
 int main(const char* args, const struct fdt_header *fdt)
 {
@@ -32,12 +33,6 @@ int main(const char* args, const struct fdt_header *fdt)
     long local = syscall(NR_getpid);
     syscall(NR_test_fork, local);
     if (local) {
-        #define get_char() ((uint8_t) syscall(NR_char, 0))
-        #define put_char(c) (syscall(NR_char, (uint64_t) (c)))
-        #define puts(str) do { \
-            for (char *cp = str; *cp; cp++) put_char(*cp); \
-        } while (0)
-        
         char buffer[64];
         int buffer_p;
         while (1) {

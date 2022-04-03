@@ -10,8 +10,7 @@
 //
 // inet 更多指的是tcp socket.
 // 
-// extern struct net_ops tcp_ops;
-struct net_ops tcp_ops;
+extern struct net_ops tcp_ops;
 extern struct net_ops udp_ops;
 
 

@@ -92,6 +92,36 @@ static void time_test(uint32_t x, void *arg) {
     timer_add(300, &time_test, 0);
 }
 
+static void tcp_test() {
+    int pid = 1;
+    int sktfd = _socket(pid, AF_INET, SOCK_STREAM, IP_TCP);
+    if(sktfd < 0) kprintf("socket failed");
+
+    struct sockaddr_in *addr = kmalloc(sizeof(struct sockaddr_in));
+    int32_t dip[] = {10, 0, 0, 15};
+    addr->sin_addr = htonl(iptoi(dip));
+    addr->sin_port = htons(1234);
+    addr->sin_family = AF_INET;
+    _bind(pid, sktfd, addr);
+
+    _listen(pid, sktfd, 5);
+
+    struct sockaddr_in *addr_in = kmalloc(sizeof(struct sockaddr_in));
+    memset(addr_in, 0, sizeof(struct sockaddr_in));
+    int acfd = _accept(pid, sktfd, addr_in);
+
+    char buf[1024];
+    while(1) {
+        memset(buf, 0, sizeof(buf));
+        _read(pid, acfd, buf, sizeof(buf));
+        kprintf("%s", buf);
+        _write(pid, acfd, buf, strlen(buf));
+    }
+    _close(pid, acfd);
+    _close(pid, sktfd);
+
+}
+
 uint64_t net_test() {
     // kprintf("----------arp_test----------\n");
     // arp_test();
@@ -103,9 +133,11 @@ uint64_t net_test() {
     // udp_recv_test();
     // kprintf("--------udp_send_test-------\n");
     // udp_send_test();
-    kprintf("---------timer_test---------\n");
-    timer_add(300, &time_test, 0);
+    // kprintf("---------timer_test---------\n");
+    // timer_add(300, &time_test, 0);
 
+    kprintf("----------tcp_test---------\n");
+    tcp_test();
     return 0;
 }
 

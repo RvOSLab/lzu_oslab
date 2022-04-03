@@ -48,4 +48,6 @@ extern int errno;
 #define ENOSYS      38 /**< Invalid system call number */
 #define    ERESTART    85 /**< Interrupted system call should be restarted */
 
+#define	ETIMEDOUT	110	/* Connection timed out */
+
 #endif /** end of include guard: __ERRNO_H__ */

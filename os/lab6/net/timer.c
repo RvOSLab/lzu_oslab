@@ -8,7 +8,7 @@
 
 static LIST_HEAD(timers);
 struct spinlock lock;
-static int tick = 0;
+static uint64_t tick = 0;
 
 
 __attribute((constructor)) init_timer_lock()  {  

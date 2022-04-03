@@ -6,6 +6,7 @@
 #include <kdebug.h>
 #include <net/icmpv4.h>
 #include <net/udp.h>
+#include <net/tcp.h>
 
 // ip_init_pkt对于接收到的ip数据报进行一定程度的解码,也就是将网络字节序转换为主机字节序
 // 方便后面的操作.
@@ -71,11 +72,11 @@ int ip_rcv(struct sk_buff *skb) {
 		icmpv4_incoming(skb);
         return 0;
     case IP_TCP:
-		kprintf("recv a TCP packet.");
-        // todo
+		kprintf("recv a TCP packet.\n");
+        tcp_in(skb);
         return 0;
 	case IP_UDP:
-		kprintf("recv a UDP packet.");
+		kprintf("recv a UDP packet.\n");
 		udp_in(skb);
 		return 0;
     default:

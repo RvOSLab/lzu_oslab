@@ -3,6 +3,7 @@
 #include <kdebug.h>
 #include <mm.h>
 #include <string.h>
+#include <net/sock.h>
 
 static struct sk_buff *
 icmpv4_alloc_skb(uint64_t icmp_len)
@@ -55,6 +56,9 @@ void icmpv4_reply(struct sk_buff *skb) {
 	struct iphdr *iphdr = ip_hdr(skb);		// 获得ip头部
 	struct icmp_v4 *icmp = (struct icmp_v4 *)iphdr->data;
 
+	struct sock sk;
+	memset(&sk, 0, sizeof(struct sock));
+
 
 	// iphdr->ihl * 4指的是ip头部的大小
 	uint16_t icmp_len = iphdr->len - (iphdr->ihl * 4);		// ip数据报的总长度减去ip头部大小,得到icmp数据报的大小
@@ -66,8 +70,9 @@ void icmpv4_reply(struct sk_buff *skb) {
 	icmp->csum = checksum(icmp, icmp_len, 0);  /* 计算校验和 */
 
 	skb->protocol = ICMPV4;
+	sk.daddr = iphdr->saddr;
 
-	ip_output(skb, iphdr->saddr);
+	ip_output(&sk, skb);
 	free_skb(skb);
 }
 
@@ -91,8 +96,35 @@ void icmpv4_echo_request(uint32_t daddr, uint32_t seq, char* txt) {
     icmp->csum = 0;
     icmp->csum = checksum(icmp, icmp_len, 0);
 
+	struct sock sk;
+	memset(&sk, 0, sizeof(struct sock));
+	sk.daddr = daddr;
+
     skb->protocol = ICMPV4;
-    ip_output(skb, daddr);
+    ip_output(&sk, skb);
     free_skb(skb);
 
+}
+
+void icmpv4_port_unreachable(uint32_t daddr, struct sk_buff *recv_skb) {
+	struct iphdr *iphdr = ip_hdr(recv_skb);
+	uint32_t icmp_len = sizeof(struct icmp_v4) + sizeof(struct icmp_v4_dst_unreachable) + iphdr->ihl + 8;
+	struct sk_buff *skb = icmpv4_alloc_skb(icmp_len);
+	struct icmp_v4 *icmp = (struct icmp_v4 *)skb_push(skb, icmp_len);
+	struct icmp_v4_dst_unreachable *icmp_unreachable = (struct icmp_v4_dst_unreachable*)(icmp->data);
+
+	memcpy(icmp_unreachable->data, iphdr, iphdr->ihl * 4 + 8 * 4);
+	icmp->type = ICMP_V4_DST_UNREACHABLE;
+	icmp->code = ICMP_PORT_UNREACH;
+
+	icmp->csum = 0;
+    icmp->csum = checksum(icmp, icmp_len, 0);
+	skb->protocol = ICMPV4;
+
+	struct sock sk;
+	memset(&sk, 0, sizeof(struct sock));
+	sk.daddr = daddr;
+
+    ip_output(&sk, skb);
+    free_skb(skb);
 }

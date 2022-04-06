@@ -11,7 +11,7 @@ struct spinlock lock;
 static uint64_t tick = 0;
 
 
-__attribute((constructor)) init_timer_lock()  {  
+void init_timer_lock()  {  
     init_lock(&lock, "timer_lock");  
 }
 

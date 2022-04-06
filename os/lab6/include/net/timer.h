@@ -20,5 +20,7 @@ void timer_cancel(struct timer *t);
 void *timers_start();
 int timer_get_tick();
 
+void init_timer_lock();
+
 
 #endif // !TIMER_H

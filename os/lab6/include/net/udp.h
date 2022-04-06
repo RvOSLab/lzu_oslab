@@ -57,5 +57,7 @@ uint16_t udp_generate_port();
 struct sock * udp_lookup_sock(uint16_t dport);
 int udp_checksum(struct sk_buff *skb, uint32_t saddr, uint32_t daddr);
 
+void init_udp_sock_lock();
+
 
 #endif // !UDP_H

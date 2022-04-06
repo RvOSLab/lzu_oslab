@@ -9,7 +9,7 @@ static LIST_HEAD(sockets);
 static int socket_count = 0;
 struct spinlock slock;
 
-__attribute((constructor)) init_socket_lock()  
+void init_socket_lock()  
 {  
     init_lock(&slock, "socket_lock");  
 }  

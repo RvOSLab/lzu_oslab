@@ -9,6 +9,10 @@
 #include <string.h>
 #include <net/net_utils.h>
 #include <net/skbuff.h>
+#include <net/socket.h>
+#include <net/timer.h>
+#include <net/udp.h>
+#include <net/tcp.h>
 
 struct netdev *loop;
 struct netdev *netdev; /* 用于记录本机地址,包括ip和mac地址 */
@@ -49,7 +53,13 @@ void netdev_init() {
     }
     if(netdev_mac[5] < 0x10) kprintf("0");
     kprintf("%x\n", netdev_mac[5]);
-    
+
+	// 初始化协议栈中用到的锁
+	init_socket_lock();
+	init_tcp_sock_lock();
+	init_udp_sock_lock();
+    init_timer_lock();
+	
 }
 
 

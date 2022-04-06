@@ -72,15 +72,12 @@ int ip_rcv(struct sk_buff *skb) {
 		icmpv4_incoming(skb);
         return 0;
     case IP_TCP:
-		kprintf("recv a TCP packet.\n");
         tcp_in(skb);
         return 0;
 	case IP_UDP:
-		kprintf("recv a UDP packet.\n");
 		udp_in(skb);
 		return 0;
     default:
-        kprintf("Unknown IP header proto\n");
         goto drop_pkt;
     }
 

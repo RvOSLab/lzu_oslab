@@ -12,7 +12,7 @@ struct spinlock es_lock;
 
 
 
-__attribute((constructor)) init_tcp_sock_lock()  {  
+void init_tcp_sock_lock()  {  
     init_lock(&cl_lock, "tcp_cl_lock");
     init_lock(&es_lock, "tcp_es_lock");  
 }

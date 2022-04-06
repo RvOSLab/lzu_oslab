@@ -7,7 +7,7 @@ static int udp_sock_amount = 0;
 static LIST_HEAD(udp_socks);
 struct spinlock slock;
 
-__attribute((constructor)) init_udp_sock_lock()  
+void init_udp_sock_lock()  
 {  
     init_lock(&slock, "socket_lock");  
 } 

@@ -233,6 +233,7 @@ int _recvfrom(pid_t pid, int sockfd, void *buf, int count, struct sockaddr_in *s
 int _sendto(pid_t pid, int sockfd, const void *buf, int len, const struct sockaddr_in *saddr);
 
 int free_socket(struct socket *sock);
-void socket_debug();
+
+void init_socket_lock();
 
 #endif // !SOCKET_H

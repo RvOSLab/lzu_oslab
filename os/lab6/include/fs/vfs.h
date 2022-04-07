@@ -65,7 +65,8 @@ enum VFS_INODE_TYPE {
 };
 
 struct vfs_stat {
-    uint32_t type;  // enum VFS_INODE_TYPE
+    uint16_t type;  // enum VFS_INODE_TYPE
+    uint16_t mode;  // vfs可改
     uint32_t gid;   // vfs可改
     uint32_t uid;   // vfs可改
     uint32_t nlink;

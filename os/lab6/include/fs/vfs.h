@@ -10,7 +10,7 @@ struct vfs_instance;
 struct vfs_dir_entry;
 
 /**
- * 每个具体文件系统应提供唯一的fs_id
+ * 每个具体文件系统应提供唯一的fs_name
  * 通常的具体文件系统应且只应处理以下inode类型, 其他类型由vfs拦截转发:
  *     [VFS_INODE_FILE, VFS_INODE_DIR, VFS_INODE_SYMBOL_LINK]
  * 具体inode的引用计数应由具体文件系统维护
@@ -19,7 +19,6 @@ struct vfs_dir_entry;
  **/
 struct vfs_interface {
     const char *fs_name;
-    uint64_t fs_id;
 
     int64_t (*init_fs)(struct vfs_instance *fs);
     int64_t (*remove_fs)(struct vfs_instance *fs);

@@ -71,7 +71,6 @@ int64_t ramfs_init_fs(struct vfs_instance *fs) {
 
 struct vfs_interface ramfs_interface = {
     .fs_name = "ramfs",
-    .fs_id = RAMFS_ID,
     .init_fs = ramfs_init_fs,
     .open_inode = ramfs_open_inode,
     .close_inode = ramfs_close_inode,

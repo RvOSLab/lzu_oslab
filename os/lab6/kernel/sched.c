@@ -72,7 +72,7 @@ void sched_init()
         .brk = (uint64_t)kernel_end - (0xC0200000 - 0x00010000),
         .pg_dir = pg_dir,
     };
-
+    vfs_user_context_init(&init_task.task.vfs_context);
     current = &init_task.task;
 }
 

@@ -116,7 +116,7 @@ struct vfs_inode *vfs_get_inode_by_path(const char *path, struct vfs_inode *cwd)
 
 void vfs_init();
 
-extern struct vfs_inode *vfs_root;
+extern struct vfs_instance root_fs;
 
 /* 工具函数 */
 static inline void vfs_instance_init(struct vfs_instance *fs, struct vfs_interface *interface) {

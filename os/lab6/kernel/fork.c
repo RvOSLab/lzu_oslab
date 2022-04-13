@@ -107,5 +107,6 @@ long sys_fork(struct trapframe *tf)
     current->p_cptr = p;
     p->context.gpr.a0 = 0; /* 新进程 fork() 返回值 */
     p->state= TASK_RUNNING;
+    vfs_user_context_fork(&current->vfs_context, &p->vfs_context);
     return nr;
 }

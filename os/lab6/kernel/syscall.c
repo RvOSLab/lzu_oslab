@@ -79,20 +79,14 @@ static long sys_block(struct trapframe *tf)
  */
 static long sys_open(struct trapframe *tf)
 {
-    uint64_t fd = 0;
-    while (fd < 4) {
-        if (!current->fd[fd]) {
-            struct vfs_inode *inode = vfs_get_inode_by_path((const char *)tf->gpr.a0, NULL);
-            current->fd[fd] = inode;
-            if (inode) {
-                vfs_ref_inode(inode);
-                return fd;
-            }
-            break;
-        }
-        fd += 1;
-    }
-    return -EAGAIN;
+    const char *path = (const char *)tf->gpr.a0;
+    uint64_t flag = tf->gpr.a1;
+    uint64_t mode = tf->gpr.a2;
+    int64_t fd = vfs_user_get_free_fd(&current->vfs_context);
+    if (fd < 0) return fd;
+    int64_t ret = vfs_user_open(&current->vfs_context, path, flag, mode, fd);
+    if (ret < 0) return ret;
+    return fd;
 }
 
 /**
@@ -101,17 +95,15 @@ static long sys_open(struct trapframe *tf)
 static long sys_close(struct trapframe *tf)
 {
     uint64_t fd = tf->gpr.a0;
-    if (fd < 0 || fd > 4) return -EINVAL;
-    struct vfs_inode *inode = current->fd[fd];
-    current->fd[fd] = NULL;
-    vfs_free_inode(inode);
-    return 0;
+    int64_t ret = vfs_user_close(&current->vfs_context, fd);
+    return ret;
 }
 
 /**
  * @brief stat
  */
 static long sys_stat(struct trapframe *tf) {
+    // TODO: vfs_user_stat
     uint64_t fd = tf->gpr.a0;
     if (fd < 0 || fd > 4) return -EINVAL;
     struct vfs_inode *inode = current->fd[fd];
@@ -125,6 +117,7 @@ static long sys_stat(struct trapframe *tf) {
  * @brief read
  */
 static long sys_read(struct trapframe *tf) {
+    // TODO: vfs_user_request
     uint64_t fd = tf->gpr.a0;
     if (fd < 0 || fd > 4) return -EINVAL;
     struct vfs_inode *inode = current->fd[fd];

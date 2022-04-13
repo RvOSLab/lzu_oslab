@@ -24,11 +24,11 @@ struct vfs_inode *vfs_get_inode(struct vfs_instance *fs, uint64_t inode_idx) {
         kfree(new_inode);
         return NULL;
     }
-    new_inode->fs->ref_cnt += 1;
     return new_inode;
 }
 
 void vfs_ref_inode(struct vfs_inode *inode) {
+    if (!inode->ref_cnt) inode->fs->ref_cnt += 1;
     inode->ref_cnt += 1;
 }
 

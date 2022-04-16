@@ -4,27 +4,74 @@
 #include <assert.h>
 #include <mm.h>
 
-struct vfs_instance root_fs;
+struct vfs_instance root_fs = {
+    .interface = &ramfs_interface
+};
+
+uint64_t vfs_inode_cache_get_hash(struct hash_table_node *node) {
+    struct vfs_inode_cache *cache = container_of(node, struct vfs_inode_cache, hash_node);
+    return cache->inode.inode_idx * 0x10001 + 19 * (uint64_t)cache->inode.fs;
+}
+
+uint64_t vfs_inode_cache_is_equal(struct hash_table_node *nodeA, struct hash_table_node *nodeB) {
+    struct vfs_inode_cache *cacheA = container_of(nodeA, struct vfs_inode_cache, hash_node);
+    struct vfs_inode_cache *cacheB = container_of(nodeB, struct vfs_inode_cache, hash_node);
+    return (
+        cacheA->inode.fs == cacheB->inode.fs &&
+        cacheA->inode.inode_idx == cacheB->inode.inode_idx
+    );
+}
+#define VFS_INODE_CACHE_LENGTH 13
+struct hash_table_node vfs_inode_cache_buffer[VFS_INODE_CACHE_LENGTH];
+struct hash_table vfs_inode_cache_table = {
+    .buffer = vfs_inode_cache_buffer,
+    .buffer_length = VFS_INODE_CACHE_LENGTH,
+    .get_hash = vfs_inode_cache_get_hash,
+    .is_equal = vfs_inode_cache_is_equal
+};
 
 void vfs_init() {
+    hash_table_init(&vfs_inode_cache_table);
+    if (!root_fs.interface) panic("root fs not set");
+    if (!root_fs.interface->init_fs) panic("cannot init root fs");
     int64_t ret = ramfs_interface.init_fs(&root_fs);
     if (ret < 0) panic("root fs init failed");
     struct vfs_inode *root_inode = vfs_get_inode(&root_fs, root_fs.root_inode_idx);
+    if (!root_inode) panic("root inode get failed");
     vfs_ref_inode(root_inode);
 }
 
 struct vfs_inode *vfs_get_inode(struct vfs_instance *fs, uint64_t inode_idx) {
-    struct vfs_inode *new_inode = kmalloc(sizeof(struct vfs_inode));
-    new_inode->fs = fs;
-    new_inode->inode_data = NULL;
-    new_inode->inode_idx = inode_idx;
-    new_inode->ref_cnt = 0;
-    int64_t ret = new_inode->fs->interface->open_inode(new_inode);
-    if (ret < 0) {
-        kfree(new_inode);
-        return NULL;
+    struct vfs_inode_cache cache = {
+        .inode = {
+            .fs = fs,
+            .inode_idx = inode_idx
+        }
+    };
+    struct hash_table_node *node = hash_table_get(&vfs_inode_cache_table, &cache.hash_node);
+    struct vfs_inode_cache *new_cache;
+    struct vfs_inode *new_inode;
+    if (node) {
+        new_cache = container_of(node, struct vfs_inode_cache, hash_node);
+        new_inode = &new_cache->inode;
+        return new_inode;
+    } else {
+        new_cache = kmalloc(sizeof(struct vfs_inode_cache));
+        if (!new_cache) return NULL;
+        new_inode = &new_cache->inode;
+        new_inode->fs = fs;
+        new_inode->inode_data = NULL;
+        new_inode->inode_idx = inode_idx;
+        new_inode->ref_cnt = 0;
+        if (!new_inode->fs->interface || !new_inode->fs->interface->open_inode) return NULL;
+        int64_t ret = new_inode->fs->interface->open_inode(new_inode);
+        if (ret < 0) {
+            kfree(new_cache);
+            return NULL;
+        }
+        hash_table_set(&vfs_inode_cache_table, &new_cache->hash_node);
+        return new_inode;
     }
-    return new_inode;
 }
 
 void vfs_ref_inode(struct vfs_inode *inode) {
@@ -35,10 +82,27 @@ void vfs_ref_inode(struct vfs_inode *inode) {
 void vfs_free_inode(struct vfs_inode *inode) {
     inode->ref_cnt -= 1;
     if (!inode->ref_cnt) {
-        int64_t ret = inode->fs->interface->close_inode(inode);
-        if (ret < 0) kputs("warn: inode close failed");
+        if (!inode->fs->interface || !inode->fs->interface->close_inode) {
+            kputs("warn: inode cannot close");
+        } else {
+            int64_t ret = inode->fs->interface->close_inode(inode);
+            if (ret < 0) kputs("warn: inode close failed");
+        }
         inode->fs->ref_cnt -= 1;
-        kfree(inode);
+        kprintf("close inode[%u]", inode->inode_idx);
+        struct vfs_inode_cache cache = {
+            .inode = {
+                .fs = inode->fs,
+                .inode_idx = inode->inode_idx
+            }
+        };
+        struct hash_table_node *node = hash_table_get(&vfs_inode_cache_table, &cache.hash_node);
+        if (!node) {
+            kputs("warn: inode not in cache");
+        } else {
+            struct vfs_inode_cache *real_cache = container_of(node, struct vfs_inode_cache, hash_node);
+            kfree(real_cache);
+        }
     }
 }
 

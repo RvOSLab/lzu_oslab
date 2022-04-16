@@ -1,6 +1,7 @@
 #ifndef VFS_H
 #define VFS_H
 
+#include <utils/hash_table.h>
 #include <stddef.h>
 #include <errno.h>
 
@@ -87,6 +88,11 @@ struct vfs_inode {
     uint64_t inode_idx;
     struct vfs_stat stat;
     struct vfs_instance *fs;
+};
+
+struct vfs_inode_cache {
+    struct vfs_inode inode;
+    struct hash_table_node hash_node;
 };
 
 struct vfs_dir_entry {

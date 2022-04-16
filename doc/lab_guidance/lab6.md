@@ -139,3 +139,8 @@ struct trapframe {
 0x00000000----->+--------------+
 ```
 
+思考题：
+
+1. 为什么在 `trapentry.S` 中保存上下文时不用 `sstatus.SPP` 判断中断前状态？
+2. 为什么 `init_task0` 要使用宏调用？
+3. 为什么在 `init_task0` 中不使用 `ecall` 来调用 0 号系统调用？

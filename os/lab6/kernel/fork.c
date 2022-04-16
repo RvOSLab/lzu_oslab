@@ -18,8 +18,8 @@
  */
 int copy_mem(struct task_struct * p)
 {
-    copy_page_tables(0, p->pg_dir, 0, current->start_kernel);
-    copy_page_tables(current->start_kernel, p->pg_dir, p->start_kernel, 0x100000000 - current->start_kernel);
+    copy_page_tables(0, p->pg_dir, 0, START_KERNEL);
+    copy_page_tables(START_KERNEL, p->pg_dir, START_KERNEL, 0x100000000 - START_KERNEL);
     return 1;
 }
 

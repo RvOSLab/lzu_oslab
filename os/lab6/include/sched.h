@@ -90,13 +90,13 @@ struct task_struct {
     uint32_t exit_code;           /**< 返回码 */
     uint32_t pid;                 /**< 进程 ID */
     uint32_t pgid;                /**< 进程组 */
-    uint64_t start_code;          /**< 代码段起始地址 */
-    uint64_t start_rodata;        /**< 只读数据段起始地址 */
+    // uint64_t start_code;          /**< 代码段起始地址 */
+    // uint64_t start_rodata;        /**< 只读数据段起始地址 */
     uint64_t start_data;          /**< 数据段起始地址 */
     uint64_t end_data;            /**< 数据段结束地址 */
     uint64_t brk;                 /**< 堆结束地址 */
-    uint64_t start_stack;         /**< 栈起始地址 */
-    uint64_t start_kernel;        /**< 内核区起始地址 */
+    // uint64_t start_stack;         /**< 栈起始地址 */
+    // uint64_t start_kernel;        /**< 内核区起始地址 */
     uint32_t state;               /**< 进程调度状态 */
     uint32_t counter;             /**< 时间片大小 */
     uint32_t priority;            /**< 进程优先级 */

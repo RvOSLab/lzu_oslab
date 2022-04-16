@@ -66,7 +66,7 @@ static int64_t sys_getppid(struct trapframe *tf)
 static int64_t sys_brk(struct trapframe *tf)
 {
     uint64_t new_brk = tf->gpr.a0;
-    if (new_brk >= current->end_data && new_brk < current->start_stack - stack_size)
+    if (new_brk >= current->end_data && new_brk < START_STACK - stack_size)
         current->brk = new_brk;
     return current->brk;
 }

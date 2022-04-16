@@ -4,6 +4,7 @@
 #include <fs/vfs.h>
 #include <mm.h>
 #include <errno.h>
+#include <string.h>
 
 struct vfs_file {
     struct vfs_dir_entry *dir;

@@ -83,6 +83,6 @@ int64_t vfs_user_stat(struct vfs_context *ctx, int64_t fd, struct vfs_stat *stat
     if (fd < 0 || fd >= VFS_FD_NUM || !ctx->file[fd]) return -EBADF;
     struct vfs_file *file = ctx->file[fd];
     if (!file->inode) return -EFAULT;
-    memcpy(stat, file->inode->stat, sizeof(struct vfs_stat));
+    memcpy(stat, &file->inode->stat, sizeof(struct vfs_stat));
     return 0;
 }

@@ -30,6 +30,7 @@ int64_t vfs_user_context_init(struct vfs_context *ctx) {
         ctx->file[i] = NULL;
     }
     struct vfs_inode *root_inode = vfs_get_inode(&root_fs, root_fs.root_inode_idx);
+    if (!root_inode) return -EFAULT;
     vfs_ref_inode(root_inode);
     ctx->cwd = root_inode;
     return 0;
@@ -71,8 +72,17 @@ int64_t vfs_user_close(struct vfs_context *ctx, int64_t fd) {
     struct vfs_file *file = ctx->file[fd];
     file->ref_cnt -= 1;
     if (!file->ref_cnt) {
+        if (!file->inode) return -EFAULT;
         vfs_free_inode(file->inode);
         kfree(file);
     }
+    return 0;
+}
+
+int64_t vfs_user_stat(struct vfs_context *ctx, int64_t fd, struct vfs_stat *stat) {
+    if (fd < 0 || fd >= VFS_FD_NUM || !ctx->file[fd]) return -EBADF;
+    struct vfs_file *file = ctx->file[fd];
+    if (!file->inode) return -EFAULT;
+    memcpy(stat, file->inode->stat, sizeof(struct vfs_stat));
     return 0;
 }

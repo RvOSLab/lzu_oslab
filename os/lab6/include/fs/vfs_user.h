@@ -2,6 +2,7 @@
 #define VFS_USER_H
 
 #include <fs/vfs.h>
+#include <mm.h>
 #include <errno.h>
 
 struct vfs_file {
@@ -47,6 +48,7 @@ enum vfs_user_mode {
 
 int64_t vfs_user_open(struct vfs_context *ctx, const char *path, uint64_t flag, uint16_t mode, uint64_t fd);
 int64_t vfs_user_close(struct vfs_context *ctx, int64_t fd);
+int64_t vfs_user_stat(struct vfs_context *ctx, int64_t fd, struct vfs_stat *stat);
 int64_t vfs_user_requset(struct vfs_context *ctx, int64_t fd);
 
 enum vfs_user_inode_mode {

@@ -95,8 +95,7 @@ static long sys_open(struct trapframe *tf)
 static long sys_close(struct trapframe *tf)
 {
     uint64_t fd = tf->gpr.a0;
-    int64_t ret = vfs_user_close(&current->vfs_context, fd);
-    return ret;
+    return vfs_user_close(&current->vfs_context, fd);
 }
 
 /**
@@ -105,12 +104,8 @@ static long sys_close(struct trapframe *tf)
 static long sys_stat(struct trapframe *tf) {
     // TODO: vfs_user_stat
     uint64_t fd = tf->gpr.a0;
-    if (fd < 0 || fd > 4) return -EINVAL;
-    struct vfs_inode *inode = current->fd[fd];
-    if (!inode) return -EINVAL;
-    struct vfs_stat *stat= &inode->stat;
-    memcpy((void *)tf->gpr.a1, stat, sizeof(struct vfs_stat));
-    return 0;
+    struct vfs_stat *stat= (struct vfs_stat *)tf->gpr.a1;
+    return vfs_user_stat(&current->vfs_context, fd, stat);
 }
 
 /**
@@ -120,7 +115,7 @@ static long sys_read(struct trapframe *tf) {
     // TODO: vfs_user_request
     uint64_t fd = tf->gpr.a0;
     if (fd < 0 || fd > 4) return -EINVAL;
-    struct vfs_inode *inode = current->fd[fd];
+    struct vfs_inode *inode = current->vfs_context.file[fd]->inode;
     if (!inode) return -EINVAL;
     return vfs_inode_request(inode, (void *)tf->gpr.a1, tf->gpr.a2, 0, 1);
 }

@@ -357,7 +357,7 @@ class EnumDataStructure(gdb.Command):
         List_P = List.pointer()
         argv = gdb.string_to_argv(arg)
         if len(argv) < 3:
-            print("用法: enum-ds <数据结构对象> <具体对象类型> <数据结构在具体类型中所用名称>")
+            print("用法: type-set <数据结构对象> <具体对象类型> <数据结构在具体类型中所用名称>")
             return
         obj = gdb.parse_and_eval(argv[0])
         if obj.type == List_P or obj.type == HashTable_P:

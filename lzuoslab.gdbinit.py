@@ -264,3 +264,115 @@ class PageInfo(gdb.Command):
 PageInfo()
 
 print("内存大师已加载")
+
+def type_decorator(type_name, field_name):
+    real_type = gdb.lookup_type(type_name)
+    if field_name not in real_type:
+        print("类型<%s>没有名为<%s>的域" % (type_name, field_name))
+        return None
+    ds_field = real_type[field_name]
+    ds_offset = ds_field.bitpos >> 3
+    def container_of(obj):
+        if obj.type != ds_field.type:
+            print("数据结构类型不匹配 需要<%s> 实际<%s>" % (ds_field.type, obj.type))
+            return None
+        real_addr = obj.address.cast(gdb.lookup_type("uint64_t")) - ds_offset
+        return real_addr.cast(real_type.pointer()).dereference()
+    return container_of, type_name
+
+linked_list_map = {}
+
+class linked_list:
+    def __init__(self, obj, container_of, type_name):
+        self.obj = obj
+        self.container_of = container_of
+        self.type_name = type_name
+        self.gdb_type = None
+    def enum(self):
+        if not self.gdb_type:
+            self.gdb_type = gdb.lookup_type("struct linked_list_node").pointer()
+        node = self.obj["next"]
+        head = self.obj.address.cast(self.gdb_type)
+        i = 0
+        while node != head:
+            node_d = node.dereference()
+            yield str(i), self.container_of(node_d)
+            node = node_d["next"]
+            i += 1
+    def children(self):
+        return self.enum()
+    def to_string(self):
+        return "[双向链表 head@0x%x]<%s>" % (self.obj.address, self.type_name)
+    def display_hint(self):
+        return "array"
+
+hash_table_map = {}
+
+class hash_table:
+    def __init__(self, obj, container_of, type_name):
+        self.obj = obj
+        self.container_of = container_of
+        self.type_name = type_name
+    def enum(self):
+        List_P = gdb.lookup_type("struct linked_list_node").pointer()
+        node_container, _ = type_decorator("struct hash_table_node", "confliced_list")
+        buffer_length = self.obj["buffer_length"]
+        buffer = self.obj["buffer"]
+        buffer.cast(gdb.lookup_type("struct hash_table_node").array(buffer_length))
+        i = 0
+        for idx in range(buffer_length):
+            linklist = buffer[idx]["confliced_list"]
+            head = linklist.address.cast(List_P)
+            node = linklist["next"]
+            while node != head:
+                node_d = node.dereference()
+                yield str(i), self.container_of(node_container(node_d))
+                node = node_d["next"]
+                i += 1
+            
+    def children(self):
+        return self.enum()
+    def to_string(self):
+        return "[哈希表 head@0x%x]<%s>" % (self.obj.address, self.type_name)
+    def display_hint(self):
+        return "array"
+
+def data_structure_printer(obj):
+    if obj.address and int(obj.address) in linked_list_map:
+        return linked_list_map[int(obj.address)]
+    elif obj.address and int(obj.address) in hash_table_map:
+        return hash_table_map[int(obj.address)]
+    return None
+
+gdb.pretty_printers.append(data_structure_printer)
+
+class EnumDataStructure(gdb.Command):
+    def __init__(self):
+        super(EnumDataStructure, self).__init__ ("type-set", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        HashTable = gdb.lookup_type("struct hash_table")
+        HashTable_P = HashTable.pointer()
+        List = gdb.lookup_type("struct linked_list_node")
+        List_P = List.pointer()
+        argv = gdb.string_to_argv(arg)
+        if len(argv) < 3:
+            print("用法: enum-ds <数据结构对象> <具体对象类型> <数据结构在具体类型中所用名称>")
+            return
+        obj = gdb.parse_and_eval(argv[0])
+        if obj.type == List_P or obj.type == HashTable_P:
+            obj = obj.dereference()
+        if obj.type == List:
+            print("[双向链表] %s" % obj.type)
+            container_of, type_name = type_decorator(argv[1], argv[2])
+            linked_list_map[int(obj.address)] = linked_list(obj, container_of, type_name)
+        elif obj.type == HashTable:
+            print("[哈希表] %s" % obj.type)
+            container_of, type_name = type_decorator(argv[1], argv[2])
+            hash_table_map[int(obj.address)] = hash_table(obj, container_of, type_name)
+            pass
+        else:
+            print("不支持的对象类型<%s>" % obj.type)
+EnumDataStructure()
+
+print("数据结构大师已加载")

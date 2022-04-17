@@ -281,9 +281,9 @@ int64_t sys_init(struct trapframe* tf)
     get_empty_page(START_STACK, USER_RW);
     invalidate();
     memcpy((void*)((uint64_t)START_STACK - PAGE_SIZE), (const void*)FLOOR(tf->gpr.sp), PAGE_SIZE);
-    tf->gpr.sp = START_STACK - ((uint64_t)boot_stack_top - tf->gpr.sp);
+    tf->gpr.sp += START_STACK - (uint64_t)boot_stack_top;
     /* GCC 使用 s0 指向函数栈帧起始地址（高地址），因此这里也要修改，否则切换到进程0会访问到内核区 */
-    tf->gpr.s0 = START_STACK;
+    tf->gpr.s0 += START_STACK - (uint64_t)boot_stack_top;
     save_context(tf);
     return 0;
 }

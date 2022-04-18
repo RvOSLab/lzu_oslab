@@ -31,8 +31,8 @@ int64_t vfs_user_context_init(struct vfs_context *ctx) {
     }
     struct vfs_inode *root_inode = vfs_get_inode(&root_fs, root_fs.root_inode_idx);
     if (!root_inode) return -EFAULT;
-    vfs_ref_inode(root_inode);
     ctx->cwd = root_inode;
+    vfs_ref_inode(ctx->cwd);
     return 0;
 }
 

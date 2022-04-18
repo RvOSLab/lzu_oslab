@@ -3,6 +3,7 @@
 
 #include <fs/vfs.h>
 #include <utils/hash_table.h>
+#include <mm.h>
 
 struct vfs_inode_cache {
     struct vfs_inode inode;

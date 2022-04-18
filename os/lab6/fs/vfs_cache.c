@@ -52,7 +52,7 @@ struct vfs_inode_cache *vfs_inode_cache_alloc() {
 }
 
 void vfs_inode_cache_free(struct vfs_inode_cache *cache) {
-    kfree(cache, sizeof(struct vfs_inode_cache));
+    kfree_s(cache, sizeof(struct vfs_inode_cache));
 }
 
 void vfs_inode_cache_add(struct vfs_inode_cache *cache) {
@@ -66,7 +66,7 @@ void vfs_inode_cache_del(struct vfs_inode_cache *cache) {
 void vfs_inode_cache_put_unused(struct vfs_inode *inode) {
     // TODO: clip
     struct vfs_inode_cache *cache = container_of(inode, struct vfs_inode_cache, inode);
-    linked_list_unshift(&vfs_inode_cache_list, &cache->hash_node);
+    linked_list_unshift(&vfs_inode_cache_list, &cache->list_node);
     vfs_inode_cached_num += 1;
 }
 
@@ -79,5 +79,5 @@ void vfs_inode_cache_del_unused(struct vfs_inode *inode) {
 void vfs_inode_cache_see_unused(struct vfs_inode *inode) {
     struct vfs_inode_cache *cache = container_of(inode, struct vfs_inode_cache, inode);
     linked_list_remove(&cache->list_node);
-    linked_list_unshift(&vfs_inode_cache_list, &cache->hash_node);
+    linked_list_unshift(&vfs_inode_cache_list, &cache->list_node);
 }

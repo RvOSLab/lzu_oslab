@@ -1,8 +1,6 @@
 #include <fs/vfs_cache.h>
 #include <fs/ramfs.h>
-
 #include <assert.h>
-#include <mm.h>
 
 struct vfs_instance root_fs = {
     .interface = &ramfs_interface
@@ -58,7 +56,7 @@ struct vfs_inode *vfs_get_inode(struct vfs_instance *fs, uint64_t inode_idx) {
             vfs_inode_cache_free(cache);
             return NULL;
         }
-        vfs_inode_cache_add(inode);
+        vfs_inode_cache_add(cache);
         vfs_inode_cache_put_unused(inode);
         return inode;
     }

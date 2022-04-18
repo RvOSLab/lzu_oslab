@@ -47,6 +47,18 @@ struct vfs_inode *vfs_inode_cache_queue(struct vfs_instance *fs, uint64_t inode_
     return &real_cache->inode;
 }
 
+void vfs_inode_cache_clip() {
+    while (vfs_inode_cached_num >= vfs_inode_cache_length) {
+        struct linked_list_node *node = linked_list_pop(&vfs_inode_cache_list);
+        if (!node) break;
+        struct vfs_inode_cache *cache = container_of(node, struct vfs_inode_cache, list_node);
+        vfs_inode_cache_del_unused(&cache->inode);
+        vfs_inode_cache_del(cache);
+        vfs_inode_close(&cache->inode);
+        vfs_inode_cache_free(cache);
+    }
+}
+
 struct vfs_inode_cache *vfs_inode_cache_alloc() {
     return (struct vfs_inode_cache *)kmalloc(sizeof(struct vfs_inode_cache));
 }
@@ -64,7 +76,7 @@ void vfs_inode_cache_del(struct vfs_inode_cache *cache) {
 }
 
 void vfs_inode_cache_put_unused(struct vfs_inode *inode) {
-    // TODO: clip
+    vfs_inode_cache_clip();
     struct vfs_inode_cache *cache = container_of(inode, struct vfs_inode_cache, inode);
     linked_list_unshift(&vfs_inode_cache_list, &cache->list_node);
     vfs_inode_cached_num += 1;

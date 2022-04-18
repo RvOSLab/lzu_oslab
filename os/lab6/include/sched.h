@@ -111,6 +111,12 @@ struct task_struct {
     uint64_t *pg_dir;             /**< 页目录地址 */
     context context;              /**< 处理器状态 */
     uint64_t sig_epc;             /**< 处理器状态，用于信号触发 */
+    union {
+        struct {
+            uint64_t vaddr;         // 上次搜到了哪个虚拟地址
+        } clock_info;
+    } swap_info;
+    
 };
 
 /**

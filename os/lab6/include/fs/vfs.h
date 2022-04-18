@@ -1,7 +1,6 @@
 #ifndef VFS_H
 #define VFS_H
 
-#include <utils/hash_table.h>
 #include <stddef.h>
 #include <errno.h>
 
@@ -90,11 +89,6 @@ struct vfs_inode {
     struct vfs_instance *fs;
 };
 
-struct vfs_inode_cache {
-    struct vfs_inode inode;
-    struct hash_table_node hash_node;
-};
-
 struct vfs_dir_entry {
     const char *name;
     uint64_t inode_idx;
@@ -113,6 +107,8 @@ void vfs_ref_inode(struct vfs_inode *inode);
 void vfs_free_inode(struct vfs_inode *inode);
 
 /* vsf提供的inode操作 */
+int64_t vfs_inode_open(struct vfs_inode *inode, struct vfs_instance *fs, uint64_t inode_idx);
+int64_t vfs_inode_close(struct vfs_inode *inode);
 int64_t vfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read);
 struct vfs_dir_entry *vfs_inode_dir_entry(struct vfs_inode *inode, uint64_t dir_idx);
 

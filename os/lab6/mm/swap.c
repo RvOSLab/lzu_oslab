@@ -178,12 +178,12 @@ void swap_in(uint64_t vaddr){
 /** 换出指定的页（表项） **/
 static void swap_out(uint64_t vaddr){
     uint64_t *pte = get_pte(vaddr);
-    *pte &= ~PAGE_VALID;
     uint64_t swapout_paddr = GET_PAGE_ADDR(*pte);
-
     uint64_t swapfile_index = swap_copy_out(vaddr);
-    free_page(swapout_paddr);
+
+    *pte &= ~PAGE_VALID;
     SET_PAGE_ADDR(*pte, swapfile_index);
+    free_page(swapout_paddr);
 }
 
 /** 执行一次换出，换出一页 **/

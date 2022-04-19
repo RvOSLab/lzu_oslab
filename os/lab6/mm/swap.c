@@ -12,7 +12,7 @@ static uint64_t *enhenced_clock_algrithm();
 static int64_t file_read(const char *path, uint64_t offset, uint64_t length, void *buffer);
 static int64_t file_write(const char *path, uint64_t offset, uint64_t length, void *src);
 static void swap_copy_in(new_paddr, swapfile_index);
-static void swap_copy_out(target_paddr);
+static uint64_t swap_copy_out(target_paddr);
 
 /** swap 页表，跟踪 swapfile 的所有页 */
 unsigned char swap_map[SWAP_PAGES] = { 0 };
@@ -144,7 +144,7 @@ static void swap_copy_in(new_paddr, swapfile_index) {
     swap_map[swapfile_index] = 0;
 }
 
-static void swap_copy_out(target_paddr) {
+static uint64_t swap_copy_out(target_paddr) {
     uint64_t index;
     for (index = 0; index < SWAP_PAGES; index++)
     {
@@ -157,6 +157,7 @@ static void swap_copy_out(target_paddr) {
         panic("读取 swap 文件时意外地遇到文件尾");
     }
     swap_map[index] = 1;
+    return index;
 }
 
 /** 换入指定的页（表项） **/

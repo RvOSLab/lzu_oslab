@@ -4,5 +4,5 @@
 #define SWAP_PAGES (SWAP_SIZE / PAGE_SIZE)
 
 void swap_init();
-void swap_in(uint64_t *pte);
-void swap_out(uint64_t *pte);
+void swap_in(uint64_t vaddr);
+void do_swap_out();

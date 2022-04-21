@@ -12,7 +12,7 @@ struct vfs_inode_cache {
 };
 
 void vfs_inode_cache_init();
-struct vfs_inode *vfs_inode_cache_queue(struct vfs_instance *fs, uint64_t inode_idx);
+struct vfs_inode *vfs_inode_cache_query(struct vfs_instance *fs, uint64_t inode_idx);
 void vfs_inode_cache_clip();
 struct vfs_inode_cache *vfs_inode_cache_alloc();
 void vfs_inode_cache_free(struct vfs_inode_cache *cache);

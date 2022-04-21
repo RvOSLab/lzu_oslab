@@ -43,7 +43,7 @@ int64_t vfs_inode_close(struct vfs_inode *inode) {
 }
 
 struct vfs_inode *vfs_get_inode(struct vfs_instance *fs, uint64_t inode_idx) {
-    struct vfs_inode *inode = vfs_inode_cache_queue(fs, inode_idx);
+    struct vfs_inode *inode = vfs_inode_cache_query(fs, inode_idx);
     if (inode) { // inode 命中缓存
         if (!inode->ref_cnt) vfs_inode_cache_see_unused(inode);
         return inode;
@@ -72,7 +72,7 @@ void vfs_ref_inode(struct vfs_inode *inode) {
 void vfs_free_inode(struct vfs_inode *inode) {
     inode->ref_cnt -= 1;
     if (!inode->ref_cnt) {
-        struct vfs_inode *cache_inode = vfs_inode_cache_queue(inode->fs, inode->inode_idx);
+        struct vfs_inode *cache_inode = vfs_inode_cache_query(inode->fs, inode->inode_idx);
         if (!cache_inode) {
             kputs("warn: inode not in cache");
         } else {

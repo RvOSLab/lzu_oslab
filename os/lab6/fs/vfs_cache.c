@@ -34,7 +34,7 @@ void vfs_inode_cache_init() {
     linked_list_init(&vfs_inode_cache_list);
 }
 
-struct vfs_inode *vfs_inode_cache_queue(struct vfs_instance *fs, uint64_t inode_idx) {
+struct vfs_inode *vfs_inode_cache_query(struct vfs_instance *fs, uint64_t inode_idx) {
     struct vfs_inode_cache cache = { // 根据 fs 和 inode_idx 查找缓存项
         .inode = {
             .fs = fs,

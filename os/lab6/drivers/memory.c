@@ -43,6 +43,6 @@ void mem_resource_map(struct driver_resource *res) {
 }
 
 void mem_resource_unmap(struct driver_resource *res) {
-    // TODO: release pte
+    free_page_tables(res->map_address, res->resource_end - res->resource_start);
     linked_list_remove(&res->list_node);
 }

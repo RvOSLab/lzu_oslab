@@ -103,7 +103,7 @@
 #define PHYSICAL(vaddr)  (vaddr - LINEAR_OFFSET)
 #define VIRTUAL(paddr)   (paddr + LINEAR_OFFSET)
 /* 必须保证 end > start */
-#define IS_KERNEL(start, end) (start >= KERNEL_ADDRESS && end <= KERNEL_ADDRESS + PAGING_MEMORY)
+#define IS_KERNEL(start, end) ((start >= KERNEL_ADDRESS && end <= KERNEL_ADDRESS + PAGING_MEMORY) || start >= 0xCC000000)
 #define IS_USER(start, end)   (end <= KERNEL_ADDRESS)
 /// @}
 

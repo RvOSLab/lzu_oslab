@@ -59,11 +59,17 @@ void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[
     struct device *dev = kmalloc(sizeof(struct device));
     device_init(dev);
     fdt_mem.resource_start = (uint64_t)fdt;
-    fdt_mem.resource_end = fdt_mem.resource_start + 2 * PAGE_SIZE;
+    fdt_mem.resource_end = fdt_mem.resource_start + PAGE_SIZE;
     device_add_resource(dev, &fdt_mem);
 
+    // 调整 fdt MMIO 映射区域大小
     fdt = (const struct fdt_header *)fdt_mem.map_address;
-    
+    uint64_t fdt_men_len = CEIL(fdt32_to_cpu(fdt->totalsize));
+    device_del_resource(dev, &fdt_mem);
+    fdt_mem.resource_end = fdt_mem.resource_start + fdt_men_len;
+    device_add_resource(dev, &fdt_mem);
+    fdt = (const struct fdt_header *)fdt_mem.map_address;
+
     union fdt_walk_pointer first_pointer = {
         .address = (uint64_t)fdt + fdt32_to_cpu(fdt->off_dt_struct)
     };

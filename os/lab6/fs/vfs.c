@@ -82,10 +82,12 @@ void vfs_free_inode(struct vfs_inode *inode) {
 }
 
 int64_t vfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
+    if (!inode->fs->interface || !inode->fs->interface->inode_request) return -EFAULT;
     return inode->fs->interface->inode_request(inode, buffer, length, offset, is_read);
 }
 
 struct vfs_dir_entry *vfs_inode_dir_entry(struct vfs_inode *inode, uint64_t dir_idx) {
+    if (!inode->fs->interface || !inode->fs->interface->dir_inode) return NULL;
     struct vfs_dir_entry *entry = kmalloc(sizeof(struct vfs_dir_entry));
     int64_t ret = inode->fs->interface->dir_inode(inode, dir_idx, entry);
     if (ret > 0) return entry;

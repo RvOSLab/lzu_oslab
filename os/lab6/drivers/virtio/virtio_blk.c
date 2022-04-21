@@ -51,6 +51,13 @@ struct irq_descriptor virtio_block_irq = {
     .handler = virtio_block_irq_handler
 };
 
+int64_t virtio_block_request(struct device *dev, struct block_request *request);
+struct block_device virtio_block_device = {
+    .block_num = 0, // virtio_blk_config 设置
+    .block_size = 0, // virtio_blk_config 设置
+    .request = virtio_block_request
+};
+
 void virtio_blk_config(struct virtio_blk_data *data, uint64_t is_legacy) {
     struct virtio_device *device = data->virtio_device;
     struct virtq *virtio_blk_queue = &data->virtio_blk_queue;
@@ -87,11 +94,13 @@ void virtio_blk_config(struct virtio_blk_data *data, uint64_t is_legacy) {
     blk_config = (struct virtio_blk_config *)((uint64_t)device + VIRTIO_BLK_CONFIG_OFFSET);
     kprintf("virtio_blk: capacity: 0x%x\n", blk_config->capacity);
     kprintf("virtio_blk: size: 0x%x\n", blk_config->blk_size);
+    virtio_block_device.block_num = blk_config->capacity;
+    virtio_block_device.block_size = blk_config->blk_size;
     // 8. set driver ok
     device->status |= VIRTIO_STATUS_DRIVER_OK;
 }
 
-void virtio_block_request(struct device *dev, struct block_request *request) {
+int64_t virtio_block_request(struct device *dev, struct block_request *request) {
     struct virtio_blk_data *data = device_get_data(dev);
     struct virtio_device *device = data->virtio_device;
     struct virtq *virtio_blk_queue = &data->virtio_blk_queue;
@@ -131,11 +140,8 @@ void virtio_block_request(struct device *dev, struct block_request *request) {
     device->queue_notify = 0;
 
     sleep_on(&request->wait_queue);
+    return 0;
 }
-
-struct block_device virtio_block_device = {
-    .request = virtio_block_request
-};
 
 void *virtio_block_get_interface(struct device *dev, uint64_t flag) {
     if(flag & BLOCK_INTERFACE_BIT) return &virtio_block_device;

@@ -12,12 +12,14 @@ struct block_request {
     uint64_t is_read;
     uint64_t sector;
     void *buffer;
-    struct task_struct * wait_queue;
+    struct task_struct *wait_queue;
 };
 
 struct block_device {
+    uint64_t block_num;
+    uint64_t block_size;
     struct device *dev;
-    void (*request)(struct device *dev, struct block_request *request);
+    int64_t (*request)(struct device *dev, struct block_request *request);
 };
 
 #endif

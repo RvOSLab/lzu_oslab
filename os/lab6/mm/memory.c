@@ -466,28 +466,6 @@ void un_wp_page(uint64_t *table_entry)
 }
 
 /**
- * @brief 取消某地址的写保护
- *
- * 地址必须合法，否则 panic
- *
- * @param addr 虚拟地址
- */
-void write_verify(uint64_t addr)
-{
-    uint64_t vpns[3] = { GET_VPN1(addr), GET_VPN2(addr), GET_VPN3(addr) };
-    uint64_t *page_table = pg_dir;
-    for (size_t level = 0; level < 2; ++level) {
-        uint64_t idx = vpns[level];
-        assert (page_table[idx],
-                "write_verify(): addr %p is not available", addr);
-        page_table =
-            (uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
-    }
-    un_wp_page(&page_table[vpns[2]]);
-}
-
-
-/**
  * @brief 测试内存模块是否正常
  */
 void mem_test()

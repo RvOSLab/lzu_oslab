@@ -23,22 +23,22 @@ int copy_mem(struct task_struct * p)
     return 1;
 }
 
-/**
- * @brief 取消从 addr 开始 size 字节的写保护
- *
- * @param addr 起始虚拟地址
- * @param size 字节数
- */
-void verify_area(uint64_t addr,int size)
-{
-    size += addr & 0xFFF;
-    addr &= ~0x00000FFF;
-    while (size>0) {
-        size -= 4096;
-        write_verify(addr);
-        addr += 4096;
-    }
-}
+// /**
+//  * @brief 取消从 addr 开始 size 字节的写保护
+//  *
+//  * @param addr 起始虚拟地址
+//  * @param size 字节数
+//  */
+// void verify_area(uint64_t addr,int size)
+// {
+//     size += addr & 0xFFF;
+//     addr &= ~0x00000FFF;
+//     while (size>0) {
+//         size -= 4096;
+//         write_verify(addr);
+//         addr += 4096;
+//     }
+// }
 /**
  * @brief 获取可用的 PID
  *

@@ -27,17 +27,6 @@ static struct trapframe* interrupt_handler(struct trapframe* tf);
 static struct trapframe* exception_handler(struct trapframe* tf);
 static struct trapframe* syscall_handler(struct trapframe* tf);
 
-/**
- *@brief 写保护异常处理函数
- */
-void wp_page_handler(struct trapframe* tf)
-{
-    uint64_t badvaddr = tf->badvaddr;
-    if (badvaddr < current->start_data)
-        panic("Try to write read-only memory");
-    write_verify(badvaddr);
-}
-
 static struct trapframe* external_handler(struct trapframe* tf)
 {
     irq_handle();
@@ -206,17 +195,20 @@ struct trapframe* exception_handler(struct trapframe* tf)
         sbi_shutdown();
         break;
     case CAUSE_INSTRUCTION_PAGE_FAULT:
-        kputs("instruction page fault");
-        print_trapframe(tf);
-        sbi_shutdown();
-        break;
     case CAUSE_LOAD_PAGE_FAULT:
-        kputs("load page fault");
-        print_trapframe(tf);
-        sbi_shutdown();
-        break;
     case CAUSE_STORE_PAGE_FAULT:
-        wp_page_handler(tf);
+        if (page_fault_handler(tf->badvaddr,tf->cause,tf->status & SSTATUS_SPP) < 0)
+        {
+            if (tf->status & SSTATUS_SPP)   // 内核态出错
+            {
+                print_trapframe(tf);
+                sbi_shutdown();
+            }
+            else    //  用户态出错
+            {
+                exit_process(current->pid, 1);
+            }
+        }
         break;
     default:
         kputs("unknown exception");

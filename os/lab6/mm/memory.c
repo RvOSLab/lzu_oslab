@@ -148,6 +148,27 @@ uint64_t get_free_page(void)
 }
 
 /**
+ * @brief 查找给定虚拟地址的页表项
+ *
+ * @param vaddr   虚拟地址
+ * @return 页表项的指针
+ * @note 不需要对齐
+ */
+uint64_t *get_pte(uint64_t vaddr) {
+    uint64_t vpns[3] = { GET_VPN1(vaddr), GET_VPN2(vaddr), GET_VPN3(vaddr) };
+    uint64_t *page_table = pg_dir;
+    for (size_t level = 0; level < 2; ++level) {
+        uint64_t idx = vpns[level];
+        if (!(page_table[idx] & PAGE_VALID)) {
+            return NULL;
+        }
+        page_table =
+            (uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
+    }
+    return &page_table[vpns[2]];
+}
+
+/**
  * @brief 建立物理地址和虚拟地址间的映射
  *
  * 本函数仅仅建立映射，不修改物理页引用计数

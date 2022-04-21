@@ -6,7 +6,6 @@
 #include <errno.h>
 #include <string.h>
 
-static uint64_t *get_pte(uint64_t vaddr);
 static uint64_t clock_algrithm();
 static uint64_t enhenced_clock_algrithm();
 static int64_t file_read(const char *path, uint64_t offset, uint64_t length, void *buffer);
@@ -18,26 +17,6 @@ static void swap_out(uint64_t vaddr);
 /** swap 页表，跟踪 swapfile 的所有页 */
 unsigned char swap_map[SWAP_PAGES] = { 0 };
 uint8_t swap_file[SWAP_SIZE]; //TEMP
-
-/**
- * @brief 查找给定虚拟地址的页表项
- *
- * @param vaddr   虚拟地址
- * @return 页表项的指针
- */
-static uint64_t *get_pte(uint64_t vaddr) {
-    uint64_t vpns[3] = { GET_VPN1(vaddr), GET_VPN2(vaddr), GET_VPN3(vaddr) };
-    uint64_t *page_table = pg_dir;
-    for (size_t level = 0; level < 2; ++level) {
-        uint64_t idx = vpns[level];
-        if (!(page_table[idx] & PAGE_VALID)) {
-            return NULL;
-        }
-        page_table =
-            (uint64_t *)VIRTUAL(GET_PAGE_ADDR(page_table[idx]));
-    }
-    return &page_table[vpns[2]];
-}
 
 static uint64_t clock_algrithm() {
     uint64_t *start_vaddr = &(current->swap_info.clock_info.vaddr);

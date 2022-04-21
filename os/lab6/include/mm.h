@@ -129,6 +129,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to, uint64_t s
 uint64_t get_free_page(void);
 void write_verify(uint64_t addr);
 void get_empty_page(uint64_t addr, uint16_t flag);
+uint64_t *get_pte(uint64_t vaddr);
 uint64_t put_page(uint64_t page, uint64_t addr, uint16_t flag);
 void show_page_tables();
 void map_kernel();

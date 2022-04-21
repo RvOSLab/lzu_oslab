@@ -168,7 +168,6 @@ void swap_in(uint64_t vaddr){
     uint64_t *pte = get_pte(vaddr);
     uint64_t new_page_paddr = get_free_page();
     uint64_t swapfile_index = GET_PAGE_ADDR(*pte);
-    *pte = GET_FLAG(*pte);
     
     SET_PAGE_ADDR(*pte, new_page_paddr);
     *pte |= PAGE_VALID;

@@ -24,7 +24,7 @@ struct hash_table vfs_inode_cache_table = {
     .is_equal = vfs_inode_cache_is_equal
 };
 struct linked_list_node vfs_inode_cache_list;
-int64_t vfs_inode_cache_length = 0;
+int64_t vfs_inode_cache_length = 10;
 int64_t vfs_inode_cached_num = 0;
 /* VFS inode 缓存结构 结束 */
 
@@ -47,7 +47,7 @@ struct vfs_inode *vfs_inode_cache_query(struct vfs_instance *fs, uint64_t inode_
     return &real_cache->inode;
 }
 
-void vfs_inode_cache_clip() {
+static void vfs_inode_cache_clip() {
     while (vfs_inode_cached_num >= vfs_inode_cache_length) {
         struct linked_list_node *node = linked_list_pop(&vfs_inode_cache_list);
         if (!node) break;
@@ -71,7 +71,7 @@ void vfs_inode_cache_add(struct vfs_inode_cache *cache) {
     hash_table_set(&vfs_inode_cache_table, &cache->hash_node);
 }
 
-void vfs_inode_cache_del(struct vfs_inode_cache *cache) {
+static void vfs_inode_cache_del(struct vfs_inode_cache *cache) {
     hash_table_del(&vfs_inode_cache_table, &cache->hash_node);
 }
 

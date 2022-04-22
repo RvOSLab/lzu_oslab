@@ -424,7 +424,7 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
                     {
                         mem_map[MAP_NR(page_addr)]++;
                     } else {
-                        (swap_map[page_addr].count)++;
+                        (swap_map[GET_PAGE_ADDR_BITS(*src_pg_tb2)].count)++;
                     }
                     *dest_pg_tb2 &= ~PAGE_WRITABLE;
                     *src_pg_tb2 &= ~PAGE_WRITABLE;

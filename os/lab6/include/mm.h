@@ -98,7 +98,9 @@
 #define GET_VPN3(addr)     (( (addr) >> 12) & 0x1FF)
 #define GET_PPN(addr)      ((addr) >> 12)
 #define GET_PAGE_ADDR(pte) (( (pte) & 0x3FFFFFFFFFFC00) << 2)
+#define GET_PAGE_ADDR_BITS(pte) (( (pte) & 0x3FFFFFFFFFFC00) >> 10)
 #define SET_PAGE_ADDR(pte, addr) ((pte) = (addr) >> 2 | GET_FLAG(pte))
+#define SET_PAGE_ADDR_BITS(pte, content) ((pte) = (content) << 10 | GET_FLAG(pte))
 #define GET_FLAG(pte)      ( (pte) & 0x3FF )
 #define LINEAR_OFFSET    0x40000000
 #define PHYSICAL(vaddr)  (vaddr - LINEAR_OFFSET)

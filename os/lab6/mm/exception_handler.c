@@ -54,4 +54,5 @@ int64_t page_fault_handler(uint64_t badvaddr, uint64_t cause, uint64_t spp) {
             return -EACCES;
         }
     }
+    return -EACCES;
 }

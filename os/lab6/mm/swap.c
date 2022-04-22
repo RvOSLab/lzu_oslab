@@ -155,7 +155,7 @@ static void swap_copy_out(uint64_t target_vaddr, int64_t swapfile_index)
 void swap_in(uint64_t vaddr){
     vaddr = FLOOR(vaddr);
     uint64_t *pte = get_pte(vaddr);
-    uint64_t swapfile_index = GET_PAGE_ADDR(*pte);
+    uint64_t swapfile_index = GET_PAGE_ADDR_BITS(*pte);
 
     if (!swap_map[swapfile_index].swapped_in_paddr)
     {   // 物理页未被换入
@@ -187,7 +187,7 @@ static void swap_out(uint64_t vaddr){
     swap_copy_out(vaddr, empty_swap_page);
 
     *pte &= ~PAGE_VALID;
-    SET_PAGE_ADDR(*pte, empty_swap_page);
+    SET_PAGE_ADDR_BITS(*pte, empty_swap_page);
 
     swap_map[empty_swap_page].count = 1;
     swap_map[empty_swap_page].swapped_in_paddr = 0;

@@ -9,6 +9,7 @@
 #include <kdebug.h>
 #include <mm.h>
 #include <stddef.h>
+#include <swap.h>
 
 /** 内核页目录（定义在 entry.s 中）*/
 extern uint64_t boot_pg_dir[512];
@@ -416,8 +417,14 @@ int copy_page_tables(uint64_t from, uint64_t *to_pg_dir, uint64_t to,
                 /* 写保护 */
                 *dest_pg_tb2 = *src_pg_tb2;
                 uint64_t page_addr = GET_PAGE_ADDR(*src_pg_tb2);
-                if (is_user_space) {
-                    ++mem_map[MAP_NR(page_addr)];
+                if (is_user_space)
+                {
+                    if (*src_pg_tb2 & PAGE_VALID)  // 仅在该页未被换出时才给物理页的引用计数加 1
+                    {
+                        mem_map[MAP_NR(page_addr)]++;
+                    } else {
+                        (swap_map[page_addr].count)++;
+                    }
                     *dest_pg_tb2 &= ~PAGE_WRITABLE;
                     *src_pg_tb2 &= ~PAGE_WRITABLE;
                 }

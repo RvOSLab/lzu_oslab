@@ -81,15 +81,17 @@ static void block_cache_store(struct block_cache *cache) {
     if (!cache->buffer || !(cache->status_flag & BLOCK_CACHE_VAILD)) {
         panic("store before load vaild");
     }
-    struct block_request req = {
-        .is_read = 0,
-        .sector = cache->block_idx,
-        .buffer = cache->buffer,
-        .wait_queue = NULL
-    };
-    int64_t ret = blk_dev->request(dev, &req);
-    if (ret < 0) cache->status_flag |= BLOCK_CACHE_ERROR;
-    cache->status_flag &= ~BLOCK_CACHE_DIRTY;
+    if (cache->status_flag & BLOCK_CACHE_DIRTY) {
+        struct block_request req = {
+            .is_read = 0,
+            .sector = cache->block_idx,
+            .buffer = cache->buffer,
+            .wait_queue = NULL
+        };
+        int64_t ret = blk_dev->request(dev, &req);
+        if (ret < 0) cache->status_flag |= BLOCK_CACHE_ERROR;
+        cache->status_flag &= ~BLOCK_CACHE_DIRTY;
+    }
 }
 
 /* 获取指定设备和块号的块缓冲, 找不到则新建缓冲区, 更新LRU链表 */
@@ -146,9 +148,7 @@ int64_t block_cache_request(struct device *dev, struct block_cache_request *requ
         if (!(cache->status_flag & BLOCK_CACHE_VAILD)) {
             block_cache_load(cache);
         }
-        if (cache->status_flag & BLOCK_CACHE_ERROR) {
-            return -EIO;
-        }
+        if (cache->status_flag & BLOCK_CACHE_ERROR) return -EIO;
         /* 计算当前块缓冲区需要拷贝的长度 */
         uint64_t cpy_len = blk_dev->block_size - blk_offset;
         if ((real_bytes_len - bytes_counter) < cpy_len) {
@@ -156,12 +156,17 @@ int64_t block_cache_request(struct device *dev, struct block_cache_request *requ
         }
         /* 搬移数据 */
         if (request->request_flag & BLOCK_READ) {
+            if (request->request_flag & BLOCK_FLUSH) {
+                block_cache_store(cache);
+                if (cache->status_flag & BLOCK_CACHE_ERROR) return -EIO;
+            }
             memcpy(&dest_buffer[bytes_counter], &cache->buffer[blk_offset], cpy_len);
         } else {
             memcpy(&cache->buffer[blk_offset], &dest_buffer[bytes_counter], cpy_len);
             cache->status_flag |= BLOCK_CACHE_DIRTY;
             if (request->request_flag & BLOCK_FLUSH) {
                 block_cache_store(cache);
+                if (cache->status_flag & BLOCK_CACHE_ERROR) return -EIO;
             }
         }
         /* 解锁缓冲区 */

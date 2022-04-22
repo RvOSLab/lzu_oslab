@@ -57,8 +57,9 @@ uint64_t block_dev_test() {
     struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 2);
     struct block_device *block_test = dev->get_interface(dev, BLOCK_INTERFACE_BIT);
     char buffer[1024];
+    memset(buffer, 'A', 1024);
     struct block_cache_request req = {
-        .request_flag = BLOCK_WRITE,
+        .request_flag = BLOCK_WRITE | BLOCK_FLUSH,
         .length = 1024,
         .offset = 16,
         .target = buffer

@@ -209,6 +209,7 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint16_t flag)
  * @param addr 虚拟地址
  * @param flag 标志位
  * @note 请确保该虚拟地址没有映射到物理页,否则本函数会覆盖原来的映射，导致内存泄漏。
+ * @note 需要对齐。
  */
 void get_empty_page(uint64_t addr, uint16_t flag)
 {

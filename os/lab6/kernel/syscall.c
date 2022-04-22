@@ -102,7 +102,6 @@ static long sys_close(struct trapframe *tf)
  * @brief stat
  */
 static long sys_stat(struct trapframe *tf) {
-    // TODO: vfs_user_stat
     uint64_t fd = tf->gpr.a0;
     struct vfs_stat *stat= (struct vfs_stat *)tf->gpr.a1;
     return vfs_user_stat(&current->vfs_context, fd, stat);

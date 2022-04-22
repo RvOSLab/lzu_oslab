@@ -1,20 +1,23 @@
 #include <fs/vfs_cache.h>
 #include <fs/ramfs.h>
+#include <fs/minixfs.h>
 #include <assert.h>
+#include <sched.h>
 
 struct vfs_instance root_fs = {
-    .interface = &ramfs_interface
+    .interface = &minixfs_interface
 };
 
 void vfs_init() {
     vfs_inode_cache_init();
     if (!root_fs.interface) panic("root fs not set");
     if (!root_fs.interface->init_fs) panic("can not init root fs");
-    int64_t ret = ramfs_interface.init_fs(&root_fs);
+    int64_t ret = root_fs.interface->init_fs(&root_fs);
     if (ret < 0) panic("root fs init failed");
     struct vfs_inode *root_inode = vfs_get_inode(&root_fs, root_fs.root_inode_idx);
     if (!root_inode) panic("root inode get failed");
     vfs_ref_inode(root_inode);
+    vfs_user_context_init(&init_task.task.vfs_context);
 }
 
 int64_t vfs_inode_open(struct vfs_inode *inode, struct vfs_instance *fs, uint64_t inode_idx) {

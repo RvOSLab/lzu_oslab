@@ -20,10 +20,10 @@ int main(const char* args, const struct fdt_header *fdt)
     init_mem_resource();
     fdt_loader(fdt, driver_list);
     set_stvec();
-    block_cache_init();
-    vfs_init();
     sched_init();
     clock_init();
+    block_cache_init();
+    vfs_init();
     kputs("Hello LZU OS");
     enable_interrupt();
     init_task0();

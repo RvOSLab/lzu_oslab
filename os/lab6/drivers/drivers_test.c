@@ -55,17 +55,16 @@ uint64_t reset_dev_test(uint64_t function) {
 
 uint64_t block_dev_test() {
     struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 2);
-    struct block_device *block_test = dev->get_interface(dev, BLOCK_INTERFACE_BIT);
     char buffer[1024];
     memset(buffer, 'A', 1024);
     struct block_cache_request req = {
-        .request_flag = BLOCK_WRITE,
+        .request_flag = BLOCK_READ,
         .length = 512,
         .offset = 0,
         .target = buffer
     };
     int64_t ret;
-    for (int64_t i = 0; i < 16; i += 1) {
+    for (int64_t i = 0; i < 3; i += 1) {
         if (i == 15) req.request_flag |= BLOCK_FLUSH;
         ret = block_cache_request(dev, &req);
         req.offset += 512;

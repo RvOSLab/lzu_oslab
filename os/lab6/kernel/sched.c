@@ -72,7 +72,6 @@ void sched_init()
         .brk = (uint64_t)kernel_end - (0xC0200000 - 0x00010000),
         .pg_dir = pg_dir,
     };
-    vfs_user_context_init(&init_task.task.vfs_context);
     current = &init_task.task;
 }
 
@@ -180,9 +179,10 @@ static inline void __sleep_on(struct task_struct **p, int state)
 	if (!p) {
 		return;
 	}
-	if (current == &(init_task.task)) {
-		panic("task[0] trying to sleep");
-	}
+    /* NOTE: 用于文件系统测试 */
+	// if (current == &(init_task.task)) {
+	// 	panic("task[0] trying to sleep");
+	// }
 	tmp = *p;
 	*p = current;
 	current->state = state;

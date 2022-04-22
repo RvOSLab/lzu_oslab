@@ -1,6 +1,7 @@
 #include <device.h>
 #include <device/reset/sifive_test.h>
 #include <device/serial/uart8250.h>
+#include <device/block/block_cache.h>
 #include <device/virtio/virtio_blk.h>
 #include <device/virtio/virtio_net.h>
 #include <kdebug.h>
@@ -55,15 +56,16 @@ uint64_t reset_dev_test(uint64_t function) {
 uint64_t block_dev_test() {
     struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 2);
     struct block_device *block_test = dev->get_interface(dev, BLOCK_INTERFACE_BIT);
-    char buffer[512];
-    struct block_request req = {
-        .is_read = 1,
-        .sector = 0,
-        .buffer = buffer,
-        .wait_queue = NULL
+    char buffer[1024];
+    struct block_cache_request req = {
+        .request_flag = BLOCK_WRITE,
+        .length = 1024,
+        .offset = 16,
+        .target = buffer
     };
-    block_test->request(dev, &req);
-    for (uint64_t i = 0; i < 16; i += 1) {
+    int64_t ret = block_cache_request(dev, &req);
+    kprintf("read: %u bytes\n", ret);
+    for (uint64_t i = 0; i < 64; i += 1) {
         if(buffer[i] < 0x10) kprintf("0");
         kprintf("%x ", buffer[i]);
         if(i%8 == 7) kprintf(" ");

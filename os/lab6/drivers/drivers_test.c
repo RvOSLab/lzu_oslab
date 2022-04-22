@@ -59,12 +59,17 @@ uint64_t block_dev_test() {
     char buffer[1024];
     memset(buffer, 'A', 1024);
     struct block_cache_request req = {
-        .request_flag = BLOCK_WRITE | BLOCK_FLUSH,
-        .length = 1024,
-        .offset = 16,
+        .request_flag = BLOCK_WRITE,
+        .length = 512,
+        .offset = 0,
         .target = buffer
     };
-    int64_t ret = block_cache_request(dev, &req);
+    int64_t ret;
+    for (int64_t i = 0; i < 16; i += 1) {
+        if (i == 15) req.request_flag |= BLOCK_FLUSH;
+        ret = block_cache_request(dev, &req);
+        req.offset += 512;
+    }
     kprintf("read: %u bytes\n", ret);
     for (uint64_t i = 0; i < 64; i += 1) {
         if(buffer[i] < 0x10) kprintf("0");

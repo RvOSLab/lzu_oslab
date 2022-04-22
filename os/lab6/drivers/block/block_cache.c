@@ -94,11 +94,25 @@ static void block_cache_store(struct block_cache *cache) {
     }
 }
 
+static void block_cache_clip() {
+    while (block_cached_num >= block_cache_length) {
+        struct linked_list_node *node = linked_list_pop(&block_cache_list);
+        if (!node) break;
+        struct block_cache *cache = container_of(node, struct block_cache, list_node);
+        if (cache->status_flag & BLOCK_CACHE_BUSY) panic("try to free busy block cache");
+        /* 从哈希表中移除, 防止其他进程找到 */
+        hash_table_del(&block_cache_table, &cache->hash_node);
+        linked_list_remove(&cache->list_node);
+        block_cached_num -= 1;
+        block_cache_store(cache);
+    }
+}
+
 /* 获取指定设备和块号的块缓冲, 找不到则新建缓冲区, 更新LRU链表 */
 static struct block_cache *block_cache_get(struct device *dev, uint64_t block_idx) {
     struct block_cache *cache = block_cache_query(dev, block_idx);
     if (!cache) { // 没有对应缓冲区时新建
-        // TODO: clip, 锁
+        block_cache_clip();
         cache = block_cache_alloc();
         if (!cache) return NULL;
         cache->status_flag = 0; // 状态标志为0
@@ -173,6 +187,7 @@ int64_t block_cache_request(struct device *dev, struct block_cache_request *requ
         cache->status_flag &= ~BLOCK_CACHE_BUSY;
         linked_list_unshift(&block_cache_list, &cache->list_node);
         wake_up(&cache->wait_queue);
+        /* 更新拷贝计数器和块缓冲偏移 */
         bytes_counter += cpy_len;
         blk_offset = 0;
         blk_index += 1;

@@ -20,16 +20,17 @@ struct block_cache_request {
 enum block_cache_flag {
     BLOCK_CACHE_VAILD = 1,
     BLOCK_CACHE_DIRTY = 2,
-    BLOCK_CACHE_BUSY = 4
+    BLOCK_CACHE_BUSY = 4,
+    BLOCK_CACHE_ERROR = 8
 };
 
 struct block_cache {
-    uint64_t status_flag;
+    volatile uint64_t status_flag;
 
     struct device *dev;
     uint64_t block_idx;
 
-    void *buffer;
+    char *buffer;
 
     struct hash_table_node hash_node;
     struct linked_list_node list_node;

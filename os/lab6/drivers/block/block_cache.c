@@ -105,6 +105,8 @@ static void block_cache_clip() {
         linked_list_remove(&cache->list_node);
         block_cached_num -= 1;
         block_cache_store(cache);
+        kfree(cache->buffer);
+        block_cache_free(cache);
     }
 }
 

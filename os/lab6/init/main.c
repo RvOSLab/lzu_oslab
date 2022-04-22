@@ -6,6 +6,7 @@
 #include <clock.h>
 #include <syscall.h>
 #include <device/loader.h>
+#include <device/block/block_cache.h>
 #include <fs/vfs.h>
 
 int main(const char* args, const struct fdt_header *fdt)

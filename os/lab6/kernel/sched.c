@@ -390,14 +390,19 @@ void exit_process(size_t task, uint32_t exit_code)
         if (tasks[i]->pid == task)
         {
             // 它首先会释放当前进程的代码段和数据段所占用的内存页面。
-            // （检查是否因此产生孤儿进程组，如果有，并且有处于停止状态(TASK_STOPPED)的组员，则向它们发送一个 SIGHUP 信号和一个 SIGCONT 信号）
-            //      检查情况 1. 我们的父进程在另外一个与我们不同的进程组中，而本进程是该组与外界的唯一联系。所以该进程组将变成一个孤儿进程组。
+            free_page_tables(0x00010000, 0xBFFFFFF0-0x00010000);
             // 通知父进程，发送子进程终止信号 SIGCHLD
+            do_signal(tasks[task]->p_pptr, SIGCHLD, NULL);
             // 如果当前进程有子进程，就将子进程的 father 字段置为 1，即把子进程的父进程改为进程 1(init 进程)
+            if(struct task_struct *cp=tasks[task]->p_cptr){
+                cp->p_pptr=tasks[0];
             // 如果该子进程已经处于僵死状态，则向进程 1 发送子进程终止信号 SIGCHLD。
-            //      检查情况 2. 我们的子进程在另外一个与我们不同的进程组中，而子进程是该组与外界的唯一联系。所以该子进程组将变成一个孤儿进程组。
-            // 接着关闭当前进程打开的所有文件、释放使用的设备。
-            // 若当前进程是进程组的首进程，则还需要终止所有相关进程。
+                if(cp->state == TASK_ZOMBIE){
+                    do_signal(tasks[0], SIGCHLD, NULL);
+                }
+                //多个子进程未考虑
+            }
+
             tasks[i]->state = TASK_ZOMBIE;
             tasks[i]->exit_code = exit_code;
             

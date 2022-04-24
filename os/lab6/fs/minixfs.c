@@ -56,9 +56,87 @@ static void minixfs_to_vfs_stat(struct minixfs_inode *m_inode, struct vfs_stat *
     v_stat->mtime = m_inode->time;
 }
 
+static int64_t minixfs_close_inode(struct vfs_inode *inode) {
+    struct minixfs_inode *real_inode = (struct vfs_inode *)inode->inode_data;
+    kfree(real_inode);
+}
+
+static int64_t minixfs_imap_get(struct minixfs_context *ctx, uint64_t idx) {
+    uint8_t bitmap;
+    if (!idx) return -EINVAL;
+    idx -= 1;
+    if ((idx >> 3) >= ctx->zone_bitmap_offset) return -EINVAL;
+    struct block_cache_request req = {
+        .request_flag = BLOCK_READ,
+        .length = sizeof(uint8_t),
+        .offset = ctx->inode_bitmap_offset + (idx >> 3),
+        .target = &bitmap
+    };
+    int64_t ret = block_cache_request(ctx->dev, &req);
+    if (ret < 0) return ret;
+    return bitmap & (1 << (idx & 7));
+}
+
+static int64_t minixfs_imap_set(struct minixfs_context *ctx, uint64_t idx) {
+    uint8_t bitmap;
+    if (!idx) return -EINVAL;
+    idx -= 1;
+    if ((idx >> 3) >= ctx->zone_bitmap_offset) return -EINVAL;
+    struct block_cache_request req = {
+        .request_flag = BLOCK_READ,
+        .length = sizeof(uint8_t),
+        .offset = ctx->inode_bitmap_offset + (idx >> 3),
+        .target = &bitmap
+    };
+    int64_t ret = block_cache_request(ctx->dev, &req);
+    if (ret < 0) return ret;
+    bitmap |= (1 << (idx & 7));
+    req.request_flag = BLOCK_WRITE;
+    block_cache_request(ctx->dev, &req);
+    if (ret < 0) return ret;
+    return 0;
+}
+
+static int64_t minixfs_zmap_get(struct minixfs_context *ctx, uint64_t idx) {
+    uint8_t bitmap;
+    if (!idx) return -EINVAL;
+    idx -= 1;
+    if ((idx >> 3) >= ctx->inode_offset) return -EINVAL;
+    struct block_cache_request req = {
+        .request_flag = BLOCK_READ,
+        .length = sizeof(uint8_t),
+        .offset = ctx->zone_bitmap_offset + (idx >> 3),
+        .target = &bitmap
+    };
+    int64_t ret = block_cache_request(ctx->dev, &req);
+    if (ret < 0) return ret;
+    return bitmap & (1 << (idx & 7));
+}
+
+static int64_t minixfs_zmap_set(struct minixfs_context *ctx, uint64_t idx) {
+    uint8_t bitmap;
+    if (!idx) return -EINVAL;
+    idx -= 1;
+    if ((idx >> 3) >= ctx->inode_offset) return -EINVAL;
+    idx -= 1;
+    struct block_cache_request req = {
+        .request_flag = BLOCK_READ,
+        .length = sizeof(uint8_t),
+        .offset = ctx->zone_bitmap_offset + (idx >> 3),
+        .target = &bitmap
+    };
+    int64_t ret = block_cache_request(ctx->dev, &req);
+    if (ret < 0) return ret;
+    bitmap |= (1 << (idx & 7));
+    req.request_flag = BLOCK_WRITE;
+    block_cache_request(ctx->dev, &req);
+    if (ret < 0) return ret;
+    return 0;
+}
+
 static int64_t minixfs_open_inode(struct vfs_inode *inode) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
-    // TODO: check inode map
+    if (minixfs_imap_get(ctx, inode->inode_idx) <= 0) return -EINVAL;
     struct minixfs_inode *real_inode = (struct minixfs_inode *)kmalloc(sizeof(struct minixfs_inode));
     if (!real_inode) return -ENOMEM;
     struct block_cache_request req = {
@@ -78,12 +156,68 @@ static int64_t minixfs_open_inode(struct vfs_inode *inode) {
     return 0;
 }
 
-int64_t minixfs_close_inode(struct vfs_inode *inode) {
-    struct minixfs_inode *real_inode = (struct vfs_inode *)inode->inode_data;
-    kfree(real_inode);
+int64_t minixfs_zone_walk(struct vfs_inode *inode) {
+    struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
+    struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
+
+    /* 一级zone (zone_level  < 7) */
+    for (uint64_t zone_level = 0; zone_level < 7; zone_level += 1) {
+        uint16_t zone_idx = real_inode->zone[zone_level];
+        if (minixfs_zmap_get(ctx, zone_idx) <= 0) return -EINVAL;
+        // done
+    }
+
+    uint64_t sub_zone_idx_num = ctx->block_size / sizeof(uint16_t);
+
+    /* 二级zone (zone_level == 7)*/
+    uint16_t zone_idx_1 = real_inode->zone[7];
+    if (minixfs_zmap_get(ctx, zone_idx_1) <= 0) return -EINVAL;
+    for (uint64_t second_idx = 0; second_idx < sub_zone_idx_num; second_idx += 1) {
+        uint16_t zone_idx;
+        struct block_cache_request req = {
+            .request_flag = BLOCK_READ,
+            .length = sizeof(uint16_t),
+            .offset = zone_idx_1 * ctx->block_size + second_idx * sizeof(uint16_t),
+            .target = &zone_idx
+        };
+        int ret = block_cache_request(ctx->dev, &req);
+        if (ret < 0) return ret;
+        if (minixfs_zmap_get(ctx, zone_idx) <= 0) return -EINVAL;
+        // done
+    }
+
+    /* 三级zone (zone_level == 8) */
+    zone_idx_1 = real_inode->zone[8];
+    if (minixfs_zmap_get(ctx, zone_idx_1) <= 0) return -EINVAL;
+    uint64_t sub_zone_idx_num = ctx->block_size / sizeof(uint16_t);
+    for (uint64_t second_idx = 0; second_idx < sub_zone_idx_num; second_idx += 1) {
+        uint16_t zone_idx_2;
+        struct block_cache_request req = {
+            .request_flag = BLOCK_READ,
+            .length = sizeof(uint16_t),
+            .offset = zone_idx_1 * ctx->block_size + second_idx * sizeof(uint16_t),
+            .target = &zone_idx_2
+        };
+        int ret = block_cache_request(ctx->dev, &req);
+        if (ret < 0) return ret;
+        if (minixfs_zmap_get(ctx, zone_idx_2) <= 0) return -EINVAL;
+        for (uint64_t third_idx = 0; third_idx < sub_zone_idx_num; third_idx += 1) {
+            uint16_t zone_idx;
+            struct block_cache_request req = {
+                .request_flag = BLOCK_READ,
+                .length = sizeof(uint16_t),
+                .offset = zone_idx_2 * ctx->block_size + third_idx * sizeof(uint16_t),
+                .target = &zone_idx
+            };
+            int ret = block_cache_request(ctx->dev, &req);
+            if (ret < 0) return ret;
+            if (minixfs_zmap_get(ctx, zone_idx) <= 0) return -EINVAL;
+            // done
+        }
+    }
 }
 
-int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
+static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
     uint64_t bytes_counter = 0;
@@ -121,7 +255,7 @@ int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t le
     return bytes_counter;
 }
 
-int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, struct vfs_dir_entry *entry) {
+static int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, struct vfs_dir_entry *entry) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
     uint64_t real_entry_len = 16;

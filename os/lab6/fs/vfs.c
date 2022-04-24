@@ -5,7 +5,8 @@
 #include <sched.h>
 
 struct vfs_instance root_fs = {
-    .interface = &minixfs_interface
+    .interface = &minixfs_interface,
+    .ref_cnt = 0
 };
 
 void vfs_init() {

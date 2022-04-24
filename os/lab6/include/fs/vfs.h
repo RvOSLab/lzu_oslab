@@ -96,8 +96,6 @@ struct vfs_dir_entry {
 
 /* 其他子系统要持有vfs_inode必须调用vfs_ref_inode，否则可能inode资源会被自动释放 */
 /* 无论是否持有，使用完inode后必须调用vfs_free_inode，系统会自动释放资源 */
-/* TODO: vfs_new_inode 已新建inode缓冲区 */
-/* TODO: vfs_free_inode 懒释放缓冲区 */
 
 /* 从指定文件系统中提取inode */
 struct vfs_inode *vfs_get_inode(struct vfs_instance *fs, uint64_t inode_idx);

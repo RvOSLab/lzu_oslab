@@ -18,6 +18,13 @@ struct minixfs_super_block {
     uint16_t state;         // mount 状态
 };
 
+enum MINIXFS_INODE_TYPE {
+    MINIXFS_IFLNK = 0120000,
+    MINIXFS_IFREG = 0100000,
+    MINIXFS_IFDIR = 0040000
+};
+#define MINIXFS_MODE_MASK 07777
+
 struct minixfs_inode {
     uint16_t mode;  // 类型和访问属性
     uint16_t uid;   // uid
@@ -36,6 +43,11 @@ struct minixfs_dir_entry {
 struct minixfs_context {
     struct minixfs_super_block super_block;
     struct device *dev;
+    uint64_t block_size;
+    uint64_t inode_bitmap_offset;
+    uint64_t zone_bitmap_offset;
+    uint64_t inode_offset;
+    uint64_t zone_offset;
 };
 
 extern struct vfs_interface minixfs_interface;

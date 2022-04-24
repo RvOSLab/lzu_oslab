@@ -63,9 +63,7 @@ static int64_t minixfs_close_inode(struct vfs_inode *inode) {
 
 static int64_t minixfs_imap_get(struct minixfs_context *ctx, uint64_t idx) {
     uint8_t bitmap;
-    if (!idx) return -EINVAL;
-    idx -= 1;
-    if ((idx >> 3) >= ctx->zone_bitmap_offset) return -EINVAL;
+    if (!idx || (idx >> 3) >= ctx->zone_bitmap_offset) return -EINVAL;
     struct block_cache_request req = {
         .request_flag = BLOCK_READ,
         .length = sizeof(uint8_t),
@@ -79,9 +77,7 @@ static int64_t minixfs_imap_get(struct minixfs_context *ctx, uint64_t idx) {
 
 static int64_t minixfs_imap_set(struct minixfs_context *ctx, uint64_t idx) {
     uint8_t bitmap;
-    if (!idx) return -EINVAL;
-    idx -= 1;
-    if ((idx >> 3) >= ctx->zone_bitmap_offset) return -EINVAL;
+    if (!idx || (idx >> 3) >= ctx->zone_bitmap_offset) return -EINVAL;
     struct block_cache_request req = {
         .request_flag = BLOCK_READ,
         .length = sizeof(uint8_t),
@@ -99,9 +95,7 @@ static int64_t minixfs_imap_set(struct minixfs_context *ctx, uint64_t idx) {
 
 static int64_t minixfs_zmap_get(struct minixfs_context *ctx, uint64_t idx) {
     uint8_t bitmap;
-    if (!idx) return -EINVAL;
-    idx -= 1;
-    if ((idx >> 3) >= ctx->inode_offset) return -EINVAL;
+    if (!idx || (idx >> 3) >= ctx->inode_offset) return -EINVAL;
     struct block_cache_request req = {
         .request_flag = BLOCK_READ,
         .length = sizeof(uint8_t),
@@ -115,9 +109,7 @@ static int64_t minixfs_zmap_get(struct minixfs_context *ctx, uint64_t idx) {
 
 static int64_t minixfs_zmap_set(struct minixfs_context *ctx, uint64_t idx) {
     uint8_t bitmap;
-    if (!idx) return -EINVAL;
-    idx -= 1;
-    if ((idx >> 3) >= ctx->inode_offset) return -EINVAL;
+    if (!idx || (idx >> 3) >= ctx->inode_offset) return -EINVAL;
     idx -= 1;
     struct block_cache_request req = {
         .request_flag = BLOCK_READ,

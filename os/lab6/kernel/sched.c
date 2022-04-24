@@ -158,11 +158,15 @@ void schedule()
         }
 
         /* 没有用户进程 */
-        if (c)
+        if (c) {
+            // NOTE: 用于文件系统: 允许进程 0 休眠
+            enable_interrupt();
+            while (tasks[0]->state != TASK_RUNNING);
             break;
+        }
 
         /* 所有可运行的进程都耗尽了时间片 */
-        for (p = &LAST_TASK; p > &FIRST_TASK; --p) {
+        for (p = &LAST_TASK; p >= &FIRST_TASK; --p) {
             if (*p) {
                 (*p)->counter = ((*p)->counter >> 1) + (*p)->priority;
             }
@@ -179,7 +183,7 @@ static inline void __sleep_on(struct task_struct **p, int state)
 	if (!p) {
 		return;
 	}
-    /* NOTE: 用于文件系统测试 */
+    // NOTE: 用于文件系统: 允许进程 0 休眠
 	// if (current == &(init_task.task)) {
 	// 	panic("task[0] trying to sleep");
 	// }

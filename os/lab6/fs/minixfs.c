@@ -189,7 +189,6 @@ int64_t minixfs_zone_walk(struct vfs_inode *inode) {
     /* 三级zone (zone_level == 8) */
     zone_idx_1 = real_inode->zone[8];
     if (minixfs_zmap_get(ctx, zone_idx_1) <= 0) return -EINVAL;
-    uint64_t sub_zone_idx_num = ctx->block_size / sizeof(uint16_t);
     for (uint64_t second_idx = 0; second_idx < sub_zone_idx_num; second_idx += 1) {
         uint16_t zone_idx_2;
         struct block_cache_request req = {
@@ -215,6 +214,7 @@ int64_t minixfs_zone_walk(struct vfs_inode *inode) {
             // done
         }
     }
+    return 0;
 }
 
 static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
@@ -256,7 +256,6 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
 }
 
 static int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, struct vfs_dir_entry *entry) {
-    struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
     uint64_t real_entry_len = 16;
     if (dir_idx > (real_inode->size / real_entry_len)) return 0;

@@ -223,6 +223,51 @@ void priority_schedule(){
     switch_to(next);
 }
 
+void mfp_schedule()
+{
+    int i, prio;
+    struct task_struct** p;
+
+    // 对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
+    for(p = &LAST_TASK ; p > &FIRST_TASK ; --p){
+        if(*p){
+            if(((*p)->state == TASK_INTERRUPTIBLE) && (~( _BLOCKABLE & (*p)->blocked ))){
+                (*p)->state = TASK_RUNNING;
+            }
+        }
+    }
+
+    if(current->priority > 0 && current->state == TASK_RUNNING){--current->priority;}
+    current->counter = (current->priority)+1;
+    
+    prio = 0;
+    while (prio<15) {
+        
+        i = 0;
+        p = &tasks[0];
+
+
+            while (++i) {
+                if (!*++p)
+                    continue;
+                /* 小心混用无符号数和有符号数！ */
+                if ((*p)->state == TASK_RUNNING && (int32_t)(*p)->priority == prio && (*p)->counter > 0) {
+                    switch_to(i);
+                }
+            }
+
+        prio++;
+    }
+    /* 所有进程都到最低优先级，将他们都调整为最高优先级 */
+    for (i = 0; i < NR_TASKS; i++) {
+            if (tasks[i]) {
+                tasks[i]->priority = 0;
+                tasks[i]->counter = 1;
+            }
+        }
+}
+
+
 /**
  * @brief 把current任务置为可中断/不可中断的睡眠状态，并让睡眠队列头指针指向当前任务。
  * 

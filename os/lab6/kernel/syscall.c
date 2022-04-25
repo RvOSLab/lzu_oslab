@@ -113,10 +113,20 @@ static long sys_stat(struct trapframe *tf) {
 static long sys_read(struct trapframe *tf) {
     // TODO: vfs_user_request
     uint64_t fd = tf->gpr.a0;
-    if (fd < 0 || fd > 4) return -EINVAL;
-    struct vfs_inode *inode = current->vfs_context.file[fd]->inode;
-    if (!inode) return -EINVAL;
-    return vfs_inode_request(inode, (void *)tf->gpr.a1, tf->gpr.a2, 0, 1);
+    char *buffer = (char *)tf->gpr.a1;
+    uint64_t length = tf->gpr.a2;
+    return vfs_user_read(&current->vfs_context, fd, length, buffer);
+}
+
+/**
+ * @brief write
+ */
+static long sys_write(struct trapframe *tf) {
+    // TODO: vfs_user_request
+    uint64_t fd = tf->gpr.a0;
+    char *buffer = (char *)tf->gpr.a1;
+    uint64_t length = tf->gpr.a2;
+    return vfs_user_write(&current->vfs_context, fd, length, buffer);
 }
 
 /**
@@ -137,7 +147,7 @@ static long sys_test_net(struct trapframe *tf)
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_reset, sys_test_net};
+fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_write, sys_reset, sys_test_net};
 
 /**
  * @brief 通过系统调用号调用对应的系统调用

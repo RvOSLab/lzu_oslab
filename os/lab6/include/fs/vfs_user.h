@@ -10,6 +10,7 @@ struct vfs_file {
     struct vfs_dir_entry *dir;
     struct vfs_inode *inode;
     uint64_t position;
+    uint64_t open_flag;
     void *file_data;
     uint64_t ref_cnt;
 };
@@ -51,6 +52,8 @@ int64_t vfs_user_open(struct vfs_context *ctx, const char *path, uint64_t flag, 
 int64_t vfs_user_close(struct vfs_context *ctx, int64_t fd);
 int64_t vfs_user_stat(struct vfs_context *ctx, int64_t fd, struct vfs_stat *stat);
 int64_t vfs_user_requset(struct vfs_context *ctx, int64_t fd);
+int64_t vfs_user_read(struct vfs_context *ctx, int64_t fd, uint64_t length, char *buffer);
+int64_t vfs_user_write(struct vfs_context *ctx, int64_t fd, uint64_t length, char *buffer);
 
 enum vfs_user_inode_mode {
     VFS_MODE_R = 0444,

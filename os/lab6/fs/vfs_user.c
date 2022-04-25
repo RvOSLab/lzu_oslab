@@ -53,17 +53,32 @@ int64_t vfs_user_context_fork(struct vfs_context *ctx, struct vfs_context *new_c
 
 int64_t vfs_user_open(struct vfs_context *ctx, const char *path, uint64_t flag, uint16_t mode, uint64_t fd) {
     // TODO: parse flag
-    struct vfs_inode *inode = vfs_get_inode_by_path(path, ctx->cwd);
-    if (!inode) return -ENOENT;
     struct vfs_file *file = (struct vfs_file *)kmalloc(sizeof(struct vfs_file));
     if (!file) return -ENOMEM;
     file->dir = NULL; // TODO: real dir
-    file->inode = inode;
     file->position = 0;
     file->file_data = NULL;
+    file->open_flag = flag;
     ctx->file[fd] = file;
     file->ref_cnt = 1;
+    struct vfs_inode *inode = vfs_get_inode_by_path(path, ctx->cwd);
+    if (flag & O_CREAT) {
+        if ((flag & O_EXCL) && inode) {
+            kfree(file);
+            ctx->file[fd] = NULL;
+        }
+        if (!inode) {
+            // TODO: create
+        }
+    } else {
+        if (!inode) {
+            kfree(file);
+            ctx->file[fd] = NULL;
+            return -ENOENT;
+        }
+    }
     vfs_ref_inode(inode);
+    file->inode = inode;
     return 0;
 }
 
@@ -75,6 +90,7 @@ int64_t vfs_user_close(struct vfs_context *ctx, int64_t fd) {
         if (!file->inode) return -EFAULT;
         vfs_free_inode(file->inode);
         kfree(file);
+        ctx->file[fd] = NULL;
     }
     return 0;
 }
@@ -85,4 +101,29 @@ int64_t vfs_user_stat(struct vfs_context *ctx, int64_t fd, struct vfs_stat *stat
     if (!file->inode) return -EFAULT;
     memcpy(stat, &file->inode->stat, sizeof(struct vfs_stat));
     return 0;
+}
+
+int64_t vfs_user_read(struct vfs_context *ctx, int64_t fd, uint64_t length, char *buffer) {
+    if (fd < 0 || fd >= VFS_FD_NUM || !ctx->file[fd]) return -EBADF;
+    struct vfs_file *file = ctx->file[fd];
+    if (!file->inode) return -EFAULT;
+    int64_t ret = vfs_inode_request(file->inode, buffer, length, file->position, 1);
+    if (ret >= 0) {
+        file->position += ret;
+    }
+    return ret;
+}
+
+int64_t vfs_user_write(struct vfs_context *ctx, int64_t fd, uint64_t length, char *buffer) {
+    if (fd < 0 || fd >= VFS_FD_NUM || !ctx->file[fd]) return -EBADF;
+    struct vfs_file *file = ctx->file[fd];
+    if (!file->inode) return -EFAULT;
+    if (file->open_flag & O_APPEND) {
+        file->position = file->inode->stat.size;
+    }
+    int64_t ret = vfs_inode_request(file->inode, buffer, length, file->position, 0);
+    if (ret >= 0) {
+        file->position += ret;
+    }
+    return ret;
 }

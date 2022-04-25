@@ -233,6 +233,19 @@ static uint16_t minixfs_zone_new(struct minixfs_context *ctx) {
     
 }
 
+static int64_t minixfs_write_inode(struct vfs_inode *inode) {
+    struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
+    struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
+    struct block_cache_request req = { // 回写inode
+        .request_flag = BLOCK_WRITE,
+        .length = sizeof(struct minixfs_inode),
+        .offset = ctx->inode_offset +
+                  (inode->inode_idx - 1) * sizeof(struct minixfs_inode),
+        .target = real_inode
+    };
+    return block_cache_request(ctx->dev, &req);
+}
+
 static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
@@ -251,17 +264,8 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             real_inode->zone[zone_level] = zone_idx;
             real_inode->size += ctx->block_size;
             inode->stat.size += ctx->block_size;
-            struct block_cache_request req = { // 回写zone号到inode
-                .request_flag = BLOCK_WRITE,
-                .length = sizeof(real_inode->zone[zone_level]),
-                .offset = ctx->inode_offset +
-                          (inode->inode_idx - 1) * sizeof(struct minixfs_inode) +
-                          offsetof(struct minixfs_inode, zone) +
-                          sizeof(real_inode->zone[zone_level]) * zone_level,
-                .target = real_inode
-            };
-            int ret = block_cache_request(ctx->dev, &req);
-            if (ret < 0) return -EIO;
+            int ret = minixfs_write_inode(inode);
+            if (ret < 0) return ret;
         }
         real_read_length = ctx->block_size;
         if (offset < real_read_length) {
@@ -287,10 +291,71 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
         }
         if (bytes_counter == length) return bytes_counter;
     }
-    
-    // TODO: support huge zone_level
-    kputs("warn: huge zone_level");
-    return 0;
+
+    uint64_t sub_zone_idx_num = ctx->block_size / sizeof(uint16_t);
+
+    /* 二级zone (zone_level == 7)*/
+    uint16_t zone_idx_1 = real_inode->zone[7];
+    if (!zone_idx_1) { // 未分配zone处理
+        if (is_read) return bytes_counter;
+        zone_idx_1 = minixfs_zone_new(ctx);
+        if (!zone_idx_1) return -EIO;
+        real_inode->zone[7] = zone_idx_1;
+        int ret = minixfs_write_inode(inode);
+        if (ret < 0) return ret;
+    }
+    for (uint64_t second_idx = 0; second_idx < sub_zone_idx_num; second_idx += 1) {
+        uint16_t zone_idx;
+        struct block_cache_request req = { // 读取zone号
+            .request_flag = BLOCK_READ,
+            .length = sizeof(uint16_t),
+            .offset = zone_idx_1 * ctx->block_size + second_idx * sizeof(uint16_t),
+            .target = &zone_idx
+        };
+        int ret = block_cache_request(ctx->dev, &req);
+        if (ret < 0) return ret;
+        if (!zone_idx) { // 未分配zone处理
+            if (is_read) return bytes_counter;
+            zone_idx = minixfs_zone_new(ctx);
+            if (!zone_idx) return -EIO;
+            struct block_cache_request req = {
+                .request_flag = BLOCK_WRITE,
+                .length = sizeof(uint16_t),
+                .offset = zone_idx_1 * ctx->block_size + second_idx * sizeof(uint16_t),
+                .target = &zone_idx
+            };
+            int ret = block_cache_request(ctx->dev, &req);
+            if (ret < 0) return ret;
+            real_inode->size += ctx->block_size;
+            inode->stat.size += ctx->block_size;
+            int ret = minixfs_write_inode(inode);
+            if (ret < 0) return ret;
+        }
+        real_read_length = ctx->block_size;
+        if (offset < real_read_length) {
+            real_read_length -= offset;
+            if ((length - bytes_counter) < real_read_length) {
+                real_read_length = length - bytes_counter;
+            }
+            struct block_cache_request req = {
+                .request_flag = is_read ? BLOCK_READ : BLOCK_WRITE,
+                .length = real_read_length,
+                .offset = zone_idx * ctx->block_size + offset,
+                .target = buffer + bytes_counter
+            };
+            if (req.offset < ctx->zone_offset) {
+                return -EAGAIN;
+            }
+            int64_t ret = block_cache_request(ctx->dev, &req);
+            if (ret < 0) return ret;
+            bytes_counter += real_read_length;
+            offset = 0;
+        } else {
+            offset -= real_read_length;
+        }
+        if (bytes_counter == length) return bytes_counter;
+    }
+    return bytes_counter;
 }
 
 static int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, struct vfs_dir_entry *entry) {

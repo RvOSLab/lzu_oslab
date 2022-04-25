@@ -209,16 +209,61 @@ int64_t minixfs_zone_walk(struct vfs_inode *inode) {
     return 0;
 }
 
+static uint16_t minixfs_zone_new(struct minixfs_context *ctx) {
+    uint16_t idx = 1;
+    while (1) {
+        int64_t map_bit = minixfs_zmap_get(ctx, idx);
+        if (map_bit < 0) return 0;
+        if (!map_bit) {
+            minixfs_zmap_set(ctx, idx);
+            char buffer[ctx->block_size];
+            memset(buffer, 0, ctx->block_size);
+            struct block_cache_request req = { // zone填0
+                .request_flag = BLOCK_WRITE,
+                .length = ctx->block_size,
+                .offset = idx * ctx->block_size,
+                .target = buffer
+            };
+            int64_t ret = block_cache_request(ctx->dev, &req);
+            if (ret < 0) return 0;
+            return idx;
+        }
+        idx += 1;
+    }
+    
+}
+
 static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint64_t length, uint64_t offset, uint64_t is_read) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
+
+    /* 拷贝计数器 */
     uint64_t bytes_counter = 0;
-    uint64_t zone_level;
-    // TODO: support write
-    for (zone_level = 0; zone_level < 7; zone_level += 1) {
-        // TODO: check zone map
+    uint64_t real_read_length;
+
+    /* 一级zone (zone_level  < 7) */
+    for (uint64_t zone_level = 0; zone_level < 7; zone_level += 1) {
         uint64_t zone_idx = real_inode->zone[zone_level];
-        uint64_t real_read_length = ctx->block_size;
+        if (!zone_idx) { // 未分配zone处理
+            if (is_read) return bytes_counter;
+            zone_idx = minixfs_zone_new(ctx);
+            if (!zone_idx) return -EIO;
+            real_inode->zone[zone_level] = zone_idx;
+            real_inode->size += ctx->block_size;
+            inode->stat.size += ctx->block_size;
+            struct block_cache_request req = { // 回写zone号到inode
+                .request_flag = BLOCK_WRITE,
+                .length = sizeof(real_inode->zone[zone_level]),
+                .offset = ctx->inode_offset +
+                          (inode->inode_idx - 1) * sizeof(struct minixfs_inode) +
+                          offsetof(struct minixfs_inode, zone) +
+                          sizeof(real_inode->zone[zone_level]) * zone_level,
+                .target = real_inode
+            };
+            int ret = block_cache_request(ctx->dev, &req);
+            if (ret < 0) return -EIO;
+        }
+        real_read_length = ctx->block_size;
         if (offset < real_read_length) {
             real_read_length -= offset;
             if ((length - bytes_counter) < real_read_length) {
@@ -240,11 +285,12 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
         } else {
             offset -= real_read_length;
         }
-        if (bytes_counter == length) break;
+        if (bytes_counter == length) return bytes_counter;
     }
+    
     // TODO: support huge zone_level
-    if (zone_level == 7) kputs("warn: huge zone_level");
-    return bytes_counter;
+    kputs("warn: huge zone_level");
+    return 0;
 }
 
 static int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, struct vfs_dir_entry *entry) {

@@ -278,18 +278,13 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             if (is_read) return bytes_counter;
             zone_idx = minixfs_zone_new(ctx);
             if (!zone_idx) return -EIO;
-            struct block_cache_request req = {
-                .request_flag = BLOCK_WRITE,
-                .length = sizeof(uint16_t),
-                .offset = zone_idx_1 * ctx->block_size + second_idx * sizeof(uint16_t),
-                .target = &zone_idx
-            };
-            int ret = block_cache_request(ctx->dev, &req);
+            req.request_flag = BLOCK_WRITE;
+            ret = block_cache_request(ctx->dev, &req);
             if (ret < 0) return ret;
             real_inode->size += ctx->block_size;
             inode->stat.size += ctx->block_size;
-            int ret2 = minixfs_flush_inode(inode);
-            if (ret2 < 0) return ret2;
+            ret = minixfs_flush_inode(inode);
+            if (ret < 0) return ret;
         }
         real_read_length = ctx->block_size;
         if (offset < real_read_length) {
@@ -340,13 +335,8 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             if (is_read) return bytes_counter;
             zone_idx_2 = minixfs_zone_new(ctx);
             if (!zone_idx_2) return -EIO;
-            struct block_cache_request req = {
-                .request_flag = BLOCK_WRITE,
-                .length = sizeof(uint16_t),
-                .offset = zone_idx_1 * ctx->block_size + second_idx * sizeof(uint16_t),
-                .target = &zone_idx_2
-            };
-            int ret = block_cache_request(ctx->dev, &req);
+            req.request_flag = BLOCK_WRITE;
+            ret = block_cache_request(ctx->dev, &req);
             if (ret < 0) return ret;
         }
         for (uint64_t third_idx = 0; third_idx < sub_zone_idx_num; third_idx += 1) {
@@ -363,18 +353,13 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
                 if (is_read) return bytes_counter;
                 zone_idx = minixfs_zone_new(ctx);
                 if (!zone_idx) return -EIO;
-                struct block_cache_request req = {
-                    .request_flag = BLOCK_WRITE,
-                    .length = sizeof(uint16_t),
-                    .offset = zone_idx_2 * ctx->block_size + third_idx * sizeof(uint16_t),
-                    .target = &zone_idx
-                };
-                int ret = block_cache_request(ctx->dev, &req);
+                req.request_flag = BLOCK_WRITE;
+                ret = block_cache_request(ctx->dev, &req);
                 if (ret < 0) return ret;
                 real_inode->size += ctx->block_size;
                 inode->stat.size += ctx->block_size;
-                int ret2 = minixfs_flush_inode(inode);
-                if (ret2 < 0) return ret2;
+                ret = minixfs_flush_inode(inode);
+                if (ret < 0) return ret;
             }
             real_read_length = ctx->block_size;
             if (offset < real_read_length) {
@@ -431,6 +416,8 @@ struct vfs_interface minixfs_interface = {
     .close_inode = minixfs_close_inode,
 
     .dir_inode = minixfs_dir_inode,
+    .add_in_dir = NULL,
+    .del_in_dir = NULL,
 
     .inode_request = minixfs_inode_request
 };

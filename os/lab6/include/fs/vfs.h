@@ -15,7 +15,7 @@ struct vfs_dir_entry;
  *     [VFS_INODE_FILE, VFS_INODE_DIR, VFS_INODE_SYMBOL_LINK]
  * 具体inode的引用计数应由具体文件系统维护
  * vfs_inode生命周期:
- *     [new_inode] -> open_inode -> <其他操作> x N -> flush_inode(可选) -> [del_inode] -> close_inode
+ *     [new_inode] -> open_inode -> <其他操作> x N -> flush_inode(可选<目前自动>) -> [del_inode] -> close_inode
  **/
 struct vfs_interface {
     const char *fs_name;

@@ -36,10 +36,12 @@ int64_t vfs_inode_open(struct vfs_inode *inode, struct vfs_instance *fs, uint64_
 }
 
 int64_t vfs_inode_close(struct vfs_inode *inode) {
-    if (!inode->fs->interface || !inode->fs->interface->close_inode) {
+    if (!inode->fs->interface || !inode->fs->interface->close_inode || !inode->fs->interface->flush_inode) {
         kputs("warn: inode can not close");
     } else {
-        int64_t ret = inode->fs->interface->close_inode(inode);
+        int64_t ret = inode->fs->interface->flush_inode(inode);
+        if (ret < 0) kputs("warn: inode flush failed");
+        ret = inode->fs->interface->close_inode(inode);
         if (ret < 0) kputs("warn: inode close failed");
     }
     inode->fs->ref_cnt -= 1;

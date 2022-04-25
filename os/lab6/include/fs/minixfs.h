@@ -37,7 +37,7 @@ struct minixfs_inode {
 
 struct minixfs_dir_entry {
     uint16_t inode; // inode
-    char name[0];   // 文件/目录名
+    char name[14];   // 文件/目录名
 };
 
 struct minixfs_context {

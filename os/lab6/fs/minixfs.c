@@ -145,6 +145,7 @@ static int64_t minixfs_new_inode(struct vfs_inode *inode) {
 static int64_t minixfs_del_inode(struct vfs_inode *inode) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     int64_t ret = minixfs_imap_set(ctx, inode->inode_idx);
+    // TODO: remove zone
     return ret;
 }
 
@@ -391,18 +392,55 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
 
 static int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, struct vfs_dir_entry *entry) {
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
-    uint64_t real_entry_len = 16;
-    if (dir_idx > (real_inode->size / real_entry_len)) return 0;
-    struct minixfs_dir_entry *dir_entry = kmalloc(real_entry_len);
-    int64_t ret = minixfs_inode_request(inode, dir_entry, real_entry_len, real_entry_len * dir_idx, 1);
+    uint64_t real_entry_len = sizeof(struct minixfs_dir_entry);
+    if (dir_idx >= (real_inode->size / real_entry_len)) return 0;
+    struct minixfs_dir_entry dir_entry;
+    int64_t ret = minixfs_inode_request(inode, &dir_entry, real_entry_len, real_entry_len * dir_idx, 1);
     if (ret < 0) return ret;
     if (ret != real_entry_len) return -EIO;
-    entry->inode_idx = dir_entry->inode;
-    entry->name = kmalloc(strlen(dir_entry->name));
+    entry->inode_idx = dir_entry.inode;
+    uint64_t str_len = strlen(dir_entry.name);
+    if (str_len > 14) str_len = 14;
+    entry->name = kmalloc(str_len + 1);
     if (!entry->name) return -ENOMEM;
-    memcpy((char *)entry->name, dir_entry->name, strlen(dir_entry->name));
+    memcpy((char *)entry->name, dir_entry.name, str_len + 1);
     // TODO: kfree name str
     return 1;
+}
+
+static int64_t minixfs_add_in_dir(struct vfs_inode *dir_inode, const char *file_name, struct vfs_inode *file_inode) {
+    struct minixfs_inode *real_inode = (struct minixfs_inode *)dir_inode->inode_data;
+    uint64_t real_entry_len = sizeof(struct minixfs_dir_entry);
+    uint64_t str_len = strlen(file_name);
+    if (str_len > 14) return -EFBIG;
+    struct minixfs_dir_entry dir_entry = {
+        .inode = file_inode->inode_idx
+    };
+    memcpy(dir_entry.name, file_name, str_len);
+    memset(dir_entry.name, 0, 14 - str_len);
+    int64_t ret = minixfs_inode_request(dir_inode, &dir_entry, real_entry_len, real_inode->size, 0);
+    if (ret < 0) return ret;
+    return 0;
+}
+
+static int64_t minixfs_del_in_dir(struct vfs_inode *dir_inode, struct vfs_inode *file_inode) {
+    struct minixfs_inode *real_inode = (struct minixfs_inode *)dir_inode->inode_data;
+    uint64_t real_entry_len = 16;
+    uint64_t dir_idx = 0;
+    struct minixfs_dir_entry dir_entry;
+    while (dir_idx < (real_inode->size / real_entry_len)) {
+        int64_t ret = minixfs_inode_request(dir_inode, &dir_entry, real_entry_len, real_entry_len * dir_idx, 1);
+        if (ret < 0) return ret;
+        if (ret != real_entry_len) return -EIO;
+        if (dir_entry.inode == file_inode->inode_idx) {
+            memset(&dir_entry, 0, real_entry_len);
+            ret = minixfs_inode_request(dir_inode, &dir_entry, real_entry_len, real_entry_len * dir_idx, 0);
+            if (ret < 0) return ret;
+            return 0;
+        }
+        dir_idx += 1;
+    }
+    return -ENOENT;
 }
 
 struct vfs_interface minixfs_interface = {
@@ -416,8 +454,8 @@ struct vfs_interface minixfs_interface = {
     .close_inode = minixfs_close_inode,
 
     .dir_inode = minixfs_dir_inode,
-    .add_in_dir = NULL,
-    .del_in_dir = NULL,
+    .add_in_dir = minixfs_add_in_dir,
+    .del_in_dir = minixfs_del_in_dir,
 
     .inode_request = minixfs_inode_request
 };

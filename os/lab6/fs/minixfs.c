@@ -127,6 +127,27 @@ static int64_t minixfs_zmap_set(struct minixfs_context *ctx, uint64_t idx) {
     return 0;
 }
 
+static int64_t minixfs_new_inode(struct vfs_inode *inode) {
+    struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
+    uint16_t idx = 1;
+    while (1) {
+        int64_t map_bit = minixfs_imap_get(ctx, idx);
+        if (map_bit < 0) return map_bit;
+        if (!map_bit) {
+            inode->inode_idx = idx;
+            minixfs_imap_set(ctx, idx);
+            return 0;
+        }
+        idx += 1;
+    }
+}
+
+static int64_t minixfs_del_inode(struct vfs_inode *inode) {
+    struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
+    int64_t ret = minixfs_imap_set(ctx, inode->inode_idx);
+    return ret;
+}
+
 static int64_t minixfs_open_inode(struct vfs_inode *inode) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     if (minixfs_imap_get(ctx, inode->inode_idx) <= 0) return -EINVAL;
@@ -170,10 +191,9 @@ static uint16_t minixfs_zone_new(struct minixfs_context *ctx) {
         }
         idx += 1;
     }
-    
 }
 
-static int64_t minixfs_write_inode(struct vfs_inode *inode) {
+static int64_t minixfs_flush_inode(struct vfs_inode *inode) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
     struct block_cache_request req = { // 回写inode
@@ -204,7 +224,7 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             real_inode->zone[zone_level] = zone_idx;
             real_inode->size += ctx->block_size;
             inode->stat.size += ctx->block_size;
-            int ret = minixfs_write_inode(inode);
+            int ret = minixfs_flush_inode(inode);
             if (ret < 0) return ret;
         }
         real_read_length = ctx->block_size;
@@ -241,7 +261,7 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
         zone_idx_1 = minixfs_zone_new(ctx);
         if (!zone_idx_1) return -EIO;
         real_inode->zone[7] = zone_idx_1;
-        int ret = minixfs_write_inode(inode);
+        int ret = minixfs_flush_inode(inode);
         if (ret < 0) return ret;
     }
     for (uint64_t second_idx = 0; second_idx < sub_zone_idx_num; second_idx += 1) {
@@ -268,7 +288,7 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             if (ret < 0) return ret;
             real_inode->size += ctx->block_size;
             inode->stat.size += ctx->block_size;
-            int ret2 = minixfs_write_inode(inode);
+            int ret2 = minixfs_flush_inode(inode);
             if (ret2 < 0) return ret2;
         }
         real_read_length = ctx->block_size;
@@ -303,7 +323,7 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
         zone_idx_1 = minixfs_zone_new(ctx);
         if (!zone_idx_1) return -EIO;
         real_inode->zone[8] = zone_idx_1;
-        int ret = minixfs_write_inode(inode);
+        int ret = minixfs_flush_inode(inode);
         if (ret < 0) return ret;
     }
     for (uint64_t second_idx = 0; second_idx < sub_zone_idx_num; second_idx += 1) {
@@ -353,7 +373,7 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
                 if (ret < 0) return ret;
                 real_inode->size += ctx->block_size;
                 inode->stat.size += ctx->block_size;
-                int ret2 = minixfs_write_inode(inode);
+                int ret2 = minixfs_flush_inode(inode);
                 if (ret2 < 0) return ret2;
             }
             real_read_length = ctx->block_size;
@@ -403,8 +423,14 @@ static int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, stru
 struct vfs_interface minixfs_interface = {
     .fs_name = "minixfs",
     .init_fs = minixfs_init_fs,
+
+    .new_inode = minixfs_new_inode,
+    .del_inode = minixfs_del_inode,
     .open_inode = minixfs_open_inode,
+    .flush_inode = minixfs_flush_inode,
     .close_inode = minixfs_close_inode,
+
     .dir_inode = minixfs_dir_inode,
+
     .inode_request = minixfs_inode_request
 };

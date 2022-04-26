@@ -96,7 +96,9 @@ static int64_t minixfs_imap_set(struct minixfs_context *ctx, uint64_t idx) {
 
 static int64_t minixfs_zmap_get(struct minixfs_context *ctx, uint64_t idx) {
     uint8_t bitmap;
-    if (!idx || (idx >> 3) >= ctx->inode_offset) return -EINVAL;
+    if (idx < ctx->super_block.fst_data_zone) return -EINVAL;
+    idx -= ctx->super_block.fst_data_zone;
+    if (idx >= ctx->super_block.nzones) return -EINVAL;
     struct block_cache_request req = {
         .request_flag = BLOCK_READ,
         .length = sizeof(uint8_t),
@@ -110,8 +112,9 @@ static int64_t minixfs_zmap_get(struct minixfs_context *ctx, uint64_t idx) {
 
 static int64_t minixfs_zmap_set(struct minixfs_context *ctx, uint64_t idx) {
     uint8_t bitmap;
-    if (!idx || (idx >> 3) >= ctx->inode_offset) return -EINVAL;
-    idx -= 1;
+    if (idx < ctx->super_block.fst_data_zone) return -EINVAL;
+    idx -= ctx->super_block.fst_data_zone;
+    if (idx >= ctx->super_block.nzones) return -EINVAL;
     struct block_cache_request req = {
         .request_flag = BLOCK_READ,
         .length = sizeof(uint8_t),
@@ -172,7 +175,7 @@ static int64_t minixfs_open_inode(struct vfs_inode *inode) {
 }
 
 static uint16_t minixfs_zone_new(struct minixfs_context *ctx) {
-    uint16_t idx = 1;
+    uint16_t idx = ctx->super_block.fst_data_zone;
     while (1) {
         int64_t map_bit = minixfs_zmap_get(ctx, idx);
         if (map_bit < 0) return 0;

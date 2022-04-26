@@ -104,9 +104,14 @@ int main(const char* args, const struct fdt_header *fdt)
                     }
                     struct vfs_stat stat;
                     syscall(NR_stat, fd, &stat);
-                    char file_buffer[64];
+                    char file_buffer[512];
+                    if (stat.size > 512) stat.size = 512;
                     syscall(NR_read, fd, file_buffer, stat.size);
                     puts(arg1); puts(": "); puts(file_buffer);
+                    memset(file_buffer, 'A', 512);
+                    for (int i = 0; i < 8; i += 1) {
+                        syscall(NR_write, fd, file_buffer, 512);
+                    }
                     syscall(NR_close, fd);
                     continue;
                 }

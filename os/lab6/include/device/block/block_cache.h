@@ -7,7 +7,7 @@
 enum block_cache_request_flag {
     BLOCK_READ = 1,
     BLOCK_WRITE = 2,
-    BLOCK_FLUSH = 4
+    BLOCK_FLUSH = 3 // NOTE: for test
 };
 
 struct block_cache_request {

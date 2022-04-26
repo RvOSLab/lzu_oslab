@@ -95,11 +95,48 @@ void switch_to(size_t task)
         return;
     }
 
-
-    register uint64_t t0 asm("t0") = (uint64_t)&current->context;
+    uint64_t is_disable = read_csr(sstatus) & SSTATUS_SIE;
+    disable_interrupt();
+    register uint64_t t0 asm("t0");
+    write_csr(sscratch, t0);
+    t0 = (uint64_t)&current->context;
     __asm__ __volatile__ (
+            "sd zero, 0(%0)\n\t"
+            "sd ra, 8(%0)\n\t"
             "sd sp, 16(%0)\n\t"
+            "sd gp, 24(%0)\n\t"
+            "sd tp, 32(%0)\n\t"
+            "sd t1, 48(%0)\n\t"
+            "mv t1, t0\n\t"
+            "mv t0, zero\n\t"
+            "csrrw t0, sscratch, t0\n\t"
+            "sd t0, 40(t1)\n\t"
+            "mv t0, t1\n\t"
+            "sd t2, 56(%0)\n\t"
             "sd s0, 64(%0)\n\t"
+            "sd s1, 72(%0)\n\t"
+            "sd a0, 80(%0)\n\t"
+            "sd a1, 88(%0)\n\t"
+            "sd a2, 96(%0)\n\t"
+            "sd a3, 104(%0)\n\t"
+            "sd a4, 112(%0)\n\t"
+            "sd a5, 120(%0)\n\t"
+            "sd a6, 128(%0)\n\t"
+            "sd a7, 136(%0)\n\t"
+            "sd s2, 144(%0)\n\t"
+            "sd s3, 152(%0)\n\t"
+            "sd s4, 160(%0)\n\t"
+            "sd s5, 168(%0)\n\t"
+            "sd s6, 176(%0)\n\t"
+            "sd s7, 184(%0)\n\t"
+            "sd s8, 192(%0)\n\t"
+            "sd s9, 200(%0)\n\t"
+            "sd s10, 208(%0)\n\t"
+            "sd s11, 216(%0)\n\t"
+            "sd t3, 224(%0)\n\t"
+            "sd t4, 232(%0)\n\t"
+            "sd t5, 240(%0)\n\t"
+            "sd t6, 248(%0)\n\t"
             "csrr t1, sstatus\n\t"
             "sd t1, 256(%0)\n\t"
             "csrr t1, stval\n\t"
@@ -126,6 +163,7 @@ void switch_to(size_t task)
     }
     __trapret(push_context(stack, &current->context));
 ret:
+    set_csr(sstatus, is_disable);
     return;
 }
 

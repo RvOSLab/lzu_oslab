@@ -1,0 +1,46 @@
+From 96448d31b8db68b6cb09ae67b9d9fb90a185426b Mon Sep 17 00:00:00 2001
+From: MaPl <mapl@york.moe>
+Date: Sun, 3 Apr 2022 20:38:58 +0800
+Subject: [PATCH] remove inner frame check
+
+---
+ gdb/frame.c | 23 +----------------------
+ 1 file changed, 1 insertion(+), 22 deletions(-)
+
+diff --git a/gdb/frame.c b/gdb/frame.c
+index 0e9d040..5ea4236 100644
+--- a/gdb/frame.c
++++ b/gdb/frame.c
+@@ -2179,28 +2179,7 @@ get_prev_frame_always_1 (struct frame_info *this_frame)
+      the next frame.  This happens when a frame unwind goes backwards.
+      This check is valid only if this frame and the next frame are NORMAL.
+      See the comment at frame_id_inner for details.  */
+-  if (get_frame_type (this_frame) == NORMAL_FRAME
+-      && this_frame->next->unwind->type == NORMAL_FRAME
+-      && frame_id_inner (get_frame_arch (this_frame->next),
+-			 get_frame_id (this_frame),
+-			 get_frame_id (this_frame->next)))
+-    {
+-      CORE_ADDR this_pc_in_block;
+-      struct minimal_symbol *morestack_msym;
+-      const char *morestack_name = NULL;
+-
+-      /* gcc -fsplit-stack __morestack can continue the stack anywhere.  */
+-      this_pc_in_block = get_frame_address_in_block (this_frame);
+-      morestack_msym = lookup_minimal_symbol_by_pc (this_pc_in_block).minsym;
+-      if (morestack_msym)
+-	morestack_name = morestack_msym->linkage_name ();
+-      if (!morestack_name || strcmp (morestack_name, "__morestack") != 0)
+-	{
+-	  frame_debug_printf ("  -> nullptr // this frame ID is inner");
+-	  this_frame->stop_reason = UNWIND_INNER_ID;
+-	  return NULL;
+-	}
+-    }
++  /* By MaPl: remove inner frame check to avoid stop when stack been switched in lzuoslab */
+ 
+   /* Check that this and the next frame do not unwind the PC register
+      to the same memory location.  If they do, then even though they
+-- 
+2.25.1
+

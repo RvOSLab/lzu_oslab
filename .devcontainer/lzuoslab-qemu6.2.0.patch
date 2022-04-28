@@ -1,0 +1,25 @@
+From 4c73ac619c6ff773c0d6cabc80d76e5891630036 Mon Sep 17 00:00:00 2001
+From: MaPl <mapl@york.moe>
+Date: Sun, 20 Mar 2022 22:22:41 +0800
+Subject: [PATCH] allow free memory access when debug
+
+---
+ target/riscv/cpu_helper.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/target/riscv/cpu_helper.c b/target/riscv/cpu_helper.c
+index 9eeed38..e1146ea 100644
+--- a/target/riscv/cpu_helper.c
++++ b/target/riscv/cpu_helper.c
+@@ -607,7 +607,7 @@ restart:
+             /* User PTE flags when not U mode and mstatus.SUM is not set,
+                or the access type is an instruction fetch */
+             return TRANSLATE_FAIL;
+-        } else if (!(pte & PTE_U) && (mode != PRV_S)) {
++        } else if (!(pte & PTE_U) && (mode != PRV_S) && !is_debug) {
+             /* Supervisor PTE flags when not S mode */
+             return TRANSLATE_FAIL;
+         } else if (ppn & ((1ULL << ptshift) - 1)) {
+-- 
+2.25.1
+

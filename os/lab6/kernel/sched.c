@@ -210,7 +210,7 @@ void priority_schedule(){
     switch_to(next);
 }
 
-void mfp_schedule()
+void mfq_schedule()
 {
     int i, prio;
     struct task_struct** p;

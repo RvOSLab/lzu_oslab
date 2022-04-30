@@ -181,7 +181,7 @@ void priority_schedule(){
     struct task_struct** p;
 
     while (1) {
-        prio = -1;
+        prio = 16;
         next = 0;
         i = NR_TASKS;
         p = &tasks[NR_TASKS];
@@ -189,7 +189,7 @@ void priority_schedule(){
             if (!*--p)
                 continue;
             /* 小心混用无符号数和有符号数！ */
-            if ((*p)->state == TASK_RUNNING && (int32_t)(*p)->priority > prio) {
+            if ((*p)->state == TASK_RUNNING && (int32_t)(*p)->priority < prio) {
                 prio = (*p)->priority;
                 next = i;
             }
@@ -417,7 +417,7 @@ void exit_process(size_t task, uint32_t exit_code)
             // 通知父进程，发送子进程终止信号 SIGCHLD
             do_signal(tasks[task]->p_pptr, SIGCHLD, NULL);
             // 如果当前进程有子进程，就将子进程的 father 字段置为 1，即把子进程的父进程改为进程 1(init 进程)
-            if(struct task_struct *cp=tasks[task]->p_cptr){
+            if((struct task_struct *cp=tasks[task]->p_cptr)){
                 cp->p_pptr=tasks[0];
             // 如果该子进程已经处于僵死状态，则向进程 1 发送子进程终止信号 SIGCHLD。
                 if(cp->state == TASK_ZOMBIE){

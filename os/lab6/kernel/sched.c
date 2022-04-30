@@ -146,7 +146,11 @@ ret:
  */
 void schedule()
 {
-    int i, next, c;
+    check_pause();
+    fcfs_schedule();
+}
+
+void check_pause(){
     struct task_struct** p;
 
     // 对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
@@ -157,9 +161,7 @@ void schedule()
             }
         }
     }
-
-    fcfs_schedule();
-            }
+}
 
 void fcfs_schedule()
 {
@@ -212,15 +214,6 @@ void mfp_schedule()
 {
     int i, prio;
     struct task_struct** p;
-
-    // 对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
-    for(p = &LAST_TASK ; p > &FIRST_TASK ; --p){
-        if(*p){
-            if(((*p)->state == TASK_INTERRUPTIBLE) && (~( _BLOCKABLE & (*p)->blocked ))){
-                (*p)->state = TASK_RUNNING;
-            }
-        }
-    }
 
     if(current->priority > 0 && current->state == TASK_RUNNING){--current->priority;}
     current->counter = (current->priority)+1;

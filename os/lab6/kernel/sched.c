@@ -215,7 +215,7 @@ void mfq_schedule()
     int i, prio;
     struct task_struct** p;
 
-    if(current->priority > 0 && current->state == TASK_RUNNING){--current->priority;}
+    if(current->priority < 15 && current->state == TASK_RUNNING){++current->priority;}
     current->counter = (current->priority)+1;
     
     prio = 0;
@@ -223,7 +223,6 @@ void mfq_schedule()
         
         i = 0;
         p = &tasks[0];
-
 
             while (++i) {
                 if (!*++p)
@@ -417,7 +416,7 @@ void exit_process(size_t task, uint32_t exit_code)
             // 通知父进程，发送子进程终止信号 SIGCHLD
             do_signal(tasks[task]->p_pptr, SIGCHLD, NULL);
             // 如果当前进程有子进程，就将子进程的 father 字段置为 1，即把子进程的父进程改为进程 1(init 进程)
-            if((struct task_struct *cp=tasks[task]->p_cptr)){
+            if((struct task_struct *cp = tasks[task]->p_cptr)){
                 cp->p_pptr=tasks[0];
             // 如果该子进程已经处于僵死状态，则向进程 1 发送子进程终止信号 SIGCHLD。
                 if(cp->state == TASK_ZOMBIE){

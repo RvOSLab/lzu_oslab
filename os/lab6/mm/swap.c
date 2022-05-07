@@ -16,7 +16,7 @@ static void swap_out(uint64_t vaddr);
 int64_t find_empty_swap_page();
 
 /** swap 页表，跟踪 swapfile 的所有页 */
-struct swap_map_struct swap_map[SWAP_PAGES] = { 0 };
+uint64_t swap_map[SWAP_PAGES] = { 0 };
 uint8_t swap_file[SWAP_SIZE]; //TEMP
 
 static uint64_t clock_algrithm() {
@@ -133,7 +133,7 @@ int64_t find_empty_swap_page()
     uint64_t index;
     for (index = 0; index < SWAP_PAGES; index++)
     {
-        if (!swap_map[index].count)
+        if (!swap_map[index])
             return index;
     }
     return -1;
@@ -157,22 +157,13 @@ void swap_in(uint64_t vaddr){
     uint64_t *pte = get_pte(vaddr);
     uint64_t swapfile_index = GET_PAGE_ADDR_BITS(*pte);
 
-    if (!swap_map[swapfile_index].swapped_in_paddr)
-    {   // 物理页未被换入
-        uint64_t new_page_paddr = get_free_page();
-        swap_map[swapfile_index].swapped_in_paddr = new_page_paddr;
-        SET_PAGE_ADDR(*pte, swap_map[swapfile_index].swapped_in_paddr);
-        *pte |= PAGE_VALID;
-        swap_copy_in(vaddr, swapfile_index);
-    }
-    else
-    {   // 物理页已通过其他进程被换入
-        SET_PAGE_ADDR(*pte, swap_map[swapfile_index].swapped_in_paddr);
-        *pte |= PAGE_VALID;
-    }
+    uint64_t new_page_paddr = get_free_page();
+    SET_PAGE_ADDR(*pte, new_page_paddr);
+    *pte |= PAGE_VALID;
+    swap_copy_in(vaddr, swapfile_index);
 
-    mem_map[MAP_NR(swap_map[swapfile_index].swapped_in_paddr)] += 1;
-    swap_map[swapfile_index].count -= 1;
+    // mem_map[MAP_NR(new_page_paddr)] += 1;
+    swap_map[swapfile_index] -= 1;
 }
 
 /** 换出指定的页 **/
@@ -189,8 +180,7 @@ static void swap_out(uint64_t vaddr){
     *pte &= ~PAGE_VALID;
     SET_PAGE_ADDR_BITS(*pte, empty_swap_page);
 
-    swap_map[empty_swap_page].count = 1;
-    swap_map[empty_swap_page].swapped_in_paddr = 0;
+    swap_map[empty_swap_page] = 1;
     mem_map[MAP_NR(swapout_paddr)] = 0;
 }
 

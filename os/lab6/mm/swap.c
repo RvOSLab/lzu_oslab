@@ -16,7 +16,7 @@ static void swap_out(uint64_t vaddr);
 int64_t find_empty_swap_page();
 
 /** swap 页表，跟踪 swapfile 的所有页 */
-uint64_t swap_map[SWAP_PAGES] = { 0 };
+unsigned char swap_map[SWAP_PAGES] = { 0 };
 uint8_t swap_file[SWAP_SIZE]; //TEMP
 
 static uint64_t clock_algrithm() {

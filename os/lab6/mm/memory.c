@@ -9,6 +9,7 @@
 #include <kdebug.h>
 #include <mm.h>
 #include <stddef.h>
+#include <sched.h>
 #include <swap.h>
 
 /** 内核页目录（定义在 entry.s 中）*/
@@ -136,6 +137,8 @@ void free_page(uint64_t addr)
 uint64_t get_free_page(void)
 {
     /* fix warrning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+    // if (current && current->pid) do_swap_out();
+    // swap test
     size_t i = MAP_NR(HIGH_MEM) - 1;
     for (; i >= MAP_NR(LOW_MEM); --i) {
         if (mem_map[i] == 0) {

@@ -74,6 +74,7 @@ void sched_init()
         .end_data = (uint64_t)kernel_end - ((uint64_t)kernel_start - START_CODE),
         .brk = (uint64_t)kernel_end - ((uint64_t)kernel_start - START_CODE),
         .pg_dir = pg_dir,
+        .swap_info.clock_info.vaddr = START_CODE,
     };
 
     current = &init_task.task;

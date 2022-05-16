@@ -13,6 +13,11 @@
 #include <trap.h>
 extern void boot_stack_top(void); /** 启动阶段内核堆栈最高地址处 */
 
+static void check_pause();
+static void fcfs_schedule();
+static void priority_schedule();
+static void feedback_schedule();
+
 /** 进程 0 */
 union task_union init_task;
 
@@ -150,7 +155,7 @@ void schedule()
     fcfs_schedule();
 }
 
-void check_pause(){
+static void check_pause(){
     struct task_struct** p;
 
     // 对所有进程，检测是否是被 pause（状态为 TASK_INTERRUPTIBLE）且有未屏蔽的信号，若是，则将其状态转为 TASK_RUNNING
@@ -163,7 +168,7 @@ void check_pause(){
     }
 }
 
-void fcfs_schedule()
+static void fcfs_schedule()
 {
     if(current){
         if(!(current->state == TASK_RUNNING)){
@@ -176,7 +181,7 @@ void fcfs_schedule()
     }
 }
 
-void priority_schedule(){
+static void priority_schedule(){
     int i, next, prio;
     struct task_struct** p;
 
@@ -210,7 +215,7 @@ void priority_schedule(){
     switch_to(next);
 }
 
-void mfq_schedule()
+static void feedback_schedule()
 {
     int i, prio;
     struct task_struct** p;
@@ -416,9 +421,11 @@ void exit_process(size_t task, uint32_t exit_code)
             // 通知父进程，发送子进程终止信号 SIGCHLD
             do_signal(tasks[task]->p_pptr, SIGCHLD, NULL);
             // 如果当前进程有子进程，就将子进程的 father 字段置为 1，即把子进程的父进程改为进程 1(init 进程)
-            if((struct task_struct *cp = tasks[task]->p_cptr)){
-                cp->p_pptr=tasks[0];
-            // 如果该子进程已经处于僵死状态，则向进程 1 发送子进程终止信号 SIGCHLD。
+            struct task_struct *cp;
+            if ((cp = tasks[task]->p_cptr))
+            {
+                cp->p_pptr = tasks[0];
+                // 如果该子进程已经处于僵死状态，则向进程 1 发送子进程终止信号 SIGCHLD。
                 if(cp->state == TASK_ZOMBIE){
                     do_signal(tasks[0], SIGCHLD, NULL);
                 }

@@ -85,6 +85,9 @@ void sched_init()
     };
 
     current = &init_task.task;
+
+    schedule_queue_init();
+    push_process_to_schedule_queue(&init_task.task);
 }
 
 /**
@@ -271,6 +274,7 @@ static inline void __sleep_on(struct task_struct **p, uint32_t state)
 	tmp = *p;
 	*p = current;
 	current->state = state;
+    delete_process_from_schedule_queue(current);
 repeat:	schedule();
 	if (*p && *p != current) {
 		(**p).state = TASK_RUNNING;
@@ -310,6 +314,7 @@ void wake_up(struct task_struct **p)
 			kputs("wake_up: TASK_ZOMBIE");
 		}
 		(**p).state = TASK_RUNNING;
+        insert_process_to_schedule_queue(*p);
 	}
 }
 

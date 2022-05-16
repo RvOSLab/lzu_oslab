@@ -44,6 +44,7 @@
 #include <kdebug.h>
 #include <fs/vfs.h>
 #include <signal.h>
+#include <utils/schedule_queue.h>
 
 #define NR_TASKS             512                              /**< 系统最大进程数 */
 

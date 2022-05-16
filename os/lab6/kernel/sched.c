@@ -176,7 +176,10 @@ static void fcfs_schedule()
 {
     if(current){
         if(!(current->state == TASK_RUNNING)){
-            switch_to(pop_first_process()->pid);
+            struct task_struct *next_process = pop_first_process();
+            uint64_t next = next_process ? next_process->pid : 0; // 队列中无进程可调时才调度进程 0
+            kprintf("switch to %u\n", next);
+            switch_to(next);
         }
     }
 }

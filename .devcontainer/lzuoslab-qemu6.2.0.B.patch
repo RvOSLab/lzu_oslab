@@ -1,0 +1,28 @@
+From 63bc519e663384fb7d23c1db590c42fc2d28e6bd Mon Sep 17 00:00:00 2001
+From: MaPl <mapl@york.moe>
+Date: Mon, 16 May 2022 18:42:38 +0800
+Subject: [PATCH] prevent accessed and dirty bits change in debug
+
+---
+ target/riscv/cpu_helper.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/target/riscv/cpu_helper.c b/target/riscv/cpu_helper.c
+index e1146eae6..dafcd6109 100644
+--- a/target/riscv/cpu_helper.c
++++ b/target/riscv/cpu_helper.c
+@@ -625,8 +625,9 @@ restart:
+             return TRANSLATE_FAIL;
+         } else {
+             /* if necessary, set accessed and dirty bits. */
+-            target_ulong updated_pte = pte | PTE_A |
+-                (access_type == MMU_DATA_STORE ? PTE_D : 0);
++            /* By MaPl: prevent accessed and dirty bits change in debug */
++            target_ulong updated_pte = pte | (!is_debug ? PTE_A : 0) |
++                (((access_type == MMU_DATA_STORE) && !is_debug) ? PTE_D : 0);
+ 
+             /* Page table updates need to be atomic with MTTCG enabled */
+             if (updated_pte != pte) {
+-- 
+2.25.1
+

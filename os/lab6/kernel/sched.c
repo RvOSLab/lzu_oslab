@@ -15,6 +15,7 @@ extern void boot_stack_top(void); /** 启动阶段内核堆栈最高地址处 */
 
 static void check_pause();
 static void fcfs_schedule();
+static void rr_schedule();
 static void priority_schedule();
 static void feedback_schedule();
 
@@ -155,7 +156,7 @@ ret:
 void schedule()
 {
     check_pause();
-    fcfs_schedule();
+    rr_schedule();
 }
 
 static void check_pause(){
@@ -175,12 +176,18 @@ static void fcfs_schedule()
 {
     if(current){
         if(!(current->state == TASK_RUNNING)){
-            for(int i=current->pid; i < NR_TASKS; i++){
-                if(tasks[i] == TASK_RUNNING){
-                    switch_to(i);
+            switch_to(pop_first_process()->pid);
         }
-            }
+    }
+}
+
+static void rr_schedule()
+{
+    if(current){
+        if(current->state == TASK_RUNNING){
+            insert_process_to_schedule_queue(current);   // 将当前进程放入队尾 0 号进程前
         }
+        switch_to(pop_first_process()->pid);
     }
 }
 

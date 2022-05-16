@@ -183,11 +183,14 @@ static void fcfs_schedule()
 
 static void rr_schedule()
 {
-    if(current){
-        if(current->state == TASK_RUNNING){
-            insert_process_to_schedule_queue(current);   // 将当前进程放入队尾 0 号进程前
+    if (current){
+        if (current->state == TASK_RUNNING && current->pid){
+            push_process_to_schedule_queue(current); // 将当前进程放入队尾
         }
-        switch_to(pop_first_process()->pid);
+        struct task_struct *next_process = pop_first_process();
+        uint64_t next = next_process ? next_process->pid : 0;   // 队列中无进程可调时才调度进程 0
+        kprintf("switch to %u\n", next);
+        switch_to(next);
     }
 }
 

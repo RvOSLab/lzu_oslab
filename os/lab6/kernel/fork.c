@@ -70,7 +70,7 @@ static uint32_t find_empty_process()
 int64_t sys_fork(struct trapframe *tf)
 {
     uint32_t nr = find_empty_process();
-    if (nr == NR_TASKS) {
+    if (nr == NR_TASKS) {   // 已达到最大进程数，无法继续创建新进程
         return -EAGAIN;
     }
     uint64_t page = get_free_page();
@@ -81,11 +81,11 @@ int64_t sys_fork(struct trapframe *tf)
 
     uint64_t page_dir = get_free_page();
     if (!page_dir) {
-        free_page(page);
+        free_page(page);        // 将 PCB 页也释放
         return -EAGAIN;
     }
 
-    memcpy(p, current, sizeof(struct task_struct) - sizeof(struct trapframe));
+    memcpy(p, current, sizeof(struct task_struct) - sizeof(context));  // 不拷贝最后的 context 结构体
     p->context = *tf;
     p->context.epc += INST_LEN(p->context.epc);
     p->pg_dir = (uint64_t *)VIRTUAL(page_dir);

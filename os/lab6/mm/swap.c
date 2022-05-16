@@ -21,7 +21,7 @@ uint8_t swap_file[SWAP_SIZE]; //TEMP
 
 static uint64_t clock_algrithm() {
     uint64_t *start_vaddr = &(current->swap_info.clock_info.vaddr);
-    uint64_t last_start_addr = *start_vaddr;
+    // uint64_t last_start_addr = *start_vaddr;
     uint64_t vpn1, vpn2, vpn3;
     uint64_t has_annoymous_page = 0;
     uint64_t round_start, round_end;
@@ -30,11 +30,12 @@ static uint64_t clock_algrithm() {
         uint64_t last_pte = 0;
         round_start = half_round ? *start_vaddr : START_CODE;
         round_end= half_round ? KERNEL_ADDRESS : *start_vaddr;
-        for (vpn1 = GET_VPN1(round_start); vpn1 < GET_VPN1(round_end); vpn1++) {
-            for (vpn2 = GET_VPN2(round_start); vpn2 < GET_VPN2(round_end); vpn2++) {
-                for (vpn3 = GET_VPN3(round_start); vpn3 < GET_VPN3(round_end); vpn3++) {
-                    uint64_t addr = vpn1 << 30 | vpn2 << 21 | vpn3 << 12;
-                    uint64_t *pte = get_pte(addr);
+        for (vpn1 = GET_VPN1(round_start); vpn1 < 0x200 && !last_pte; vpn1++) {
+            for (vpn2 = GET_VPN2(round_start); vpn2 < 0x200 && !last_pte; vpn2++) {
+                for (vpn3 = GET_VPN3(round_start); vpn3 < 0x200 && !last_pte; vpn3++) {
+                    uint64_t vaddr = vpn1 << 30 | vpn2 << 21 | vpn3 << 12;
+                    last_pte = vaddr == round_end;
+                    uint64_t *pte = get_pte(vaddr);
                     if(!pte || !(*pte & PAGE_VALID)) continue;
                     // check ref, swap one ref(annoymous page) only
                     if (mem_map[MAP_NR(GET_PAGE_ADDR(*pte))] == 1) {
@@ -49,53 +50,58 @@ static uint64_t clock_algrithm() {
                 } // for vpn3
             } // for vpn2
         } // for vpn1
-        half_round = ~half_round;
+        half_round = !half_round;
     } while(has_annoymous_page || !half_round /* 还没有走完一圈 */);
     return 0;    // 没有匿名页
 }
 
 static uint64_t enhenced_clock_algrithm() {
     uint64_t *start_vaddr = &(current->swap_info.clock_info.vaddr);
-    uint64_t last_start_addr = *start_vaddr;
-    int vpn1, vpn2, vpn3;
+    // uint64_t last_start_addr = *start_vaddr;
+    uint64_t vpn1, vpn2, vpn3;
     uint64_t has_annoymous_page = 0;
     uint64_t round_start, round_end;
     uint64_t half_round = 1;
     uint64_t stage = 0;
     do {
+        uint64_t last_pte = 0;
         round_start = half_round ? *start_vaddr : START_CODE;
         round_end= half_round ? KERNEL_ADDRESS : *start_vaddr;
-        for (vpn1 = GET_VPN1(round_start); vpn1 < GET_VPN1(round_end); vpn1++) {
-            for (vpn2 = GET_VPN2(round_start); vpn2 < GET_VPN2(round_end); vpn2++) {
-                for (vpn3 = GET_VPN3(round_start); vpn3 < GET_VPN3(round_end); vpn3++) {
+        for (vpn1 = GET_VPN1(round_start); vpn1 < 0x200 && !last_pte; vpn1++) {
+            for (vpn2 = GET_VPN2(round_start); vpn2 < 0x200 && !last_pte; vpn2++) {
+                for (vpn3 = GET_VPN3(round_start); vpn3 < 0x200 && !last_pte; vpn3++) {
                     uint64_t vaddr = vpn1 << 30 | vpn2 << 21 | vpn3 << 12;
-                    uint64_t *pte = get_pte(vaddr);
+                    last_pte = vaddr >= round_end;
+                    volatile uint64_t *pte = get_pte(vaddr);
                     if(!pte || !(*pte & PAGE_VALID)) continue;
                     // check ref, swap one ref(annoymous page) only
                     if (mem_map[MAP_NR(GET_PAGE_ADDR(*pte))] == 1) {
                         has_annoymous_page = 1;
-                        if (*pte & PAGE_ACCESSED) {
-                            *pte &= ~PAGE_ACCESSED;
-                        } else {
-                            if (stage == 0) {
-                                if (!(*pte & PAGE_DIRTY)) {
-                                    *start_vaddr = vaddr;
-                                    return vaddr;
-                                }
-                            } else {
-                                if (*pte & PAGE_DIRTY) {
+                        if (stage == 0){
+                            if (!(*pte & PAGE_DIRTY) && !(*pte & PAGE_ACCESSED)){
+                                *start_vaddr = vaddr;
+                                return vaddr;
+                            }
+                        }
+                        else{
+                            if (*pte & PAGE_ACCESSED){
+                                *pte &= ~PAGE_ACCESSED;
+                                __asm__ __volatile__("fence\n\t":::"memory");
+                                kprintf("%x\n",*pte&PAGE_ACCESSED);
+                            }
+                            else{
+                                if (*pte & PAGE_DIRTY){
                                     *start_vaddr = vaddr;
                                     return vaddr;
                                 }
                             }
-
                         }
                     } // check ref
                 } // for vpn3
             } // for vpn2
         } // for vpn1
-        if (!half_round) stage = ~stage;
-        half_round = ~half_round;
+        if (!half_round) stage = !stage;
+        half_round = !half_round;
     } while(has_annoymous_page || !half_round /* 还没有走完一圈 */);
     return 0;    // 没有匿名页
 }
@@ -164,6 +170,7 @@ void swap_in(uint64_t vaddr){
 
     // mem_map[MAP_NR(new_page_paddr)] += 1;
     swap_map[swapfile_index] -= 1;
+    
 }
 
 /** 换出指定的页 **/
@@ -186,7 +193,7 @@ static void swap_out(uint64_t vaddr){
 
 /** 执行一次换出，换出一页 **/
 void do_swap_out(){
-    uint64_t vaddr = clock_algrithm();
+    uint64_t vaddr = enhenced_clock_algrithm();
     if (vaddr) {
         swap_out(vaddr);
         kputs("swapped out one page.");

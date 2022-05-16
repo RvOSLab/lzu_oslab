@@ -45,6 +45,7 @@
 #include <fs/vfs.h>
 #include <signal.h>
 #include <utils/schedule_queue.h>
+#include <kdebug.h> // for print_schedule_queue()
 
 #define NR_TASKS             512                              /**< 系统最大进程数 */
 
@@ -164,5 +165,19 @@ void sleep_on(struct task_struct **p);
 void wake_up(struct task_struct **p);
 void exit_process(size_t task, uint32_t exit_code);
 void do_exit(uint32_t exit_code);
+
+/**
+ * 打印当前调度队列
+ */
+static inline void print_schedule_queue()
+{
+    struct linked_list_node *node;
+    for_each_linked_list_node(node, &schedule_queue.list_node)
+    {
+        struct schedule_queue_node *schedule_queue = container_of(node, struct schedule_queue_node, list_node);
+        kprintf("%u->", schedule_queue->task->pid);
+    }
+    kprintf("\n");
+}
 
 #endif /* end of include guard: __SCHED_H__ */

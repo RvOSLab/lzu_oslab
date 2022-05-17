@@ -54,6 +54,7 @@ static inline void delete_process_from_schedule_queue(struct task_struct *p)
         {
             linked_list_remove(node);
             kfree(cur_node);
+            break;
         }
     }
 }

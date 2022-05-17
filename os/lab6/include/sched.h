@@ -180,4 +180,26 @@ static inline void print_schedule_queue()
     kprintf("\n");
 }
 
+
+/**
+ * 弹出调度队列中第一个优先级为 n 的有时间片进程，没找到返回 NULL
+ */
+static inline struct task_struct *pop_priority_process(uint64_t prio)
+{
+    struct linked_list_node *node;
+    struct task_struct *return_process = NULL;
+    for_each_linked_list_node(node, &schedule_queue.list_node)
+    {
+        struct schedule_queue_node *cur_node = container_of(node, struct schedule_queue_node, list_node);
+        if (cur_node->task->priority == prio && cur_node->task->counter > 0)
+        {
+            return_process = cur_node->task;
+            linked_list_remove(node);
+            kfree(cur_node);
+            break;
+        }
+    }
+    return return_process;
+}
+
 #endif /* end of include guard: __SCHED_H__ */

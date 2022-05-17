@@ -218,6 +218,7 @@ static void priority_schedule()
     }
 
     uint64_t next = next_process ? next_process->pid : 0; // 还是没有找到合适进程，队列中无进程可调时才调度进程 0
+    kprintf("switch to %u with priority %u\n", next, next_process ? next_process->priority : init_task.task.priority);
     switch_to(next);
 }
 
@@ -252,6 +253,7 @@ static void feedback_schedule()
     if (!next_process)
     {
         /* 所有进程恢复最高优先级与时间片 */
+        kprintf("all processes are running out of time slices.\nresuming time slices and set to priority 0...\n");
         for (uint64_t i = 0; i < NR_TASKS; i++)
         {
             if (tasks[i])
@@ -269,6 +271,7 @@ static void feedback_schedule()
     }
 
     uint64_t next = next_process ? next_process->pid : 0; // 还是没有找到合适进程，队列中无进程可调时才调度进程 0
+    kprintf("switch to %u with priority %u\n", next, next_process ? next_process->priority : init_task.task.priority);
     switch_to(next);
 }
 
@@ -460,7 +463,7 @@ void exit_process(size_t task, uint32_t exit_code)
 
             tasks[i]->state = TASK_ZOMBIE;
             tasks[i]->exit_code = exit_code;
-            
+            kprintf("process %u exited.\n", task);
             schedule(); // 最后让内核重新调度任务运行。
         }
 }

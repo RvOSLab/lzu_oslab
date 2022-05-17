@@ -197,72 +197,79 @@ static void rr_schedule()
     }
 }
 
-static void priority_schedule(){
-    int i, next, prio;
-    struct task_struct** p;
-
-    while (1) {
-        prio = 16;
-        next = 0;
-        i = NR_TASKS;
-        p = &tasks[NR_TASKS];
-        while (--i) {
-            if (!*--p)
-                continue;
-            /* 小心混用无符号数和有符号数！ */
-            if ((*p)->state == TASK_RUNNING && (int32_t)(*p)->priority < prio) {
-                prio = (*p)->priority;
-                next = i;
-            }
-        }
-
-        /* 没有用户进程 */
-        if (prio)
-            break;
-
-        /* 所有可运行的进程都耗尽了时间片 */
-        for (p = &LAST_TASK; p > &FIRST_TASK; --p) {
-            if (*p) {
-                (*p)->counter = ((*p)->counter >> 1) + (*p)->priority;
-            }
+static void priority_schedule()
+{
+    if (current)
+    {
+        if (current->state == TASK_RUNNING)
+        {
+            /* 若是正常运行被调出，则重设时间片 */
+            current->counter = (current->priority) + 1;
+            if (current->pid)
+                push_process_to_schedule_queue(current); // 将当前进程放入队尾
         }
     }
-    // kprintf("switch to %u\n", next);
+
+    struct task_struct *next_process = NULL;
+    for (uint64_t prio = 0; prio < 16; prio++)
+    {
+        if ((next_process = pop_priority_process(prio)))
+            break;
+    }
+
+    uint64_t next = next_process ? next_process->pid : 0; // 还是没有找到合适进程，队列中无进程可调时才调度进程 0
     switch_to(next);
 }
 
 static void feedback_schedule()
 {
-    int i, prio;
-    struct task_struct** p;
-
-    if(current->priority < 15 && current->state == TASK_RUNNING){++current->priority;}
-    current->counter = (current->priority)+1;
-    
-    prio = 0;
-    while (prio<15) {
-        
-        i = 0;
-        p = &tasks[0];
-
-            while (++i) {
-                if (!*++p)
-                    continue;
-                /* 小心混用无符号数和有符号数！ */
-                if ((*p)->state == TASK_RUNNING && (int32_t)(*p)->priority == prio && (*p)->counter > 0) {
-                    switch_to(i);
-                }
+    if (current)
+    {
+        if (current->state == TASK_RUNNING)
+        {
+            /* 若是正常运行被调出，则降低当前进程优先级，重设时间片 */
+            if (current->priority < 16)
+            {
+                ++current->priority;
+                current->counter = (current->priority) + 1;
             }
-
-        prio++;
-    }
-    /* 所有进程都到最低优先级，将他们都调整为最高优先级 */
-    for (i = 0; i < NR_TASKS; i++) {
-            if (tasks[i]) {
-                tasks[i]->priority = 0;
-                tasks[i]->counter = 1;
+            if (current->pid)
+            {
+                push_process_to_schedule_queue(current); // 将当前进程放入队尾
             }
         }
+    }
+
+    struct task_struct *next_process = NULL;
+    /* 第一轮查找 */
+    for (uint64_t prio = 0; prio < 16; prio++)
+    {
+        if ((next_process = pop_priority_process(prio)))
+            break;
+    }
+
+    /* 所有可运行的进程都（在最低优先级）耗尽了时间片 */
+    if (!next_process)
+    {
+        /* 所有进程恢复最高优先级与时间片 */
+        for (uint64_t i = 0; i < NR_TASKS; i++)
+        {
+            if (tasks[i])
+            {
+                tasks[i]->priority = 0;
+                tasks[i]->counter = 1 + tasks[i]->priority;
+            }
+        }
+        /* 再次查找进程 */
+        for (uint64_t prio = 0; prio < 16; prio++)
+        {
+            if ((next_process = pop_priority_process(prio)))
+                break;
+        }
+    }
+
+    uint64_t next = next_process ? next_process->pid : 0; // 还是没有找到合适进程，队列中无进程可调时才调度进程 0
+    switch_to(next);
 }
 
 

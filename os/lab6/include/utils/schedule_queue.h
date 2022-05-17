@@ -65,10 +65,15 @@ static inline void delete_process_from_schedule_queue(struct task_struct *p)
 static inline struct task_struct *pop_first_process()
 {
     struct linked_list_node *first_node = linked_list_shift(&schedule_queue.list_node); // 取出就绪队列第一个进程
-    struct schedule_queue_node *first_process_node = container_of(first_node, struct schedule_queue_node, list_node);
-    struct task_struct *first_process = first_process_node->task;
-    kfree(first_process_node);
-    return first_process;
+    if (first_node)
+    {
+        struct schedule_queue_node *first_process_node = container_of(first_node, struct schedule_queue_node, list_node);
+        struct task_struct *first_process = first_process_node->task;
+        kfree(first_process_node);
+        return first_process;
+    }
+    else
+        return NULL;
 }
 
 static inline void schedule_queue_init()

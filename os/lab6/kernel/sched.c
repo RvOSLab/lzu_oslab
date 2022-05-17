@@ -438,11 +438,12 @@ uint32_t sys_pause(void){
 
 void exit_process(size_t task, uint32_t exit_code)
 {
-    for (uint32_t i = NR_TASKS - 1; i > -1; i--)
-        if (tasks[i]->pid == task)
+    for (int32_t i = NR_TASKS - 1; i > -1; i--)
+        if (tasks[i] && tasks[i]->pid == task)
         {
-            // 它首先会释放当前进程的代码段和数据段所占用的内存页面。
-            free_page_tables(0x00010000, 0xBFFFFFF0-0x00010000);
+            // 它首先会释放当前进程的代码段和数据段所占用的内存页面(这里释放的页面参考 fork 中的 copy_mem() )。
+            free_page_tables(0x0, current->start_kernel);
+            // free_page_tables(current->start_kernel, PAGING_MEMORY);
             // 通知父进程，发送子进程终止信号 SIGCHLD
             do_signal(tasks[task]->p_pptr, SIGCHLD, NULL);
             // 如果当前进程有子进程，就将子进程的 father 字段置为 1，即把子进程的父进程改为进程 1(init 进程)

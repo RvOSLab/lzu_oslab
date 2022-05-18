@@ -88,7 +88,6 @@ void sched_init()
     current = &init_task.task;
 
     schedule_queue_init();
-    push_process_to_schedule_queue(&init_task.task);
 }
 
 /**
@@ -337,7 +336,7 @@ void wake_up(struct task_struct **p)
 			kputs("wake_up: TASK_ZOMBIE");
 		}
 		(**p).state = TASK_RUNNING;
-        insert_process_to_schedule_queue(*p);
+        push_process_to_schedule_queue(*p);
 	}
 }
 

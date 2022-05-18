@@ -31,15 +31,15 @@ static inline void unshift_process_to_schedule_queue(struct task_struct *p)
     linked_list_unshift(&schedule_queue.list_node, &current_process_node->list_node);
 }
 
-/**
- * 将某进程放入调度队列倒数第二个位置
- */
-static inline void insert_process_to_schedule_queue(struct task_struct *p)
-{
-    struct schedule_queue_node *current_process_node = (struct schedule_queue_node *)kmalloc(sizeof(struct schedule_queue_node));
-    current_process_node->task = p;
-    linked_list_insert_before(linked_list_last(&schedule_queue.list_node), &current_process_node->list_node);
-}
+// /**
+//  * 将某进程放入调度队列倒数第二个位置
+//  */
+// static inline void insert_process_to_schedule_queue(struct task_struct *p)
+// {
+//     struct schedule_queue_node *current_process_node = (struct schedule_queue_node *)kmalloc(sizeof(struct schedule_queue_node));
+//     current_process_node->task = p;
+//     linked_list_insert_before(linked_list_last(&schedule_queue.list_node), &current_process_node->list_node);
+// }
 
 /**
  * 将某进程从调度队列中删除

@@ -155,7 +155,7 @@ ret:
 void schedule()
 {
     check_pause();
-    rr_schedule();
+    fcfs_schedule();
 }
 
 static void check_pause(){
@@ -179,6 +179,8 @@ static void fcfs_schedule()
             uint64_t next = next_process ? next_process->pid : 0; // 队列中无进程可调时才调度进程 0
             kprintf("switch to %u\n", next);
             switch_to(next);
+        } else {
+            current->counter = 4294967295;
         }
     }
 }

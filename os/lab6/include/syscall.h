@@ -9,7 +9,7 @@ typedef int64_t (*fn_ptr)(struct trapframe *);                 /**< 系统调用
 extern fn_ptr syscall_table[];
 // extern long test_fork;
 /// @{ @name 系统调用号
-#define NR_syscalls  17                                     /**< 系统调用数量 */
+#define NR_syscalls  18                                     /**< 系统调用数量 */
 #define NR_fork      1
 #define NR_test_fork 2
 #define NR_getpid    3
@@ -26,6 +26,7 @@ extern fn_ptr syscall_table[];
 #define NR_kill 14
 #define NR_exit 15
 #define NR_sigreturn 16
+#define NR_setpriority 17
 /// @}
 
 int64_t syscall(int64_t number, ...);

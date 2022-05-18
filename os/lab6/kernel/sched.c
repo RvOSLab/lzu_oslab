@@ -472,3 +472,34 @@ void do_exit(uint32_t exit_code)
 {
     exit_process(current->pid, exit_code);
 }
+
+/**
+ * @brief 设置进程优先级
+ *
+ * 暂时只支持 which 为 PRIO_PROCESS，且没有root用户权限检测
+ */
+int64_t do_setpriority(int64_t which, int64_t who, int64_t niceval)
+{
+    if (which == PRIO_PROCESS)
+    {
+        if (who == 0)
+        {
+            current->priority = niceval;
+            kprintf("set the priority of process %u to %u.\n", current->pid, current->priority);
+            return 0;
+        }
+        else
+        {
+            for (uint64_t i = 0; i < NR_TASKS; i++)
+            {
+                if (tasks[i] && tasks[i]->pid == who)
+                {
+                    tasks[i]->priority = niceval;
+                    kprintf("set the priority of process %u to %u.\n", tasks[i]->pid, tasks[i]->priority);
+                    return 0;
+                }
+            }
+        }
+    }
+    return -1;
+}

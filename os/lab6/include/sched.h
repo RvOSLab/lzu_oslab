@@ -66,6 +66,12 @@
 #define START_KERNEL 0xC0000000                               /**< 内核区起始地址 */
 /// @}
 
+/// @{ 优先级设定的 which 种类
+#define PRIO_PROCESS    0   //进程
+#define PRIO_PGRP   1   //进程组
+#define PRIO_USER   2   //用户进程
+/// @}
+
 typedef struct trapframe context;                             /**< 处理器上下文 */
 
 /** 信号处理函数 */
@@ -165,6 +171,7 @@ void sleep_on(struct task_struct **p);
 void wake_up(struct task_struct **p);
 void exit_process(size_t task, uint32_t exit_code);
 void do_exit(uint32_t exit_code);
+int64_t do_setpriority(int64_t which,int64_t who,int64_t niceval);
 
 /**
  * 打印当前调度队列

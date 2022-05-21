@@ -31,7 +31,7 @@ struct driver_match_table virtio_match_table[] = {
 };
 
 struct device_driver virtio_driver = {
-    .driver_name = "MaPl VirtIO driver",
+    .driver_name = "LZUOS VirtIO driver",
     .match_table = virtio_match_table,
     .device_probe = virtio_device_probe
 };

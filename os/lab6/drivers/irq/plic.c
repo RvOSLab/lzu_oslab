@@ -139,7 +139,7 @@ struct driver_match_table plic_match_table[] = {
 };
 
 struct device_driver plic_driver = {
-    .driver_name = "MaPl PLIC driver",
+    .driver_name = "LZUOS PLIC driver",
     .match_table = plic_match_table,
     .device_probe = plic_device_probe
 };

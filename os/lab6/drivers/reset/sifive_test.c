@@ -42,7 +42,7 @@ struct driver_match_table test_match_table[] = {
 };
 
 struct device_driver test_driver = {
-    .driver_name = "MaPl SiFive test driver",
+    .driver_name = "LZUOS SiFive test driver",
     .match_table = &test_match_table[0],
     .device_probe = test_device_probe
 };

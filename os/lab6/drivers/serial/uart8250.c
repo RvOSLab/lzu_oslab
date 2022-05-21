@@ -108,7 +108,7 @@ struct driver_match_table uart8250_match_table[] = {
 };
 
 struct device_driver uart8250_driver = {
-    .driver_name = "MaPl UART8250 driver",
+    .driver_name = "LZUOS UART8250 driver",
     .match_table = uart8250_match_table,
     .device_probe = uart8250_device_probe
 };

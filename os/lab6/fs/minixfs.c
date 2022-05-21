@@ -148,7 +148,6 @@ static int64_t minixfs_new_inode(struct vfs_inode *inode) {
 static int64_t minixfs_del_inode(struct vfs_inode *inode) {
     struct minixfs_context *ctx = (struct minixfs_context *)inode->fs->fs_data;
     int64_t ret = minixfs_imap_set(ctx, inode->inode_idx);
-    // TODO: remove zone
     return ret;
 }
 
@@ -407,7 +406,6 @@ static int64_t minixfs_dir_inode(struct vfs_inode *inode, uint64_t dir_idx, stru
     entry->name = kmalloc(str_len + 1);
     if (!entry->name) return -ENOMEM;
     memcpy((char *)entry->name, dir_entry.name, str_len + 1);
-    // TODO: kfree name str
     return 1;
 }
 

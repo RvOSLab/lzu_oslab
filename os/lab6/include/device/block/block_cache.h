@@ -38,6 +38,9 @@ struct block_cache {
     struct task_struct *wait_queue;
 };
 
+extern int64_t block_cache_length;
+extern struct linked_list_node block_cache_list;
+
 void block_cache_init();
 int64_t block_cache_request(struct device *dev, struct block_cache_request *request);
 

@@ -143,7 +143,6 @@ struct vfs_inode *vfs_get_inode_by_path(const char *path, struct vfs_inode *cwd)
             is_first_name = 0;
         }
         if (name_start_p != char_p) { // path = <...>/<name>
-            /* TODO: stat check */
             if (!is_last_name && now_inode->stat.type != VFS_INODE_DIR) return NULL;
             if (next_inode) { // previous next_inode
                 next_inode = vfs_search_inode_in_dir(now_inode, path + name_start_p);

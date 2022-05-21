@@ -121,7 +121,6 @@ static long sys_seek(struct trapframe *tf) {
  * @brief read
  */
 static long sys_read(struct trapframe *tf) {
-    // TODO: vfs_user_request
     uint64_t fd = tf->gpr.a0;
     char *buffer = (char *)tf->gpr.a1;
     uint64_t length = tf->gpr.a2;
@@ -132,7 +131,6 @@ static long sys_read(struct trapframe *tf) {
  * @brief write
  */
 static long sys_write(struct trapframe *tf) {
-    // TODO: vfs_user_request
     uint64_t fd = tf->gpr.a0;
     char *buffer = (char *)tf->gpr.a1;
     uint64_t length = tf->gpr.a2;

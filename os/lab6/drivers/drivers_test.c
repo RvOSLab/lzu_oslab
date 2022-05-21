@@ -55,26 +55,69 @@ uint64_t reset_dev_test(uint64_t function) {
 
 uint64_t block_dev_test() {
     struct device *dev = get_dev_by_major_minor(VIRTIO_MAJOR, 2);
-    char buffer[1024];
-    memset(buffer, 'A', 1024);
+
+    char buffer[512];
+
     struct block_cache_request req = {
         .request_flag = BLOCK_READ,
         .length = 512,
         .offset = 0,
         .target = buffer
     };
-    int64_t ret;
-    for (int64_t i = 0; i < 3; i += 1) {
-        if (i == 15) req.request_flag |= BLOCK_FLUSH;
-        ret = block_cache_request(dev, &req);
-        req.offset += 512;
+
+    /* 清空块设备缓冲区 */
+    block_cache_length = 0;
+    block_cache_request(dev, &req);
+
+    /* 读测试 */
+    block_cache_length = 3;
+    int64_t read_seq[] = {1, 2, 1, 3, 2, 4};
+    kprintf("read block: ");
+    for (int64_t i = 0; i < ARRAY_SIZE(read_seq); i += 1) {
+        kprintf("%u ", read_seq[i]);
+        req.request_flag = BLOCK_READ;
+        req.offset = read_seq[i] * 512;
+        block_cache_request(dev, &req);
     }
-    kprintf("read: %u bytes\n", ret);
-    for (uint64_t i = 0; i < 64; i += 1) {
-        if(buffer[i] < 0x10) kprintf("0");
-        kprintf("%x ", buffer[i]);
-        if(i%8 == 7) kprintf(" ");
-        if(i%16 == 15) kprintf("\n");
+    kputs("");
+
+    /* 打印块设备缓冲区LRU链表 */
+    struct linked_list_node *node;
+    kprintf("buffered block: ");
+    for_each_linked_list_node(node, &block_cache_list) {
+        struct block_cache *cache = container_of(node, struct block_cache, list_node);
+        kprintf("%u ", cache->block_idx);
     }
+
+    // /* 清空块设备缓冲区 */
+    // block_cache_length = 0;
+    // block_cache_request(dev, &req);
+
+    // /* 写测试 */
+    // memset(buffer, 'A', 512);
+    // block_cache_length = 3;
+    // kprintf("write block('A' * 512): ");
+    // for (int64_t i = 0; i < ARRAY_SIZE(read_seq); i += 1) {
+    //     kprintf("%u ", read_seq[i]);
+    //     req.request_flag = BLOCK_WRITE;
+    //     req.offset = read_seq[i] * 512;
+    //     block_cache_request(dev, &req);
+    // }
+
+    // /* 打印块设备缓冲区LRU链表 */
+    // kprintf("buffered block: ");
+    // for_each_linked_list_node(node, &block_cache_list) {
+    //     struct block_cache *cache = container_of(node, struct block_cache, list_node);
+    //     kprintf("%u ", cache->block_idx);
+    // }
+    // kputs("\n");
+
+    // // kprintf("read: %u bytes\n", ret);
+    // for (uint64_t i = 0; i < 64; i += 1) {
+    //     if(buffer[i] < 0x10) kprintf("0");
+    //     kprintf("%x ", buffer[i]);
+    //     if(i%8 == 7) kprintf(" ");
+    //     if(i%16 == 15) kprintf("\n");
+    // }
     return 0;
 }

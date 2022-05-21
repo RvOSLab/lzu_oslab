@@ -32,5 +32,8 @@ typedef signed long long ssize_t;
         const typeof(((type *)0)->member) *_mptr = (ptr); \
         (type *)((char *)_mptr - offsetof(type, member)); \
     })
-
+#define BUILD_BUG_ON_ZERO(e) (sizeof(struct { int:-!!(e); }))
+#define must_be_array(a) \
+    BUILD_BUG_ON_ZERO(__builtin_types_compatible_p(typeof(a), typeof(&a[0])))
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + must_be_array(arr))
 #endif

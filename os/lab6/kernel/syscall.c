@@ -108,6 +108,16 @@ static long sys_stat(struct trapframe *tf) {
 }
 
 /**
+ * @brief lseek
+ */
+static long sys_seek(struct trapframe *tf) {
+    uint64_t fd = tf->gpr.a0;
+    int64_t offset = tf->gpr.a1;
+    int64_t whence = tf->gpr.a2;
+    return vfs_user_seek(&current->vfs_context, fd, offset, whence);
+}
+
+/**
  * @brief read
  */
 static long sys_read(struct trapframe *tf) {
@@ -147,7 +157,7 @@ static long sys_test_net(struct trapframe *tf)
  * 存储所有系统调用的指针的数组，系统调用号是其中的下标。
  * 所有系统调用都通过系统调用表调用
  */
-fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_write, sys_reset, sys_test_net};
+fn_ptr syscall_table[] = {sys_init, sys_fork, sys_test_fork, sys_getpid, sys_getppid, sys_char, sys_block, sys_open, sys_close, sys_stat, sys_read, sys_write, sys_seek, sys_reset, sys_test_net};
 
 /**
  * @brief 通过系统调用号调用对应的系统调用

@@ -52,10 +52,9 @@ int64_t vfs_user_context_fork(struct vfs_context *ctx, struct vfs_context *new_c
 }
 
 int64_t vfs_user_open(struct vfs_context *ctx, const char *path, uint64_t flag, uint16_t mode, uint64_t fd) {
-    // TODO: parse flag
     struct vfs_file *file = (struct vfs_file *)kmalloc(sizeof(struct vfs_file));
     if (!file) return -ENOMEM;
-    file->dir = NULL; // TODO: real dir
+    file->dir = NULL;
     file->position = 0;
     file->file_data = NULL;
     file->open_flag = flag;
@@ -68,7 +67,7 @@ int64_t vfs_user_open(struct vfs_context *ctx, const char *path, uint64_t flag, 
             ctx->file[fd] = NULL;
         }
         if (!inode) {
-            // TODO: create
+            // create inode when set O_CREAT
         }
     } else {
         if (!inode) {
@@ -101,6 +100,28 @@ int64_t vfs_user_stat(struct vfs_context *ctx, int64_t fd, struct vfs_stat *stat
     if (!file->inode) return -EFAULT;
     memcpy(stat, &file->inode->stat, sizeof(struct vfs_stat));
     return 0;
+}
+
+int64_t vfs_user_seek(struct vfs_context *ctx, int64_t fd, int64_t offset, int64_t whence) {
+    if (fd < 0 || fd >= VFS_FD_NUM || !ctx->file[fd]) return -EBADF;
+    struct vfs_file *file = ctx->file[fd];
+    if (!file->inode) return -EFAULT;
+    switch (whence) {
+        case SEEK_SET:
+            break;
+        case SEEK_CUR:
+            offset += file->position;
+            break;
+        case SEEK_END:
+            offset += file->inode->stat.size;
+            break;
+        default:
+            return -EINVAL;
+    }
+    if (offset < 0) return -EINVAL;
+    if (offset >= file->inode->stat.size) return -EINVAL;
+    file->position = offset;
+    return offset;
 }
 
 int64_t vfs_user_read(struct vfs_context *ctx, int64_t fd, uint64_t length, char *buffer) {

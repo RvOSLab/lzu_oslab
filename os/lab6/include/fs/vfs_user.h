@@ -48,9 +48,16 @@ enum vfs_user_mode {
     S_ISVTX = 01000
 };
 
+enum vfs_user_seek_mode {
+    SEEK_SET = 1,
+    SEEK_CUR = 2,
+    SEEK_END = 3
+};
+
 int64_t vfs_user_open(struct vfs_context *ctx, const char *path, uint64_t flag, uint16_t mode, uint64_t fd);
 int64_t vfs_user_close(struct vfs_context *ctx, int64_t fd);
 int64_t vfs_user_stat(struct vfs_context *ctx, int64_t fd, struct vfs_stat *stat);
+int64_t vfs_user_seek(struct vfs_context *ctx, int64_t fd, int64_t offset, int64_t whence);
 int64_t vfs_user_requset(struct vfs_context *ctx, int64_t fd);
 int64_t vfs_user_read(struct vfs_context *ctx, int64_t fd, uint64_t length, char *buffer);
 int64_t vfs_user_write(struct vfs_context *ctx, int64_t fd, uint64_t length, char *buffer);

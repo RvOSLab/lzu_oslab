@@ -214,6 +214,7 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
     struct minixfs_inode *real_inode = (struct minixfs_inode *)inode->inode_data;
 
     /* 拷贝计数器 */
+    uint64_t request_end = length + offset;
     uint64_t bytes_counter = 0;
     uint64_t real_read_length;
 
@@ -225,8 +226,6 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             zone_idx = minixfs_zone_new(ctx);
             if (!zone_idx) return -EIO;
             real_inode->zone[zone_level] = zone_idx;
-            real_inode->size += ctx->block_size;
-            inode->stat.size += ctx->block_size;
             int ret = minixfs_flush_inode(inode);
             if (ret < 0) return ret;
         }
@@ -252,7 +251,17 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
         } else {
             offset -= real_read_length;
         }
-        if (bytes_counter == length) return bytes_counter;
+        if (bytes_counter == length) {
+            if (!is_read) {
+                if (request_end >= real_inode->size) {
+                        real_inode->size = request_end;
+                        inode->stat.size = request_end;
+                        int64_t ret = minixfs_flush_inode(inode);
+                        if (ret < 0) return ret;
+                }
+            }
+            return bytes_counter;
+        }
     }
 
     uint64_t sub_zone_idx_num = ctx->block_size / sizeof(uint16_t);
@@ -284,8 +293,6 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             req.request_flag = BLOCK_WRITE;
             ret = block_cache_request(ctx->dev, &req);
             if (ret < 0) return ret;
-            real_inode->size += ctx->block_size;
-            inode->stat.size += ctx->block_size;
             ret = minixfs_flush_inode(inode);
             if (ret < 0) return ret;
         }
@@ -311,7 +318,17 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
         } else {
             offset -= real_read_length;
         }
-        if (bytes_counter == length) return bytes_counter;
+        if (bytes_counter == length) {
+            if (!is_read) {
+                if (request_end >= real_inode->size) {
+                        real_inode->size = request_end;
+                        inode->stat.size = request_end;
+                        int64_t ret = minixfs_flush_inode(inode);
+                        if (ret < 0) return ret;
+                }
+            }
+            return bytes_counter;
+        }
     }
 
     /* 三级zone (zone_level == 8) */
@@ -359,8 +376,6 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
                 req.request_flag = BLOCK_WRITE;
                 ret = block_cache_request(ctx->dev, &req);
                 if (ret < 0) return ret;
-                real_inode->size += ctx->block_size;
-                inode->stat.size += ctx->block_size;
                 ret = minixfs_flush_inode(inode);
                 if (ret < 0) return ret;
             }
@@ -386,7 +401,25 @@ static int64_t minixfs_inode_request(struct vfs_inode *inode, void *buffer, uint
             } else {
                 offset -= real_read_length;
             }
-            if (bytes_counter == length) return bytes_counter;
+            if (bytes_counter == length) {
+                if (!is_read) {
+                    if (request_end >= real_inode->size) {
+                        real_inode->size = request_end;
+                        inode->stat.size = request_end;
+                        int64_t ret = minixfs_flush_inode(inode);
+                        if (ret < 0) return ret;
+                    }
+                }
+                return bytes_counter;
+            }
+        }
+    }
+    if (!is_read) {
+        if (request_end >= real_inode->size) {
+                real_inode->size = request_end;
+                inode->stat.size = request_end;
+                int64_t ret = minixfs_flush_inode(inode);
+                if (ret < 0) return ret;
         }
     }
     return bytes_counter;

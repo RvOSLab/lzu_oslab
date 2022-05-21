@@ -84,7 +84,13 @@ int main(const char* args, const struct fdt_header *fdt)
                 arg1 += 1;
             }
             if (!strcmp(buffer_nospace, "t")) {
-                syscall(NR_test_net);
+                // syscall(NR_test_net);
+                int fd = syscall(NR_open, "/test/test.txt");
+                const char *str_write = "write test\n";
+                syscall(NR_seek, fd, 7, 1); // define SEEK_SET 1
+                syscall(NR_write, fd, str_write, 12);
+                syscall(NR_close, fd);
+                puts("write 'write test\\n' > /test/test.txt@7\n");
             } else if (!strcmp(buffer_nospace, "b")) {
                 syscall(NR_block);
             } else if (!strcmp(buffer_nospace, "q")) {

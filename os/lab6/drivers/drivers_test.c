@@ -83,11 +83,12 @@ uint64_t block_dev_test() {
 
     /* 打印块设备缓冲区LRU链表 */
     struct linked_list_node *node;
-    kprintf("buffered block: ");
+    kprintf("cached block: ");
     for_each_linked_list_node(node, &block_cache_list) {
         struct block_cache *cache = container_of(node, struct block_cache, list_node);
         kprintf("%u ", cache->block_idx);
     }
+    kputs("");
 
     // /* 清空块设备缓冲区 */
     // block_cache_length = 0;

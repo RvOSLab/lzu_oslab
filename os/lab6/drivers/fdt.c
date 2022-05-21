@@ -64,6 +64,15 @@ void fdt_loader(const struct fdt_header *fdt, struct device_driver *driver_list[
 
     fdt = (const struct fdt_header *)fdt_mem.map_address;
     
+    struct fdt_node_header *node = fdt_find_node_by_path(fdt, "/memory");
+    struct fdt_property *reg = fdt_get_prop(fdt, node, "reg");
+    uint64_t mem_start, mem_length;
+    mem_start = fdt_get_prop_num_value(reg, 0) << sizeof(fdt32_t);
+    mem_start += fdt_get_prop_num_value(reg, 1);
+    mem_length = fdt_get_prop_num_value(reg, 2) << sizeof(fdt32_t);
+    mem_length += fdt_get_prop_num_value(reg, 3);
+    kprintf("physical memory: [%p - %p]\n",mem_start, mem_start + mem_length);
+
     union fdt_walk_pointer first_pointer = {
         .address = (uint64_t)fdt + fdt32_to_cpu(fdt->off_dt_struct)
     };

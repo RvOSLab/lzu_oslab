@@ -13,11 +13,11 @@ int main(const char* args, const struct fdt_header *fdt)
     kputs("\nLZU OS STARTING....................");
     print_system_infomation();
     mem_init();
+    init_device_table();
+    fdt_loader(fdt, driver_list);
     mem_test();
     malloc_test();
     swap_init();
-    init_device_table();
-    fdt_loader(fdt, driver_list);
     set_stvec();
     vfs_init();
     sched_init();

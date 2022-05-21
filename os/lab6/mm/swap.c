@@ -196,6 +196,6 @@ void do_swap_out(){
     uint64_t vaddr = enhenced_clock_algrithm();
     if (vaddr) {
         swap_out(vaddr);
-        kputs("swapped out one page.");
+        kprintf("swapped out one page @ %p.\n", vaddr);
     } else kputs("swap out failed.");
 }

@@ -83,6 +83,7 @@ static void udp_send_test() {
     addr->sin_port = htons(1234);
     addr->sin_family = AF_INET;
     _sendto(pid, sktfd, txt, strlen(txt), addr);
+    kprintf("Send \"hello, world!\" to 10.0.0.2:1234 by UDP\n");
 }
 
 
@@ -104,6 +105,7 @@ static void tcp_test() {
     addr->sin_family = AF_INET;
     _bind(pid, sktfd, addr);
 
+    kprintf("Waiting to connect on port 1234...\n");
     _listen(pid, sktfd, 5);
 
     struct sockaddr_in *addr_in = kmalloc(sizeof(struct sockaddr_in));

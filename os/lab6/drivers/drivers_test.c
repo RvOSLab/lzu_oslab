@@ -67,7 +67,7 @@ uint64_t block_dev_test() {
 
     /* 清空块设备缓冲区 */
     block_cache_length = 0;
-    block_cache_request(dev, &req);
+    block_cache_clip();
 
     /* 读测试 */
     block_cache_length = 3;
@@ -92,7 +92,7 @@ uint64_t block_dev_test() {
 
     // /* 清空块设备缓冲区 */
     // block_cache_length = 0;
-    // block_cache_request(dev, &req);
+    // block_cache_clip();
 
     // /* 写测试 */
     // memset(buffer, 'A', 512);

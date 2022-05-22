@@ -94,7 +94,7 @@ static void block_cache_store(struct block_cache *cache) {
     }
 }
 
-static void block_cache_clip() {
+void block_cache_clip() {
     while (block_cached_num >= block_cache_length) {
         struct linked_list_node *node = linked_list_pop(&block_cache_list);
         if (!node) break;

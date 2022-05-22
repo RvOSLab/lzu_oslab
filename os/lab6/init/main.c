@@ -22,10 +22,10 @@ int main(const char* args, const struct fdt_header *fdt)
     set_stvec();
     vfs_init();
     sched_init();
+    usleep_queue_init();
     clock_init();
     netdev_init();
     kputs("Hello LZU OS");
-    usleep_queue_init();
 
     enable_interrupt();
     init_task0();

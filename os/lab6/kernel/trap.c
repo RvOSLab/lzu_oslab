@@ -209,6 +209,9 @@ struct trapframe* exception_handler(struct trapframe* tf)
                 exit_process(current->pid, 1);
             }
         }
+        else {
+            invalidate();
+        }
         break;
     default:
         kputs("unknown exception");

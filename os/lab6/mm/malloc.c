@@ -2,7 +2,7 @@
  * @file malloc.c
  * @brief 实现内核内存管理
  *
- * 本模块实现了kmalloc与kfree_s函数，从而允许内核程序动态的申请和释放内存。
+ * 本模块实现了kmalloc_i与kfree_s函数，从而允许内核程序动态的申请和释放内存。
  */
 
 #include <mm.h>
@@ -47,7 +47,7 @@ static inline uint8_t q_log2_ceil(uint64_t n) {
 /**
  * @brief 快速计算素因子中所含2的个数
  *
- * 设n = (2*k+1) * 2 ** p，返回p。
+ * 设n = a * 2 ** p，返回p。
  *
  * @param n   64位无符号整数
  * @return 素因子中所含2的个数
@@ -95,7 +95,7 @@ void init_bucket_page(uint64_t page_addr, uint8_t alloc_size) {
 /**
  * @brief 取得空桶
  *
- * 取得空桶，使用了一些奇怪的技巧。
+ * 取得指定块大小的空桶，以递归形式分配。
  *
  * @param alloc_size 分配的块大小(指数形式)
  * @return empty_bucket
@@ -109,7 +109,7 @@ struct bucket_desc* take_empty_bucket(uint8_t alloc_size) {
         bucket->refcnt = 1;
         bucket->freeidx = 1;
     } else {
-        bucket = (struct bucket_desc *) kmalloc_i(sizeof(struct bucket_desc));
+        bucket = (struct bucket_desc *) kmalloc(sizeof(struct bucket_desc));
         bucket->refcnt = 0;
         bucket->freeidx = 0;
     }
@@ -123,7 +123,7 @@ struct bucket_desc* take_empty_bucket(uint8_t alloc_size) {
  * @brief 申请一块内核内存
  *
  * 向内核申请size大小的一块内存，并返回该内存的起始地址；申请失败时返回NULL。
- * 所申请的内存至少为1B, 且不能超过一页大小。实际分配的内存大小为2的幂次。
+ * 所申请的内存至少为1B, 且不能超过一页大小。实际分配的内存大小为2的幂次(4~12)。
  *
  * @param size 申请的内存大小(最大为PAGE_SIZE)
  * @return 所申请内存的起始地址

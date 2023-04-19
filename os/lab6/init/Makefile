@@ -9,8 +9,8 @@ vpath $.a ../lib
 
 build : entry.o main.o
 
-entry.o : entry.s 
-	$(CC) $(CFLAGS) -c entry.s
+entry.o : entry.S
+	$(CC) $(CFLAGS) -c entry.S
 main.o : main.c
 	$(CC) $(CFLAGS) -c main.c
 

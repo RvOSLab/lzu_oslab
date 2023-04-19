@@ -3,8 +3,12 @@
 /* 目标架构 */
 OUTPUT_ARCH(riscv)
 
-/* 起始地址 */
-BASE_ADDRESS = 0xc0200000;
+/*
+ * 起始地址 asm/page.h: __START_KERNEL
+ *
+ */
+
+BASE_ADDRESS = 0xffffffff80200000;
 
 SECTIONS
 {

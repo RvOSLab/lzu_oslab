@@ -1,4 +1,4 @@
-file kernel.bin
+file build/kernel.bin
 target remote localhost:1234
 layout src
 b main

@@ -1,40 +1,57 @@
-include tools/toolchain.mk
 # 二进制文件，可直接启动系统
 KERN_IMG := kernel.img
 # 链接得到的 ELF 格式的可执行文件
-KERN_BIN := kernel.bin
+override KERN_BIN := kernel.bin
 # 导出的内存布局文件
 KERN_MAP := kernel.map
 # 导出的符号表（存放了变量等符号信息）
 KERN_SYM := kernel.sym
 # 反汇编得到的汇编程序
-KERN_ASM := kernel.asm
+KERN_ASM := kernel.S
 
-# -mcmodel=medany 适用于64位RISC-V的CPU（RV64I指令集），使一些C语言代码中的寻址操作可以被编译为auipc指令，用于相对寻址，可使程序的运行与程序被加载的位置无关
-# -Wall 将所有的警告信息全开
-# -g3 添加适用于gdb的调试信息
-# -fno-builtin 不使用 GCC 内建函数
-# -fno-stack-protector 不使用栈保护
-# -fno-strict-aliasing 允许未定义的类型间强制转换
-# -nostdinc 不使用系统标准库
-# -I include 优先在include目录搜索头文件
+RISCV_PREFIX := riscv64-linux-gnu
+CC := $(RISCV_PREFIX)-gcc
+LD := $(RISCV_PREFIX)-ld
+AR := $(RISCV_PREFIX)-ar
+OBJCOPY := $(RISCV_PREFIX)-objcopy
+OBJDUMP := $(RISCV_PREFIX)-objdump
+READELF := $(RISCV_PREFIX)-readelf
+NM := $(RISCV_PREFIX)-nm
+AS := $(RISCV_PREFIX)-as
+TMUX := tmux
+QEMU := qemu-system-riscv64
+GDB := gdb-multiarch
+BEAR := bear
+
+override BUILD_DIR := ./build
+SRC_DIRS := ./init ./lib ./kernel ./drivers ./fs ./mm
+INC_DIRS := ./include
+
+SRCS := $(shell find $(SRC_DIRS) -name '*.c' -or -name '*.S')
+OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
+# String substitution (suffix version without %).
+# As an example, ./build/hello.cpp.o turns into ./build/hello.cpp.d
+DEPS := $(OBJS:.o=.d)
+
+# Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
+INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+
+# The -MMD and -MP flags together generate Makefiles for us!
+# These files will have .d instead of .o as the output.
+CPPFLAGS := $(INC_FLAGS) -MMD -MP
 CFLAGS := -mcmodel=medany -fno-pie -Wall -g3 -fno-builtin -fno-stack-protector -fno-strict-aliasing -nostdinc -I include
+LDFLAGS := -T tools/linker.ld -Map=$(BUILD_DIR)/$(KERN_MAP)
 
-# .PHONY表示后面这些都是伪造的target，无论同名文件是否存在都会运行
-.PHONY : all build run run-gui symbol debug clean disassembly format
+.PHONY : all run run-gui build symbol debug clean disassembly format compiledb env
 
-# make 不加参数默认选取第一个 target 运行，此处 all 就是第一个 target，要想生成 target 需要先决条件 build（见下）
-all : build
+all: build symbol disassembly
 
-build :
-	make -C init build
-	make -C lib build
-	make -C mm build
-	make -C kernel build
-	make -C drivers build
-	make -C fs build
-	$(LD) -T tools/linker.ld -Map=$(KERN_MAP) -o $(KERN_BIN) init/entry.o init/main.o kernel/libkernel.a fs/libfs.a drivers/libdrivers.a mm/libmm.a lib/libstd.a
-	$(OBJCOPY) $(KERN_BIN) --strip-all -O binary $(KERN_IMG)
+build: $(BUILD_DIR)/$(KERN_IMG)
+
+symbol: $(BUILD_DIR)/$(KERN_SYM)
+
+disassembly: $(BUILD_DIR)/$(KERN_ASM)
+
 # run，启动 TUI 的 QEMU 运行操作系统，先决条件是 build （见上）
 # bios 使用 tools/fw_jump.bin (OpenSBI v0.9) 作为 BIOS。
 run : build
@@ -42,14 +59,14 @@ run : build
     		-machine virt \
     		-nographic \
     		-bios tools/fw_jump.bin \
-    		-device loader,file=$(KERN_IMG),addr=0x80200000
+    		-device loader,file=$(BUILD_DIR)/$(KERN_IMG),addr=0x80200000
 
 # run-gui，启动图形形式的 QEMU 运行操作系统，需要 X 服务器，先决条件是 build （见上）
 run-gui : build
 	@$(QEMU) \
     		-machine virt \
     		-bios tools/fw_jump.bin \
-    		-device loader,file=$(KERN_IMG),addr=0x80200000 \
+    		-device loader,file=$(BUILD_DIR)/$(KERN_IMG),addr=0x80200000 \
     		-monitor stdio \
 
 # debug，启动 QEMU 调试支持，使用我们编译的 GDB 连接上 QEMU 的调试端口，使用 tmux 分割终端，使 QEMU 执行和 GDB 调试界面一起显示
@@ -59,29 +76,74 @@ debug : build
 				-s -S \
 				-nographic \
 				-bios tools/fw_jump.bin \
-				-device loader,file=$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
+				-device loader,file=$(BUILD_DIR)/$(KERN_IMG),addr=0x80200000" && $(TMUX) split-window -h "$(GDB) -q -x tools/gdbinit"
 	$(TMUX) attach-session -t debug
-
-# 使用 riscv64-linux-gnu-nm 命令输出 kernel.bin 中符号的信息到 kernel.sym，先决条件是 $(KERN_BIN)
-# -v：按照地址由低到高排序。
-symbol : $(KERN_BIN)
-	$(READELF) -s $(KERN_BIN) > $(KERN_SYM)
-
-# 使用 objdump 命令输出 kernel.bin 的反汇编后的汇编代码，先决条件是 $(KERN_BIN)
-# -d：仅反汇编代码段内容
-disassembly : $(KERN_BIN)
-	$(OBJDUMP) -d $(KERN_BIN) > $(KERN_ASM)
-
 # 格式化代码
 format:
 	@find . -regex '.*\.\(c\|h\)' -exec clang-format -i {} \;
-# 清理编译产生的文件。
-# 命令前面加上“-”，即使这条命令出错，make 也会继续执行后续命令
-clean :
-	-make -C init/ clean
-	-make -C lib/ clean
-	-make -C kernel/ clean
-	-make -C mm/ clean
-	-make -C drivers/ clean
-	-make -C fs/ clean
-	-rm -f $(KERN_BIN) $(KERN_IMG) $(KERN_SYM) $(KERN_ASM) $(KERN_MAP)
+
+compiledb:
+	@$(MAKE) clean
+	@$(BEAR) -- $(MAKE)
+
+env:
+	@echo KERN_IMG: $(KERN_IMG)
+	@echo KERN_BIN: $(KERN_BIN)
+	@echo KERN_MAP: $(KERN_MAP)
+	@echo KERN_SYM: $(KERN_SYM)
+	@echo KERN_ASM: $(KERN_ASM)
+	@echo RISCV_PREFIX: $(RISCV_PREFIX)
+	@echo CC: $(CC)
+	@echo LD: $(LD)
+	@echo AR: $(AR)
+	@echo OBJCOPY: $(OBJCOPY)
+	@echo OBJDUMP: $(OBJDUMP)
+	@echo READELF: $(READELF)
+	@echo NM: $(NM)
+	@echo AS: $(AS)
+	@echo TMUX: $(TMUX)
+	@echo QEMU: $(QEMU)
+	@echo GDB: $(GDB)
+	@echo BEAR: $(BEAR)
+	@echo BUILD_DIR: $(BUILD_DIR)
+	@echo SRC_DIRS: $(SRC_DIRS)
+	@echo INC_DIRS: $(INC_DIRS)
+	@echo SRCS: $(SRCS)
+	@echo OBJS: $(OBJS)
+	@echo DEPS: $(DEPS)
+	@echo INC_FLAGS: $(INC_FLAGS)
+	@echo CPPFLAGS: $(CPPFLAGS)
+	@echo CFLAGS: $(CFLAGS)
+	@echo LDFLAGS: $(LDFLAGS)
+
+clean:
+	@rm -r $(BUILD_DIR)
+
+
+$(BUILD_DIR)/$(KERN_IMG): $(BUILD_DIR)/$(KERN_BIN)
+	$(OBJCOPY) $^ --strip-all -O binary $@
+
+# The final build step.
+$(BUILD_DIR)/$(KERN_BIN): $(OBJS)
+	$(LD) $(LDFLAGS) $(OBJS) -o $@
+
+# Build step for C source
+$(BUILD_DIR)/%.c.o: %.c
+	mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+# Build step for .S source
+$(BUILD_DIR)/%.S.o: %.S
+	mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/$(KERN_SYM): $(BUILD_DIR)/$(KERN_BIN)
+	$(READELF) -s $^ > $@
+
+$(BUILD_DIR)/$(KERN_ASM): $(BUILD_DIR)/$(KERN_BIN)
+	$(OBJDUMP) -dS $^ > $@
+
+# Include the .d makefiles. The - at the front suppresses the errors of missing
+# Makefiles. Initially, all the .d files will be missing, and we don't want those
+# errors to show up.
+-include $(DEPS)

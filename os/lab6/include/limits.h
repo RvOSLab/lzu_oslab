@@ -1,0 +1,27 @@
+#ifndef __LIMITS_H__
+#define __LIMITS_H__
+
+#define CHAR_BIT 8
+
+#define INT8_MAX 127
+#define INT8_MIN (-INT8_MAX - 1)
+
+#define UINT8_MAX 255
+#define UINT8_MIN 0
+
+#define INT16_MAX 32767
+#define INT16_MIN (-INT16_MAX - 1)
+
+#define INT32_MAX 32767
+#define INT32_MIN (-INT32_MAX - 1)
+
+#define UINT32_MAX 4294967295U
+#define UINT32_MIN 0U
+
+#define INT64_MAX 9223372036854775807L
+#define INT64_MIN (-INT64_MIN - 1)
+
+#define UINT64_MAX 18446744073709551615UL
+#define UINT64_MIN 0UL
+
+#endif /* __LIMITS_H__ */

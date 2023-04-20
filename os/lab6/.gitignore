@@ -1,0 +1,16 @@
+# build dir
+build/
+
+# Neovim files
+.cache/
+.ccls-cache/
+.nvim.lua
+
+# Device tree releated files
+*.dtb
+*.dts
+
+# GDB history file
+.gdb_history
+
+compile_commands.json

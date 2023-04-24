@@ -1,3 +1,4 @@
+#ifdef COMPILE
 /**
  * @file malloc.c
  * @brief 实现内核内存管理
@@ -222,9 +223,9 @@ uint64_t kfree_s_i(void* ptr, uint64_t size) {
 
 /**
  * @brief malloc.c测试用例
- * 
+ *
  * test case for malloc.c
- * 
+ *
  */
 void malloc_test() {
     kputs("malloc_test(): running");
@@ -253,3 +254,4 @@ void malloc_test() {
     }
     kputs("malloc_test(): Passed");
 }
+#endif

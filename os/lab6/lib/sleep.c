@@ -1,3 +1,4 @@
+#ifdef COMPILE
 #include <lib/sleep.h>
 #include <stddef.h>
 #include <sched.h>
@@ -61,3 +62,4 @@ void usleep_handler()
         }
     }
 }
+#endif

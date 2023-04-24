@@ -1,3 +1,4 @@
+#ifdef COMPILE
 #include <lib/stdio.h>
 #include <stddef.h>
 static uint64_t pow(uint64_t x, uint64_t y);
@@ -115,3 +116,4 @@ static uint64_t pow(uint64_t x, uint64_t y)
     }
     return sum;
 }
+#endif

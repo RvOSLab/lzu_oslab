@@ -24,7 +24,8 @@ GDB := gdb-multiarch
 BEAR := bear
 
 override BUILD_DIR := ./build
-SRC_DIRS := ./init ./lib ./kernel ./drivers ./fs ./mm
+# SRC_DIRS := ./init ./lib ./kernel ./drivers ./fs ./mm
+SRC_DIRS := ./init ./lib ./mm
 INC_DIRS := ./include
 
 SRCS := $(shell find $(SRC_DIRS) -name '*.c' -or -name '*.S')

@@ -16,12 +16,8 @@ SECTIONS
     . = ALIGN(4K);
     . = BASE_ADDRESS;
 
-    /* start 符号表示全部的开始位置 */
-    kernel_start = .;
-
-    text_start = .;
-
-    /* .text 字段 */
+    /* .text 段 */
+    __text = .;
     .text : {
         /* 把 entry 函数放在最前面 */
         *(.text.entry)
@@ -29,34 +25,35 @@ SECTIONS
         *(.text .text.*)
     }
 
+    /* .rodata 段 */
     . = ALIGN(4K);
-    rodata_start = .;
-
-    /* .rodata 字段 */
+    __text_end = .;
+    __rodata = .;
     .rodata : {
         /* 要链接的文件的 .rodata 字段集中放在这里 */
         *(.rodata .rodata.*)
     }
 
+    /* .data 段 */
     . = ALIGN(4K);
-    data_start = .;
-
-    /* .data 字段 */
+    __rodata_end = .;
+    __data = .;
     .data : {
         /* 要链接的文件的 .data 字段集中放在这里 */
         *(.data .data.*)
     }
 
-    . = ALIGN(4K);
-    bss_start = .;
-
     /* .bss 字段 */
+    . = ALIGN(4K);
+    __data_end = .;
+     __bss = .;
     .bss : {
         /* 要链接的文件的 .bss 字段集中放在这里 */
         *(.sbss .bss .bss.*)
     }
 
-    . = ALIGN(4K);
     /* 结束地址 */
-    kernel_end = .;
+    . = ALIGN(4K);
+    __bss_end = .;
+    __end = .;
 }

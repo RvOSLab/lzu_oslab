@@ -1,3 +1,4 @@
+#ifdef COMPILE
 #include <lib/stdio.h>
 
 /* 状态机相关宏定义 */
@@ -362,3 +363,4 @@ int scanf(const char *format_str, ...) {
         END_STATE_MACHINE();
     }
 }
+#endif

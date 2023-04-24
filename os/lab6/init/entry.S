@@ -28,7 +28,7 @@ boot_stack_top:
 # 创建内核镜像区映射
 boot_pg_dir:
     .zero 2 * 8
-    .quad (FLOOR(__START_KERNEL - __START_KERNEL_MAP, 1 << 30) >> 2) | __PROT_LEAF
+    .quad (__floor(__START_KERNEL - __START_KERNEL_MAP, 1 << 30) >> 2) | __PROT_LEAF
     .zero 507 * 8
-    .quad (FLOOR(__START_KERNEL - __START_KERNEL_MAP, 1 << 30) >> 2) | __PROT_LEAF
-    .quad (FLOOR(__START_KERNEL - __START_KERNEL_MAP, 1 << 30) >> 2) | __PROT_LEAF
+    .quad (__floor(__START_KERNEL - __START_KERNEL_MAP, 1 << 30) >> 2) | __PROT_LEAF
+    .quad (__floor(__START_KERNEL - __START_KERNEL_MAP, 1 << 30) >> 2) | __PROT_LEAF

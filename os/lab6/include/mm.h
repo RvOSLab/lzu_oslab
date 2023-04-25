@@ -13,6 +13,7 @@
 #include <pgtable.h>
 #include <riscv.h>
 #include <stddef.h>
+#include <mmzone.h>
 
 /// @{ @name 物理内存布局和物理地址操作
 #define DEVICE_START 0x10000000 /**< 设备树地址空间，暂时不使用 */
@@ -126,5 +127,7 @@ void malloc_test();
 void probe_mem_areas(const struct fdt_header *fdt);
 void mem_init();
 void clear_bss();
+
+__unused void __free_pages(struct page *page, int order);
 
 #endif

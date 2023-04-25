@@ -164,6 +164,7 @@ static void __init cal_phys_start_end() {
     ram_end_pfn = FLOOR(ram_end_pfn, PAGE_SIZE) >> PAGE_SHIFT;
     start_pfn >>= PAGE_SHIFT;
     end_pfn >>= PAGE_SHIFT;
+    present_pages >>= PAGE_SHIFT;
 }
 
 // Check if target area [*addrp, *addrp+size] is available
@@ -363,7 +364,7 @@ static void __init reserve_kernel_data() {
 
 static void __init reserve_sbi_data() {
     reserve_bootmem(NODE(0)->bootmem, ram_start_pfn << PAGE_SHIFT,
-                    pa(__START_KERNEL));
+                    MAX_SBI_ADDR);
 }
 
 static void __init bootmem_init() {
@@ -371,16 +372,95 @@ static void __init bootmem_init() {
                                      .end_pfn = ram_end_pfn,
                                      .mem_map = alloc_bootmap(ram_start_pfn,
                                                               ram_end_pfn) };
-    bootmem_init_node(0, ram_start_pfn, ram_end_pfn);
     free_init_mem_areas();
     reserve_kernel_data();
     reserve_sbi_data();
-    uint32_t map_size = NODE(0)->spanned_pages * sizeof(struct page);
+    uint32_t map_size =
+        (NODE(0)->bootmem->end_pfn - NODE(0)->bootmem->start_pfn) *
+        sizeof(struct page);
     NODE(0)->mem_map = bootmem_alloc(NODE(0)->bootmem, map_size, 64);
     assert(NODE(0)->mem_map != NULL, "bootmem_alloc(): no memory");
 }
 
+// Calculate size and holes of each zone in pages.
+//
+// Ignore holes for now, this causes wrong zone present pages, but does not
+// affect memory allocation.
+static void zone_size_init(uint64_t *zone_sizes, uint64_t *zone_holes) {
+    uint64_t dma_pages = DMA_ZONE_SIZE >> PAGE_SHIFT;
+    zone_sizes[ZONE_DMA] = dma_pages;
+    if (NODE(0)->present_pages < dma_pages) {
+        zone_sizes[ZONE_DMA] = NODE(0)->present_pages / 4;
+    }
+    zone_sizes[ZONE_NORMAL] = NODE(0)->present_pages - zone_sizes[ZONE_DMA];
+    memset(zone_holes, 0, MAX_NR_ZONES);
+}
+
+static void __init free_area_init_node(struct node *node, int nid,
+                                       uint64_t start_pfn, uint64_t *zone_sizes,
+                                       uint64_t *zone_holes) {
+    node->node_id = nid;
+    node->start_pfn = start_pfn;
+    uint64_t size = 0;
+    uint64_t real_size = 0;
+    for (int i = 0; i < MAX_NR_ZONES; ++i) {
+        size += zone_sizes[i];
+        real_size = size - zone_holes[i];
+    }
+    node->spanned_pages = size;
+    node->present_pages = real_size;
+
+    for (int i = 0; i < MAX_NR_ZONES; ++i) {
+        struct zone *zone = &node->zones[i];
+        zone->free_pages = 0;
+        zone->spanned_pages = zone_sizes[i];
+        zone->present_pages = zone_sizes[i] - zone_holes[i];
+        zone->node = node;
+        zone->start_pfn =
+            (i > 0) ? ((zone - 1)->start_pfn + (zone - 1)->spanned_pages) :
+                      node->start_pfn + zone_sizes[i];
+        zone->mem_map = node->mem_map + (zone->start_pfn - node->start_pfn);
+
+        for (int j = 0; j < MAX_GFP_ORDER; ++j) {
+            zone->free_areas[j].nr_free = 0;
+            linked_list_init(&zone->free_areas[j].free_list);
+        }
+
+        struct page *zone_mem_map = zone->mem_map;
+        for (uint64_t i = 0; i < zone->spanned_pages; ++i) {
+            zone_mem_map[i].count = 0;
+            if (test_and_set_bit(&zone->mem_map[i].flags, PG_RESERVED)) {
+                panic("free_area_init_node: page %x is reserved",
+                      i + zone->start_pfn);
+            }
+        }
+    }
+}
+
 static void __init retire_bootmem() {
+    bootmem_init_node(0, ram_start_pfn, ram_end_pfn);
+    uint64_t zone_sizes[MAX_NR_ZONES] = { 0 };
+    uint64_t zone_holes[MAX_NR_ZONES] = { 0 };
+    zone_size_init(zone_sizes, zone_holes);
+    free_area_init_node(NODE(0), 0, NODE(0)->start_pfn, zone_sizes, zone_holes);
+
+    uint8_t *bootmap = NODE(0)->bootmem->mem_map;
+    uint32_t block_size = 64;
+    for (uint64_t i = 0; i < NODE(0)->spanned_pages; ++i) {
+        if ((i + block_size <= NODE(0)->spanned_pages) &&
+            (bootmap[__idx(i)] == 0)) {
+            for (int j = i; j < i + 64; ++j) {
+                clear_bit(&NODE(0)->mem_map[j].flags, PG_RESERVED);
+            }
+            __free_pages(&NODE(0)->mem_map[i], 6);
+            i += 63;
+        } else {
+            if (!test_bit(bootmap, i)) {
+                clear_bit(&NODE(0)->mem_map[i].flags, PG_RESERVED);
+                __free_pages(&NODE(0)->mem_map[i], 0);
+            }
+        }
+    }
 }
 
 void mem_init() {

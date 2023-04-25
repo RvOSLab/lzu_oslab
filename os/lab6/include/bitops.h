@@ -60,6 +60,20 @@ static inline int64_t find_next_zero_bit(void *addr, uint32_t size,
     return -1;
 }
 
+static inline uint64_t min_pow_of_2(uint64_t n) {
+    // Most significant bit is 1
+    if ((int64_t)n < 0) {
+        return 1ULL << 63;
+    }
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n |= n >> 32;
+    return (n + 1) >> 1;
+}
+
 #define FLOOR(addr, align) ((addr) & ~((align)-1))
 #define CEIL(addr, align) (((addr) + (align)-1) & ~((align)-1))
 #define ALIGN(addr, align) FLOOR((addr), (align))

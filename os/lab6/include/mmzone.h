@@ -13,11 +13,14 @@ enum zone_type { ZONE_DMA, ZONE_NORMAL, MAX_NR_ZONES };
 struct bootmem {
     uint64_t start_pfn; // start pfn of managed RAM
     uint64_t end_pfn; // end pfn of managed RAM
-    uint8_t *mem_map; // a bitmap tracks whether a page is free or not.
-        // 0 means free, 1 means used.
 
-    uint64_t last_pos; // used in bootmem_alloc(),
-    uint64_t last_offset; // see mm/init.c
+    // a bitmap tracks whether a page is free or not.
+    // 0 means free, 1 means used.
+    uint8_t *mem_map;
+
+    // used to merge allocate request and implement small aign.
+    uint64_t last_pos;
+    uint64_t last_offset;
     uint64_t last_success;
 };
 
@@ -26,6 +29,10 @@ struct free_area {
     struct linked_list_node free_list;
     int nr_free;
 };
+
+#define PG_RESERVED 0U
+#define PG_SLAB 1U
+#define PG_LRU 2U
 
 // Track the physical page status.
 struct page {
@@ -44,7 +51,6 @@ struct zone {
     uint64_t pages_low, pages_min, page_high; // Used in page reclaim
 
     struct node *node;
-    char *name;
 };
 
 // Used for zone fallback.

@@ -4,7 +4,7 @@
 #define pow_of_2(val)                                                          \
     ({                                                                         \
         uint64_t __val = (val);                                                \
-        __val &(__val - 1) ? 0 : 1;                                            \
+        __val && !(__val & (__val - 1));                                       \
     })
 
 #define __idx(i) ((i) / 8)

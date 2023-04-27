@@ -10,6 +10,8 @@
 #include <sched.h>
 #include <stddef.h>
 
+struct zone *zone_table[1 << (MAX_NODE_SHIFT + MAX_ZONE_SHIFT)];
+
 struct mem_areas mem_areas __initdata;
 
 // TODO: move to shced.c
@@ -410,29 +412,32 @@ static void __init free_area_init_node(struct node *node, int nid,
     node->spanned_pages = size;
     node->present_pages = real_size;
 
-    for (int i = 0; i < MAX_NR_ZONES; ++i) {
-        struct zone *zone = &node->zones[i];
+    for (int zoneid = 0; zoneid < MAX_NR_ZONES; ++zoneid) {
+        struct zone *zone = &node->zones[zoneid];
         zone->free_pages = 0;
-        zone->spanned_pages = zone_sizes[i];
-        zone->present_pages = zone_sizes[i] - zone_holes[i];
+        zone->spanned_pages = zone_sizes[zoneid];
+        zone->present_pages = zone_sizes[zoneid] - zone_holes[zoneid];
         zone->node = node;
         zone->start_pfn =
-            (i > 0) ? ((zone - 1)->start_pfn + (zone - 1)->spanned_pages) :
-                      node->start_pfn + zone_sizes[i];
+            (zoneid > 0) ? ((zone - 1)->start_pfn + (zone - 1)->spanned_pages) :
+                           node->start_pfn;
         zone->mem_map = node->mem_map + (zone->start_pfn - node->start_pfn);
+        zone_table[NODEZONE(nid, zoneid)] = zone;
 
-        for (int j = 0; j < MAX_GFP_ORDER; ++j) {
-            zone->free_areas[j].nr_free = 0;
-            linked_list_init(&zone->free_areas[j].free_list);
+        for (int i = 0; i <= MAX_GFP_ORDER; ++i) {
+            zone->free_areas[i].nr_free = 0;
+            linked_list_init(&zone->free_areas[i].free_list);
         }
 
         struct page *zone_mem_map = zone->mem_map;
         for (uint64_t i = 0; i < zone->spanned_pages; ++i) {
-            zone_mem_map[i].count = 0;
-            if (test_and_set_bit(&zone->mem_map[i].flags, PG_RESERVED)) {
+            if (zone_mem_map[i].flags & PG_RESERVED) {
                 panic("free_area_init_node: page %x is reserved",
                       i + zone->start_pfn);
             }
+            memset(&zone_mem_map[i], 0, sizeof(*zone_mem_map));
+            set_page_nodezone(&zone->mem_map[i], nid, zoneid);
+            linked_list_init(&zone_mem_map[i].lru);
         }
     }
 }
@@ -447,20 +452,40 @@ static void __init retire_bootmem() {
     uint8_t *bootmap = NODE(0)->bootmem->mem_map;
     uint32_t block_size = 64;
     for (uint64_t i = 0; i < NODE(0)->spanned_pages; ++i) {
+        assert(NODE(0)->mem_map[i].count == 0);
         if ((i + block_size <= NODE(0)->spanned_pages) &&
             (bootmap[__idx(i)] == 0)) {
-            for (int j = i; j < i + 64; ++j) {
-                clear_bit(&NODE(0)->mem_map[j].flags, PG_RESERVED);
+            struct page *page = &NODE(0)->mem_map[i];
+            page->count = 1;
+            for (int j = i; j < i + 64; ++j, ++page) {
+                page->flags &= ~PG_RESERVED;
             }
             __free_pages(&NODE(0)->mem_map[i], 6);
             i += 63;
-        } else {
+        } else if (bootmap[__idx(0)] != 0xffU) {
             if (!test_bit(bootmap, i)) {
-                clear_bit(&NODE(0)->mem_map[i].flags, PG_RESERVED);
-                __free_pages(&NODE(0)->mem_map[i], 0);
+                struct page *page = &NODE(0)->mem_map[i];
+                page->flags &= ~PG_RESERVED;
+                page->count = 1;
+                __free_pages(page, 0);
             }
+        } else {
+            i += 63;
         }
     }
+
+    // Reclaim bootmap
+    struct page *page = va_to_page(bootmap);
+    uint32_t eidx =
+        ((NODE(0)->bootmem->end_pfn - NODE(0)->bootmem->start_pfn + 7) / 8 +
+         PAGE_SIZE - 1) /
+        PAGE_SIZE;
+    for (uint32_t i = 0; i < eidx; ++i, ++page) {
+        page->flags &= ~PG_RESERVED;
+        page->count = 1;
+        __free_pages(page, 0);
+    }
+    NODE(0)->bootmem = NULL;
 }
 
 void mem_init() {
@@ -468,4 +493,5 @@ void mem_init() {
     init_direct_mapping();
     bootmem_init();
     retire_bootmem();
+    print_free_areas(NODE(0)->zones->free_areas);
 }

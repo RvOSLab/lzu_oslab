@@ -128,6 +128,17 @@ void probe_mem_areas(const struct fdt_header *fdt);
 void mem_init();
 void clear_bss();
 
-__unused void __free_pages(struct page *page, int order);
+// buddy system allocator options
+//
+// gfp means 'get free page'
+typedef uint32_t gfp_t;
+
+#define __GFP_WAIT 0x04U
+#define __GFP_ALLOWD_FLAGS (__GFP_WAIT)
+#define GFP_KERNEL (GFP_WAIT)
+
+void __free_pages(struct page *page, uint32_t order);
+void rm_area_order(struct page *area);
+void print_free_areas(struct free_area *free_areas);
 
 #endif

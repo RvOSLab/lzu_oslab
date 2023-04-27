@@ -49,4 +49,6 @@
         }                                                                      \
     } while (0)
 
+#define static_assert(cond, msg) _Static_assert((cond), msg)
+
 #endif

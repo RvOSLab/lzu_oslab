@@ -132,10 +132,13 @@ void clear_bss();
 //
 // gfp means 'get free page'
 typedef uint32_t gfp_t;
-
-#define __GFP_WAIT 0x04U
-#define __GFP_ALLOWD_FLAGS (__GFP_WAIT)
-#define GFP_KERNEL (GFP_WAIT)
+#define GFP_ZONE_MASK 0x03U // Low 2 bits are used to store zone type
+#define __GFP_WAIT 0x04U // Wthether allow process to sleep
+#define GFP_ALLOWD_FLAGS (__GFP_WAIT)
+#define GFP_ATOMIC
+#define GFP_DMA 0x01U
+#define GFP_NORMAL 0x00U
+#define GFP_KERNEL (GFP_WAIT | GFP_NORMAL)
 
 void __free_pages(struct page *page, uint32_t order);
 void rm_area_order(struct page *area);

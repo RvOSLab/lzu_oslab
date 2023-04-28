@@ -20,6 +20,7 @@ struct mm init_mm = { .pgd = boot_pg_dir };
 // Currenty, only support one node.
 struct bootmem init_bootmem;
 struct node init_node = { .node_id = 0, .bootmem = &init_bootmem };
+struct node *init_nodes[MAX_NR_NODES] = { &init_node };
 
 // start and end of RAM
 uint64_t ram_start_pfn;
@@ -369,6 +370,35 @@ static void __init reserve_sbi_data() {
                     MAX_SBI_ADDR);
 }
 
+static uint32_t __init __build_zonelists(struct node *node,
+                                         struct zone_list *zone_list,
+                                         uint32_t idx, uint32_t type) {
+    switch (type) {
+    case ZONE_NORMAL:
+        zone_list->zones[idx++] = &node->zones[type];
+    case ZONE_DMA:
+        zone_list->zones[idx++] = &node->zones[type];
+        break;
+    default:
+        panic("bad zone type");
+    }
+    return idx;
+}
+
+static void __init build_zonelists(struct node *node) {
+    for (int i = 0; i < MAX_NR_ZONES; ++i) {
+        uint32_t idx = 0;
+        struct zone_list *zone_list = &node->zone_lists[i];
+        memset(zone_list, 0, sizeof(*zone_list));
+        uint32_t type = ZONE_NORMAL;
+        if (i & GFP_DMA) {
+            type = ZONE_DMA;
+        }
+        idx = __build_zonelists(node, zone_list, idx, type);
+        zone_list->zones[idx] = NULL;
+    }
+}
+
 static void __init bootmem_init() {
     init_bootmem = (struct bootmem){ .start_pfn = ram_start_pfn,
                                      .end_pfn = ram_end_pfn,
@@ -486,6 +516,8 @@ static void __init retire_bootmem() {
         __free_pages(page, 0);
     }
     NODE(0)->bootmem = NULL;
+
+    build_zonelists(NODE(0));
 }
 
 void mem_init() {
@@ -493,5 +525,4 @@ void mem_init() {
     init_direct_mapping();
     bootmem_init();
     retire_bootmem();
-    print_free_areas(NODE(0)->zones->free_areas);
 }

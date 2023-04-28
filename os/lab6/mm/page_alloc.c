@@ -48,13 +48,14 @@ struct page *__alloc_pages(struct zone *zone, uint32_t order) {
 
         struct page *area =
             container_of(free_area->free_list.next, struct page, lru);
-        assert(area->count == 0);
-        assert(check_area_allocatable(area, current_order));
-        linked_list_remove(&free_area->free_list);
+        if (check_area_allocatable(area, current_order)) {
+            panic("__alloc_pages: area is not allocatable.");
+        }
+        free_area->nr_free--;
+        linked_list_remove(&area->lru);
+        zone->free_pages -= 1U << order;
         area->count = 1;
         rm_area_order(area);
-        free_area->nr_free--;
-        zone->free_pages -= 1UL << order;
         while (current_order-- > order) {
             free_area--;
             uint64_t area_size = 1 << current_order;
@@ -118,6 +119,46 @@ void __free_pages(struct page *page, uint32_t order) {
     init_free_area(coalesced, order);
     linked_list_push(&zone->free_areas[order].free_list, &coalesced->lru);
     zone->free_areas[order].nr_free++;
+}
+
+// Allocate `count` areas linked in `list`.
+static inline uint32_t __alloc_pages_bulk(struct zone *zone, uint32_t order,
+                                          uint32_t count,
+                                          struct linked_list_node *list) {
+    uint32_t allocated = 0;
+    disable_interrupt();
+    for (uint32_t i = 0; i < count; ++i) {
+        struct page *page = __alloc_pages(zone, order);
+        if (!page) {
+            break;
+        }
+        ++allocated;
+        linked_list_push(list, &page->lru);
+    }
+    enable_interrupt();
+    return allocated;
+}
+
+struct page *alloc_pages_node(struct node *node, uint32_t order, gfp_t flags) {
+    uint32_t target_zone = flags & GFP_ZONE_MASK;
+    struct zone_list *zone_list = node->zone_lists + (flags & GFP_ZONE_MASK);
+    struct zone *zone = &node->zones[target_zone];
+    struct page *page = NULL;
+    for (; zone_list; ++zone_list) {
+        page = __alloc_pages(zone, order);
+        if (page) {
+            break;
+        }
+    }
+    return page;
+}
+
+struct page *alloc_pages(uint32_t order, gfp_t flags) {
+    return alloc_pages_node(cpu_current_node(), order, flags);
+}
+
+void free_pages(struct page *page, uint32_t order) {
+    return __free_pages(page, order);
 }
 
 void print_free_areas(struct free_area *free_areas) {

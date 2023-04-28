@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <assert.h>
 #include <limits.h>
+#include <processor.h>
 #include <utils/linked_list.h>
 
 #define MAX_NR_NODES 1
@@ -62,7 +63,7 @@ struct zone {
     uint64_t present_pages;
     uint64_t spanned_pages;
 
-    struct free_area free_areas[MAX_GFP_ORDER+1];
+    struct free_area free_areas[MAX_GFP_ORDER + 1];
     uint64_t free_pages;
     uint64_t pages_low, pages_min, page_high; // Used in page reclaim
 
@@ -81,13 +82,15 @@ struct node {
     uint64_t spanned_pages;
     struct page *mem_map;
     struct zone zones[MAX_NR_ZONES];
-    struct zonelist *zonelist[0]; // TODO(kongjun18): build zonelist
+    struct zone_list zone_lists[MAX_NR_ZONES]; // TODO(kongjun18): build zonelist
 
     uint32_t node_id;
 };
 
 // Currently only support one node. Thus always return init_node.
-#define NODE(nid) (&init_node)
+extern struct node init_node;
+extern struct node *init_nodes[];
+#define NODE(nid) init_nodes[0]
 #define pfn_to_node(pfn) (&init_node)
 #define pfn_to_page(pfn)                                                       \
     ({                                                                         \
@@ -96,8 +99,6 @@ struct node {
     })
 #define va_to_pfn(addr) (pa((addr)) >> PAGE_SHIFT)
 #define va_to_page(addr) pfn_to_page(va_to_pfn(addr))
-
-//
 
 // NODE_ZONE_SHIFT bits in (struct page).flags are used to store node and zone id.
 // +----------+-----+---------------------------+
@@ -147,5 +148,17 @@ static inline uint64_t page_pfn(struct page *page) {
 }
 
 #define page_node(page) NODE(page_nid((page)))
+
+static inline uint32_t cpu_nodeid(uint32_t cpuid) {
+    return 0;
+}
+
+static inline struct node *cpu_node(uint32_t cpuid) {
+    return NODE(cpu_nodeid(cpuid));
+}
+
+static inline struct node *cpu_current_node() {
+    return cpu_node(cpu_id());
+}
 
 #endif /* __MMZONE__ */

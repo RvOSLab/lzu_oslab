@@ -1,6 +1,8 @@
 #ifndef __BITOPS__
 #define __BITOPS__
 #include <stddef.h>
+
+// Check whether `val` is power of 2
 #define pow_of_2(val)                                                          \
     ({                                                                         \
         uint64_t __val = (val);                                                \

@@ -50,7 +50,7 @@ struct kmem_cache {
     void (*ctor)(void *, struct kmem_cache *, uint32_t);
     void (*dtor)(void *, struct kmem_cache *, uint32_t);
 
-    char *name;
+    const char *name;
     struct linked_list_node list;
 };
 
@@ -85,7 +85,11 @@ extern struct kmem_cache *kmalloc_caches[NR_KMALLOC_TYPES][NR_KMALLOC_CACHES];
 #define SLAB_TRACE_USER 0x04U // Store last user in debug area
 #define SLAB_CACHE_DMA 0x08U // Allocate memory in DMA zone
 #define SLAB_PANIC 0x10U // Panic if `kmem_cache_create()` fails
-#define SLAB_HW_CACHE_ALIGN // Align to hardware cache line
+#define SLAB_DEBUG (SLAB_PANIC | SLAB_POSION | SLAB_RED_ZONE | SLAB_TRACE_USER)
+#define SLAB_HW_CACHE_ALIGN 0x20U // Align to hardware cache line
+#define SLAB_ALLOWD_FLAGS                                                      \
+    (SLAB_POSION | SLAB_RED_ZONE | SLAB_TRACE_USER | SLAB_CACHE_DMA |          \
+     SLAB_PANIC | SLAB_HW_CACHE_ALIGN)
 
 // `kmalloc()` allocates byte-sized chunk
 extern void *kmalloc(uint64_t size, uint32_t flags);

@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <mm.h>
 #include <compiler.h>
+#include <page_alloc.h>
 #include <slab.h>
 #include <bitops.h>
 
@@ -21,7 +22,7 @@ struct kmalloc_info {
     }
 
 struct kmalloc_info kmalloc_infos[NR_KMALLOC_CACHES] __initdata = {
-    INIT_KMALLOC_INFO(16, 16),        INIT_KMALLOC_INFO(32, 32),
+    INIT_KMALLOC_INFO(32, 32),        INIT_KMALLOC_INFO(16, 16),
     INIT_KMALLOC_INFO(64, 64),        INIT_KMALLOC_INFO(128, 128),
     INIT_KMALLOC_INFO(256, 256),      INIT_KMALLOC_INFO(512, 512),
     INIT_KMALLOC_INFO(1024, 1K),      INIT_KMALLOC_INFO(2048, 2K),
@@ -36,6 +37,7 @@ struct kmem_cache kmem_cache = {
     .slab_full = INIT_LINKED_LIST(kmem_cache.slab_full),
     .slab_empty = INIT_LINKED_LIST(kmem_cache.slab_full),
     .obj_size = sizeof(struct kmem_cache),
+    .flags = SLAB_DEBUG,
     .name = "kmem_cache",
 };
 
@@ -58,6 +60,8 @@ static inline int off_slab(struct kmem_cache *kmem_cache) {
     return kmem_cache->flags & __KMEM_OFF_SLAB;
 }
 
+// Calculate `left_over`, `slab_size` and `obj_num` according to arguments.
+// It handles OFF_SLAB correctly.
 static void cache_estimate(uint32_t order, uint32_t obj_size, uint32_t align,
                            uint32_t flags, uint32_t *left_over,
                            uint32_t *slab_size, uint32_t *obj_num) {
@@ -65,19 +69,32 @@ static void cache_estimate(uint32_t order, uint32_t obj_size, uint32_t align,
     obj_size = ALIGN(obj_size, align);
     uint32_t slabmgt_size = 0;
     uint32_t bufctl_size = sizeof(kmem_bufctl_t);
+    uint32_t base_size = sizeof(struct slab);
     uint32_t i = 0;
     uint32_t used_size = 0;
     if (flags & __KMEM_OFF_SLAB) {
         bufctl_size = 0;
+        base_size = 0;
     }
     while (used_size < block_size) {
         ++i;
-        slabmgt_size = ALIGN(sizeof(struct slab) + bufctl_size * i, align);
+        slabmgt_size = ALIGN(base_size + bufctl_size * i, align);
         used_size = slabmgt_size + i * obj_size;
     }
-    *obj_num = --i;
-    *slab_size = ALIGN(sizeof(struct slab) + bufctl_size * i, align);
-    *left_over = block_size - (*slab_size + i * obj_size);
+    // `cache_estimate` is called before `kmem_cache_init()` finihsed.
+    // Thus should not access `off_slab_obj_limit`.
+    if ((--i) > SLAB_OBJ_LIMIT) {
+        i = SLAB_OBJ_LIMIT;
+    }
+    *obj_num = i;
+    slabmgt_size = ALIGN(base_size + bufctl_size * i, align);
+    used_size = slabmgt_size + i * obj_size;
+    *left_over = block_size - used_size;
+    // OFF_SLAB slab management streu is allocated from kmalloc. Therefore
+    // there is no need to align it.
+    *slab_size = (flags & __KMEM_OFF_SLAB) ?
+                     (sizeof(kmem_bufctl_t) * i + sizeof(struct slab)) :
+                     slabmgt_size;
 }
 
 struct kmem_cache *find_kmalloc_cache(uint64_t size, uint32_t flags) {
@@ -91,6 +108,20 @@ struct kmem_cache *find_kmalloc_cache(uint64_t size, uint32_t flags) {
         }
     }
     return NULL;
+}
+
+__unused static struct slab *alloc_slabmgt() {
+    return NULL;
+}
+
+__unused static void *cache_get_pages(uint32_t order, gfp_t flags) {
+    return NULL;
+}
+
+__unused static void cache_free_pages(struct page *page, uint32_t order) {
+}
+
+__unused static void destory_slab(struct slab *slab) {
 }
 
 static void free_objp_block(struct kmem_cache *cachep, void *objpp[],
@@ -178,6 +209,9 @@ void kmem_cache_init() __init {
     linked_list_push(&cache_list, &kmem_cache.list);
 
     // 2&3. Initalize kmalloc caches
+    if (sizeof(struct objp_cache_init) > kmalloc_infos[0].size) {
+        panic("sizeof(struct opj_objp_cache_init) > kmalloc_infos[0].size");
+    }
     for (uint32_t kmalloc_type = KMALLOC_NORMAL;
          kmalloc_type < NR_KMALLOC_TYPES; ++kmalloc_type) {
         for (uint32_t i = 0; i < NR_KMALLOC_CACHES; ++i) {
@@ -218,24 +252,136 @@ void kmem_cache_init() __init {
     kmem_cache_state = READY;
 }
 
-__unused struct kmem_cache *
+struct kmem_cache *
 kmem_cache_create(const char *name, uint64_t size, uint64_t align,
                   uint32_t flags,
                   void (*ctor)(void *, struct kmem_cache *, uint32_t),
                   void (*dtor)(void *, struct kmem_cache *, uint32_t)) {
-    return NULL;
+    // TODO(kongjun18): add more checks
+    if (!name || (flags & (~SLAB_ALLOWD_FLAGS)) ||
+        (!pow_of_2(align) && align)) {
+        panic("kmem_cache_create: invalid args");
+    }
+
+    size = ALIGN(size, BYTES_PER_WORD);
+    uint64_t ralign = BYTES_PER_WORD;
+    if (flags & SLAB_HW_CACHE_ALIGN) {
+        for (ralign = cache_line_size(); size <= ralign; ralign /= 2) {
+        }
+    }
+    // If align is zero, use default align.
+    if (ralign < align) {
+        ralign = align;
+    }
+    align = ralign;
+
+    struct kmem_cache *cachep = kmem_cache_alloc(&kmem_cache, GFP_KERNEL);
+    if (!cachep) {
+        if (flags & SLAB_PANIC) {
+            panic("kmem_cache_create: kmem_cache_alloc failed");
+        }
+        return NULL;
+    }
+    memset(cachep, 0, sizeof(*cachep));
+
+    if (size > (PAGE_SIZE >> 3)) {
+        flags |= __KMEM_OFF_SLAB;
+    }
+    uint32_t left_over = 0;
+    uint32_t slab_size = 0;
+    uint32_t obj_num = 0;
+    do {
+        cache_estimate(cachep->order, cachep->obj_size, align, flags,
+                       &left_over, &slab_size, &obj_num);
+        if (!obj_num) {
+            ++cachep->order;
+        }
+        if (cachep->order > MAX_GFP_ORDER) {
+            if (flags & SLAB_PANIC) {
+                panic("kmem_cache_create: MAX_GFP_ORDER reached");
+            }
+            return NULL;
+        }
+        // `cache_estimate()` does not check `off_slab_obj_limit`. Therefore,
+        // we should check it here.
+        if (off_slab(cachep) && obj_num > off_slab_obj_limit) {
+            obj_num = off_slab_obj_limit;
+        }
+        // Check internal fragment.
+        // If `left_over` is smaller than 1/8 of the memory block, it is
+        // an acceptable internal fragment.
+        if (obj_num && left_over <= ((PAGE_SIZE << cachep->order) / 8))
+            break;
+    } while (1);
+
+    if ((flags & __KMEM_OFF_SLAB) && (left_over >= ALIGN(slab_size, align))) {
+        flags &= ~__KMEM_OFF_SLAB;
+        slab_size = ALIGN(slab_size, align);
+        left_over -= slab_size;
+    }
+
+    cachep->color_off = cache_line_size();
+    cachep->color = left_over / cachep->color_off;
+    cachep->color_next = 0;
+
+    if (flags & SLAB_CACHE_DMA) {
+        cachep->gfpflags |= GFP_DMA;
+    }
+
+    cachep->obj_size = size;
+    cachep->obj_num = obj_num;
+    cachep->slab_size = slab_size;
+    cachep->ctor = ctor;
+    cachep->dtor = dtor;
+    cachep->name = name;
+    linked_list_init(&cachep->list);
+    linked_list_init(&cachep->slab_full);
+    linked_list_init(&cachep->slab_empty);
+    linked_list_init(&cachep->slab_partial);
+    cachep->free_objs = 0;
+    cachep->slabp_cache =
+        (flags & __KMEM_OFF_SLAB) ?
+            find_kmalloc_cache(cachep->slab_size, cachep->gfpflags) :
+            NULL;
+
+    // Install `objp_cache` into cache
+    if (kmem_cache_state == READY) {
+        tune_objp_cache(cachep);
+    } else {
+        struct objp_cache *new = NULL;
+        if (kmem_cache_state == PARTIAL) { // kmalloc-32 is available
+            new = kmalloc(sizeof(struct objp_cache_init), GFP_KERNEL);
+        } else { // kmem_cache_state ==  NONE
+            new = (struct objp_cache *)&init_kmalloc_objp_cache;
+        }
+        if (!new) {
+            panic("kmem_cache_init: fail to allocate objp_cache");
+        }
+        new->avail = 0;
+        new->batch_count = 1;
+        new->capacity = BOOT_OBJP_CACHE_ENTRIES;
+        new->touched = 0;
+        cachep->objp_cache = new;
+        cachep->free_limit =
+            2 * cachep->objp_cache->batch_count + cachep->obj_num;
+    }
+
+    linked_list_push(&cache_list, &cachep->list);
+    return cachep;
 }
 
-__unused void *kmem_cache_alloc(struct kmem_cache *cachep, uint32_t flags) {
+__unused void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flags) {
     return NULL;
 }
 
 void kmem_cache_free(struct kmem_cache *cachep, void *buf) {
 }
+
+void kmem_cache_shrink(struct kmem_cache *cachep) {
+}
 void kmem_cache_destroy(struct kmem_cache *cachep) {
 }
 
-// TODO: handle kmalloc flags
 void *kmalloc(uint64_t size, uint32_t flags) {
     return kmem_cache_alloc(find_kmalloc_cache(size, flags), flags);
 }

@@ -157,6 +157,10 @@ struct page *alloc_pages(uint32_t order, gfp_t flags) {
     return alloc_pages_node(cpu_current_node(), order, flags);
 }
 
+struct page *alloc_page(gfp_t flags) {
+    return alloc_pages(0, flags);
+}
+
 void *get_free_pages(uint32_t order) {
     struct page *page = alloc_pages(order, GFP_KERNEL);
     if (!page) {

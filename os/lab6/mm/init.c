@@ -491,14 +491,14 @@ static void __init retire_bootmem() {
             for (int j = i; j < i + 64; ++j, ++page) {
                 page->flags &= ~PG_RESERVED;
             }
-            __free_pages(&NODE(0)->mem_map[i], 6);
+            free_pages(&NODE(0)->mem_map[i], 6);
             i += 63;
         } else if (bootmap[__idx(0)] != 0xffU) {
             if (!test_bit(bootmap, i)) {
                 struct page *page = &NODE(0)->mem_map[i];
                 page->flags &= ~PG_RESERVED;
                 page->count = 1;
-                __free_pages(page, 0);
+                free_pages(page, 0);
             }
         } else {
             i += 63;
@@ -514,7 +514,7 @@ static void __init retire_bootmem() {
     for (uint32_t i = 0; i < eidx; ++i, ++page) {
         page->flags &= ~PG_RESERVED;
         page->count = 1;
-        __free_pages(page, 0);
+        free_pages(page, 0);
     }
     NODE(0)->bootmem = NULL;
 

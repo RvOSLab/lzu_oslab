@@ -8,7 +8,7 @@ static inline void set_area_order(struct page *area, uint32_t order) {
     area->private = order;
 }
 
-inline void rm_area_order(struct page *area) {
+static inline void rm_area_order(struct page *area) {
     area->flags &= ~PG_PRIVATE;
     area->private = 0;
 }
@@ -71,7 +71,7 @@ struct page *__alloc_pages(struct zone *zone, uint32_t order) {
 }
 
 // Free `count` areas linked in `list` in `zone`
-static void __free_pages_in_bulk(struct zone *zone, uint32_t count,
+__unused static void __free_pages_in_bulk(struct zone *zone, uint32_t count,
                                  struct linked_list_node *list,
                                  uint32_t order) {
 }

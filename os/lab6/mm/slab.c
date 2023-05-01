@@ -218,14 +218,16 @@ void kmem_cache_init() __init {
     kmem_cache_state = READY;
 }
 
-struct kmem_cache *
+__unused struct kmem_cache *
 kmem_cache_create(const char *name, uint64_t size, uint64_t align,
                   uint32_t flags,
                   void (*ctor)(void *, struct kmem_cache *, uint32_t),
                   void (*dtor)(void *, struct kmem_cache *, uint32_t)) {
+    return NULL;
 }
 
-void *kmem_cache_alloc(struct kmem_cache *cachep, uint32_t flags) {
+__unused void *kmem_cache_alloc(struct kmem_cache *cachep, uint32_t flags) {
+    return NULL;
 }
 
 void kmem_cache_free(struct kmem_cache *cachep, void *buf) {

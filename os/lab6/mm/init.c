@@ -3,6 +3,7 @@
 #include <bitops.h>
 #include <compiler.h>
 #include <device/fdt.h>
+#include <page_alloc.h>
 #include <kdebug.h>
 #include <limits.h>
 #include <mm.h>

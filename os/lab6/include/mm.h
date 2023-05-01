@@ -107,41 +107,9 @@ uint64_t put_page(uint64_t page, uint64_t addr, uint16_t flag);
 void show_page_tables();
 void map_kernel();
 void active_mapping();
-void *kmalloc_i(uint64_t size); /* 通用内核内存分配函数 */
-uint64_t kfree_s_i(void *obj, uint64_t size); /* 释放指定对象占用的内存 */
-static inline void *kmalloc(uint64_t size) {
-    disable_interrupt();
-    void *ptr = kmalloc_i(size);
-    enable_interrupt();
-    return ptr;
-}
-static inline uint64_t kfree_s(void *obj, uint64_t size) {
-    disable_interrupt();
-    uint64_t real_size = kfree_s_i(obj, size);
-    enable_interrupt();
-    return real_size;
-}
-#define kfree(ptr) kfree_s((ptr), 0)
-void malloc_test();
 
 void probe_mem_areas(const struct fdt_header *fdt);
 void mem_init();
 void clear_bss();
-
-// buddy system allocator options
-//
-// gfp means 'get free page'
-typedef uint32_t gfp_t;
-#define GFP_ZONE_MASK 0x03U // Low 2 bits are used to store zone type
-#define __GFP_WAIT 0x04U // Wthether allow process to sleep
-#define GFP_ALLOWD_FLAGS (__GFP_WAIT)
-#define GFP_ATOMIC
-#define GFP_DMA 0x01U
-#define GFP_NORMAL 0x00U
-#define GFP_KERNEL (GFP_WAIT | GFP_NORMAL)
-
-void __free_pages(struct page *page, uint32_t order);
-void rm_area_order(struct page *area);
-void print_free_areas(struct free_area *free_areas);
 
 #endif

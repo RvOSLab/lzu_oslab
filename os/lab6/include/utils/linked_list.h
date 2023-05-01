@@ -9,6 +9,9 @@ struct linked_list_node {
     struct linked_list_node *next;
 };
 
+#define INIT_LINKED_LIST(head)                                                 \
+    { &(head), &(head) }
+
 // 初始化头结点
 static inline void linked_list_init(struct linked_list_node *head) {
     head->prev = head;

@@ -82,7 +82,7 @@ struct node {
     uint64_t spanned_pages;
     struct page *mem_map;
     struct zone zones[MAX_NR_ZONES];
-    struct zone_list zone_lists[MAX_NR_ZONES]; // TODO(kongjun18): build zonelist
+    struct zone_list zone_lists[MAX_NR_ZONES];
 
     uint32_t node_id;
 };

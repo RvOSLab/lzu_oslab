@@ -1,7 +1,7 @@
-
 #include <stddef.h>
 #include <mm.h>
 #include <mmzone.h>
+#include <page_alloc.h>
 
 static inline void set_area_order(struct page *area, uint32_t order) {
     area->flags |= PG_PRIVATE;

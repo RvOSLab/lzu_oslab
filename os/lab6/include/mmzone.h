@@ -99,6 +99,8 @@ extern struct node *init_nodes[];
     })
 #define va_to_pfn(addr) (pa((addr)) >> PAGE_SHIFT)
 #define va_to_page(addr) pfn_to_page(va_to_pfn(addr))
+#define pfn_to_va(pfn) (va((pfn) << PAGE_SHIFT))
+#define page_to_va(page) (pfn_to_va(page_pfn((page))))
 
 // NODE_ZONE_SHIFT bits in (struct page).flags are used to store node and zone id.
 // +----------+-----+---------------------------+

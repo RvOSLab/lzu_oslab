@@ -72,8 +72,8 @@ struct page *__alloc_pages(struct zone *zone, uint32_t order) {
 
 // Free `count` areas linked in `list` in `zone`
 __unused static void __free_pages_in_bulk(struct zone *zone, uint32_t count,
-                                 struct linked_list_node *list,
-                                 uint32_t order) {
+                                          struct linked_list_node *list,
+                                          uint32_t order) {
 }
 
 static inline int check_range(struct zone *zone, struct page *area,
@@ -157,11 +157,23 @@ struct page *alloc_pages(uint32_t order, gfp_t flags) {
     return alloc_pages_node(cpu_current_node(), order, flags);
 }
 
+void *get_free_pages(uint32_t order) {
+    struct page *page = alloc_pages(order, GFP_KERNEL);
+    if (!page) {
+        return page;
+    }
+    return (void *)page_to_va(page);
+}
+
+void *get_free_page() {
+    return get_free_pages(0);
+}
+
 void free_pages(struct page *page, uint32_t order) {
     return __free_pages(page, order);
 }
 
-void print_free_areas(struct free_area *free_areas) {
+__unused static void print_free_areas(struct free_area *free_areas) {
     for (int i = 0; i <= MAX_GFP_ORDER; i++) {
         kprintf("order %x: %x free areas\n", i, free_areas[i].nr_free);
     }

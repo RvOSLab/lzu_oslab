@@ -15,6 +15,10 @@ typedef uint32_t gfp_t;
 #define GFP_ATOMIC GFP_NORMAL // TODO(kongjun18): implement GFP_ATOMIC
 #define GFP_KERNEL (GFP_WAIT | GFP_NORMAL)
 
+struct page *alloc_pages(uint32_t order, gfp_t flags);
+void *get_free_pages(uint32_t order);
+void *get_free_page();
+void free_pages(struct page *page, uint32_t order);
 void __free_pages(struct page *page, uint32_t order);
 
 #endif /* __PAGE_ALLOC_H__ */
